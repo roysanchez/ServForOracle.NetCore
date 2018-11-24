@@ -3,6 +3,7 @@ using Oracle.ManagedDataAccess.Types;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -10,7 +11,7 @@ using System.Text.RegularExpressions;
 
 namespace ServForOracle.NetCore
 {
-
+    Oracle.ManagedDataAccess.Client.OracleDbType
     public class RamoObj
     {
         public string CodRamo { get; set; }
@@ -33,6 +34,20 @@ namespace ServForOracle.NetCore
         public int StartNumber { get; private set; }
         public int LastNumber { get; private set; }
         public IEnumerable<OracleParameter> Parameters { get; private set; }
+    }
+
+    public class PreparedOutputParameter
+    {
+        public PreparedOutputParameter(Param parameter, OracleParameter oracleParameter, string refCursorString)
+        {
+            Parameter = parameter;
+            OracleParameter = oracleParameter;
+            RefCursorString = refCursorString;
+        }
+
+        public Param Parameter { get; private set; }
+        public OracleParameter OracleParameter { get; private set; }
+        public string RefCursorString { get; set; }
     }
 
     public class MetadataOracleTypeProperty
@@ -322,10 +337,15 @@ namespace ServForOracle.NetCore
         public new T Value { get; private set; }
         public override bool IsOracleType { get => false; }
 
-        public Param(T value)
-            : base(value)
+        public Param(T value, ParameterDirection direction)
+            : base(value, direction)
         {
             Value = value;
+        }
+
+        internal override void SetOutputValue(object value)
+        {
+            Value = (T)Metadata.ConvertOracleParameterToBaseType(typeof(T), value);
         }
     }
 
@@ -346,8 +366,9 @@ namespace ServForOracle.NetCore
         public override Type Type => typeof(T);
         public override string ParameterName => _ParameterName;
 
-        public ParamObject(T value, string schema, string objectName, OracleConnection con, string listName = null)
-            : base(value)
+        public ParamObject(T value, string schema, string objectName, OracleConnection con,
+            ParameterDirection direction, string listName = null)
+            : base(value, direction)
         {
             _Schema = schema;
             _ObjectName = objectName;
@@ -365,15 +386,21 @@ namespace ServForOracle.NetCore
         {
             return $"{_ParameterName} {_Schema}.{_ObjectName};";
         }
+
+        internal override void SetOutputValue(object value)
+        {
+            Value = Metadata.GetValueFromRefCursor(value as OracleRefCursor);
+        }
     }
 
     public abstract class ParamObject : Param
     {
-        public ParamObject(object value)
-            : base(value)
+        public ParamObject(object value, ParameterDirection direction)
+            : base(value, direction)
         {
 
         }
+
         public virtual string ParameterName { get; }
         public virtual string Schema { get; }
         public virtual string ObjectName { get; }
@@ -383,13 +410,17 @@ namespace ServForOracle.NetCore
 
     public abstract class Param
     {
-        public Param(object value)
+        public ParameterDirection Direction { get; private set; }
+        public Param(object value, ParameterDirection direction)
         {
             Value = value;
+            Direction = direction;
         }
         public virtual Type Type { get; }
         public virtual object Value { get; protected set; }
         public virtual bool IsOracleType { get; }
+        internal abstract void SetOutputValue(object value);
+
     }
 
     public class ParamHandler
@@ -403,13 +434,32 @@ namespace ServForOracle.NetCore
 
         public PreparedParameter PrepareParameterForQuery<T>(string name, ParamObject<T> parameter, int startNumber)
             where T : new()
-        { 
+        {
             var (constructor, lastNumber) = parameter.Metadata.BuildConstructor(parameter.Value, startNumber);
             var oracleParameters = parameter.Metadata.GetOracleParameters(parameter.Value, startNumber);
 
             return new PreparedParameter(constructor, startNumber, lastNumber, oracleParameters);
         }
+
+        public PreparedOutputParameter PrepareOutputParameter<T>(string name, Param<T> parameter, int startNumber)
+            where T : new()
+        {
+            string query = string.Empty;
+            if (typeof(T).IsArray)
+            {
+                query = parameter.Metadata.GetRefCursorCollectionQuery(startNumber, name);
+            }
+            else
+            {
+                query = parameter.Metadata.GetRefCursorQuery(startNumber, name);
+            }
+
+            var oracleParameter = parameter.Metadata.GetOracleParameterForRefCursor(startNumber);
+
+            return new PreparedOutputParameter(parameter, oracleParameter, query);
+        }
     }
+
 
     public class ServForOracle
     {
@@ -417,6 +467,7 @@ namespace ServForOracle.NetCore
 
         private static readonly MethodInfo ParamBody = typeof(ParamHandler).GetMethod(nameof(ParamHandler.ParameterBodyConstruction));
         private static readonly MethodInfo Prepare = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareParameterForQuery));
+        private static readonly MethodInfo Output = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareOutputParameter));
 
         public T[] ExecuteFunction<T>(string function, string schema, string obj, string list, OracleConnection con,
           params Param[] parameters) where T : new()
@@ -426,6 +477,8 @@ namespace ServForOracle.NetCore
             var declare = new StringBuilder();
             var query = new StringBuilder($"ret := {function}(");
             var body = new StringBuilder();
+            var outparameters = new StringBuilder();
+            var outputs = new List<PreparedOutputParameter>();
 
             var returnMetadata = new MetadataOracleObject<T>(schema, obj, list, con);//new ParamObject<T>(default, schema, obj, con);
             //returnMetadata.SetParameterName("ret");
@@ -438,28 +491,75 @@ namespace ServForOracle.NetCore
 
             var objCounter = 0;
             var counter = 0;
+            bool first = true;
             foreach (var param in parameters)
             {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    query.Append(",");
+                }
                 if (param.IsOracleType && param is ParamObject paramObject)
                 {
                     var name = $"p{objCounter++}";
                     paramObject.SetParameterName(name);
 
                     declare.AppendLine(paramObject.GetDeclareLine());
-                    var genericMethod = Prepare.MakeGenericMethod(param.Type);
-                    var preparedParameter = genericMethod.Invoke(_ParamHandler, new object[] { name, param, counter })
-                        as PreparedParameter;
 
-                    cmd.Parameters.AddRange(preparedParameter.Parameters.ToArray());
+                    if (param.Direction == ParameterDirection.Input || param.Direction == ParameterDirection.InputOutput)
+                    {
+                        var genericMethod = Prepare.MakeGenericMethod(param.Type);
+                        var preparedParameter = genericMethod.Invoke(_ParamHandler, new object[] { name, param, counter })
+                            as PreparedParameter;
 
-                    body.AppendLine($"{name} := {preparedParameter.ConstructorString}");
-                    counter = preparedParameter.LastNumber;
+                        cmd.Parameters.AddRange(preparedParameter.Parameters.ToArray());
+
+                        body.AppendLine($"{name} := {preparedParameter.ConstructorString}");
+                        counter = preparedParameter.LastNumber;
+                    }
+
+                    if (param.Direction == ParameterDirection.Output || param.Direction == ParameterDirection.InputOutput)
+                    {
+                        var outputMethod = Output.MakeGenericMethod(param.Type);
+                        var preparedOutput = outputMethod.Invoke(_ParamHandler, new object[] { name, param, counter++ })
+                            as PreparedOutputParameter;
+                        outparameters.AppendLine(preparedOutput.RefCursorString);
+
+                        cmd.Parameters.Add(preparedOutput.OracleParameter);
+                        outputs.Add(preparedOutput);
+                    }
+
                     //TODO commas
                     query.Append($"{name}");
                 }
                 else
                 {
-                    cmd.Parameters.Add(new OracleParameter($":{counter++}", param.Value));
+                    var oracleParameter = new OracleParameter($":{counter++}", param.Value)
+                    {
+                        Direction = param.Direction
+                    };
+                    cmd.Parameters.Add(oracleParameter);
+                    if(param.Direction == ParameterDirection.Output || param.Direction == ParameterDirection.InputOutput)
+                    {
+                        outputs.Add(new PreparedOutputParameter(param, oracleParameter, null));
+                    }
+                    //if (param.Direction == ParameterDirection.Input)
+                    //{
+                    //    cmd.Parameters.Add(new OracleParameter($":{counter++}", param.Value));
+                    //}
+                    //else
+                    //{
+                    //    var name = $"p{objCounter++}";
+                    //    var oracleParameter = new OracleParameter(name, param.Value)
+                    //    {
+                    //        Direction = param.Direction
+                    //    };
+                    //    outputs.Add(new PreparedOutputParameter(param, oracleParameter, null));
+
+                    //}
                 }
             }
 
@@ -486,6 +586,12 @@ namespace ServForOracle.NetCore
             cmd.ExecuteNonQuery();
 
             var zz = returnMetadata.GetListValueFromRefCursor(retOra.Value as OracleRefCursor);
+
+            foreach (var param in outputs)
+            {
+                param.Parameter.SetOutputValue(param.OracleParameter.Value);
+            }
+
             return zz;
         }
     }
@@ -500,7 +606,8 @@ namespace ServForOracle.NetCore
             var serv = new ServForOracle();
             var ramon = new RamoObj() { CodRamo = "BABB" };
             var x = serv.ExecuteFunction<RamoObj>("uniserv.prueba_net_core_list_param", "UNISERV", "RAMO_OBJ", "RAMO_LIST", con,
-                new ParamObject<RamoObj>(ramon, "UNISERV", "RAMO_OBJ", con));
+                new ParamObject<RamoObj>(ramon, "UNISERV", "RAMO_OBJ", con, ParameterDirection.Input),
+                new Param<DateTime>(DateTime.Now, ParameterDirection.Input));
 
             var zz = new MetadataOracleObject<RamoObj>("uniserv", "ramo_obj", con);
 
