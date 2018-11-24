@@ -100,6 +100,9 @@ namespace ServForOracle.NetCore
 
             for (var counter = 0; counter < properties.Count; counter++)
             {
+                constructor.Append(properties[counter].Name);
+                constructor.Append("=>");
+
                 constructor.Append('$');
                 if (counter + 1 < properties.Count)
                 {
@@ -346,6 +349,9 @@ namespace ServForOracle.NetCore
         public ParamObject(T value, string schema, string objectName, OracleConnection con, string listName = null)
             : base(value)
         {
+            _Schema = schema;
+            _ObjectName = objectName;
+            _ListName = listName;
             Metadata = new MetadataOracleObject<T>(schema, objectName, con);
             Value = value;
         }
@@ -395,9 +401,9 @@ namespace ServForOracle.NetCore
             return (name + " := " + constructor.Constructor, constructor.LastNumber);
         }
 
-        public PreparedParameter PrepareParameterForQuery<T>(string name, Param<T> parameter, int startNumber)
+        public PreparedParameter PrepareParameterForQuery<T>(string name, ParamObject<T> parameter, int startNumber)
             where T : new()
-        {
+        { 
             var (constructor, lastNumber) = parameter.Metadata.BuildConstructor(parameter.Value, startNumber);
             var oracleParameters = parameter.Metadata.GetOracleParameters(parameter.Value, startNumber);
 
@@ -412,8 +418,8 @@ namespace ServForOracle.NetCore
         private static readonly MethodInfo ParamBody = typeof(ParamHandler).GetMethod(nameof(ParamHandler.ParameterBodyConstruction));
         private static readonly MethodInfo Prepare = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareParameterForQuery));
 
-        public T[] ExecuteFunction<T>(string function, string schema, string obj, OracleConnection con,
-            params Param[] parameters) where T : new()
+        public T[] ExecuteFunction<T>(string function, string schema, string obj, string list, OracleConnection con,
+          params Param[] parameters) where T : new()
         {
             var cmd = con.CreateCommand();
 
@@ -421,13 +427,12 @@ namespace ServForOracle.NetCore
             var query = new StringBuilder($"ret := {function}(");
             var body = new StringBuilder();
 
-            var returnMetadata = new MetadataOracleObject<T>(schema, obj, con);//new ParamObject<T>(default, schema, obj, con);
+            var returnMetadata = new MetadataOracleObject<T>(schema, obj, list, con);//new ParamObject<T>(default, schema, obj, con);
             //returnMetadata.SetParameterName("ret");
 
 
-
             declare.AppendLine("declare");
-            declare.AppendLine($"ret {schema}.{obj};");
+            declare.AppendLine($"ret {schema}.{list} := {schema}.{list}();");
 
             body.AppendLine("begin");
 
@@ -446,10 +451,11 @@ namespace ServForOracle.NetCore
                         as PreparedParameter;
 
                     cmd.Parameters.AddRange(preparedParameter.Parameters.ToArray());
-                    
-                    body.AppendLine(preparedParameter.ConstructorString);
+
+                    body.AppendLine($"{name} := {preparedParameter.ConstructorString}");
                     counter = preparedParameter.LastNumber;
-                    query.Append($",{name}");
+                    //TODO commas
+                    query.Append($"{name}");
                 }
                 else
                 {
@@ -491,8 +497,12 @@ namespace ServForOracle.NetCore
             var con = new OracleConnection("");
             con.Open();
 
+            var serv = new ServForOracle();
+            var ramon = new RamoObj() { CodRamo = "BABB" };
+            var x = serv.ExecuteFunction<RamoObj>("uniserv.prueba_net_core_list_param", "UNISERV", "RAMO_OBJ", "RAMO_LIST", con,
+                new ParamObject<RamoObj>(ramon, "UNISERV", "RAMO_OBJ", con));
+
             var zz = new MetadataOracleObject<RamoObj>("uniserv", "ramo_obj", con);
-            var ramon = new RamoObj() { CodRamo = "aAABB" };
 
 
 
