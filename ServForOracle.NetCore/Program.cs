@@ -11,6 +11,44 @@ using System.Text.RegularExpressions;
 
 namespace ServForOracle.NetCore
 {
+    public static class TypeExtensions
+    {
+        public static bool IsCollection(this Type type)
+        {
+            return
+                type.IsArray
+                ||
+                (type.IsInterface && type.IsGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+                ||
+                (type != typeof(string) && !type.IsValueType && type.GetInterface(nameof(IEnumerable)) != null);
+        }
+
+        public static Type GetCollectionUnderType(this Type type)
+        {
+            if (type == null || !IsCollection(type))
+                return null;
+
+            var ga = type.GetGenericArguments();
+            if (ga.Length > 0)
+                return ga.Single();
+            else
+                return type.GetElementType();
+        }
+
+        public static object CreateInstance(this Type proxyType)
+        {
+            if (proxyType.IsCollection())
+            {
+                return Activator.CreateInstance(proxyType.GetCollectionUnderType().CreateListType());
+            }
+            else return Activator.CreateInstance(proxyType);
+        }
+        public static Type CreateListType(this Type proxyUnderType)
+        {
+            return typeof(List<>).MakeGenericType(proxyUnderType);
+        }
+    }
+
     public class RamoObj
     {
         public string CodRamo { get; set; }
@@ -64,7 +102,7 @@ namespace ServForOracle.NetCore
         public string CollectionName { get; set; }
     }
 
-    public class MetadataOracleObject<T>: MetadataOracle where T : new()
+    public class MetadataOracleObject<T>: MetadataOracle
     {
         private readonly Regex regex;
         private readonly string ConstructorString;
@@ -210,7 +248,7 @@ namespace ServForOracle.NetCore
 
         public T GetValueFromRefCursor(OracleRefCursor refCursor)
         {
-            var instance = new T();
+            var instance = Type.CreateInstance();
 
             var reader = refCursor.GetDataReader();
             while (reader.Read())
@@ -223,7 +261,7 @@ namespace ServForOracle.NetCore
                 }
             }
 
-            return instance;
+            return (T)instance;
         }
 
         public T[] GetListValueFromRefCursor(OracleRefCursor refCursor)
@@ -234,13 +272,13 @@ namespace ServForOracle.NetCore
             while (reader.Read())
             {
                 var count = 0;
-                var instance = new T();
+                var instance = Type.CreateInstance();
                 foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
                 {
                     prop.NETProperty.SetValue(instance,
                         ConvertOracleParameterToBaseType(prop.NETProperty.PropertyType, reader.GetOracleValue(count++)));
                 }
-                list.Add(instance);
+                list.Add((T)instance);
             }
 
             return list.ToArray();
@@ -338,7 +376,7 @@ namespace ServForOracle.NetCore
         }
     }
 
-    public class Param<T> : Param where T : new()
+    public class Param<T> : Param
     {
         public MetadataOracle Metadata { get; private set; }
         public new T Value { get; private set; }
@@ -441,7 +479,6 @@ namespace ServForOracle.NetCore
         //}
 
         public PreparedParameter PrepareParameterForQuery<T>(string name, ParamObject<T> parameter, int startNumber)
-            where T : new()
         {
             var (constructor, lastNumber) = parameter.Metadata.BuildConstructor(parameter.Value, startNumber);
             var oracleParameters = parameter.Metadata.GetOracleParameters(parameter.Value, startNumber);
@@ -450,7 +487,6 @@ namespace ServForOracle.NetCore
         }
 
         public PreparedOutputParameter PrepareOutputParameter<T>(string name, ParamObject<T> parameter, int startNumber)
-            where T : new()
         {
             string query = string.Empty;
             if (typeof(T).IsArray)
@@ -478,7 +514,7 @@ namespace ServForOracle.NetCore
         private static readonly MethodInfo OutputObj = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareOutputParameter));
 
         public T[] ExecuteFunction<T>(string function, string schema, string obj, string list, OracleConnection con,
-          params Param[] parameters) where T : new()
+          params Param[] parameters)
         {
             var cmd = con.CreateCommand();
 
