@@ -44,7 +44,7 @@ namespace ServForOracle.NetCore.Metadata
             ConstructorString = constructor.ToString();
         }
 
-        public (string Constructor, int LastNumber) BuildConstructor(T value, int startNumber)
+        private string BuildConstructor(ref int startNumber)
         {
             var constructor = ConstructorString;
             foreach (var prop in OracleTypeNetMetadata.Properties.OrderBy(c => c.Order))
@@ -60,7 +60,29 @@ namespace ServForOracle.NetCore.Metadata
 
             }
 
-            return (constructor, startNumber);
+            return constructor;
+        }
+
+        public (string Constructor, int LastNumber) BuildQueryConstructorString(T value, string name, int startNumber)
+        {
+            var baseString = new StringBuilder();
+            
+            if(Type.IsCollection())
+            {
+                foreach(var v in value as IEnumerable)
+                {
+                    var baseConstructor = BuildConstructor(ref startNumber);
+                    baseString.AppendLine($"{name}.extend;");
+                    baseString.AppendLine($"{name}({name}.last) := {baseConstructor}");
+                }
+            }
+            else
+            {
+                var baseConstructor = BuildConstructor(ref startNumber);
+                baseString.AppendLine($"{name} := {baseConstructor}");
+            }
+
+            return (baseString.ToString(), startNumber);
         }
 
         public OracleParameter[] GetOracleParameters(T value, int startNumber)
@@ -130,27 +152,27 @@ namespace ServForOracle.NetCore.Metadata
             return query.ToString();
         }
 
-        public override object GetValueFromRefCursor(OracleRefCursor refCursor)
+        public override object GetValueFromRefCursor(Type type, OracleRefCursor refCursor)
         {
-            dynamic instance = Type.CreateInstance();
+            dynamic instance = type.CreateInstance();
             
             var reader = refCursor.GetDataReader();
 
-            if (Type.IsCollection())
+            if (type.IsCollection())
             {
-                var subType = Type.GetCollectionUnderType();
+                var subType = type.GetCollectionUnderType();
                 while (reader.Read())
                 {
                     instance.Add(ReadObjectInstance(subType, reader));
                 }
 
-                return Type.IsArray ? Enumerable.ToArray(instance) : Enumerable.AsEnumerable(instance);
+                return type.IsArray ? Enumerable.ToArray(instance) : Enumerable.AsEnumerable(instance);
             }
             else
             {
                 while (reader.Read())
                 {
-                    ReadObjectInstance(Type, reader);
+                    ReadObjectInstance(type, reader);
                 }
 
                 return (T)instance;
@@ -174,7 +196,7 @@ namespace ServForOracle.NetCore.Metadata
 
     internal abstract class MetadataOracleObject: MetadataOracle
     {
-        public abstract object GetValueFromRefCursor(OracleRefCursor refCursor);
+        public abstract object GetValueFromRefCursor(Type type, OracleRefCursor refCursor);
         public abstract string GetRefCursorQuery(int startNumber, string fieldName);
         public abstract string GetRefCursorCollectionQuery(int startNumber, string fieldName);
     }

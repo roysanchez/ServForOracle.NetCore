@@ -59,7 +59,7 @@ namespace ServForOracle.NetCore.Parameters
 
         internal override void SetOutputValue(object value)
         {
-            Value = (T)Metadata.GetValueFromRefCursor(value as OracleRefCursor);
+            Value = (T)Metadata.GetValueFromRefCursor(Type, value as OracleRefCursor);
         }
     }
 

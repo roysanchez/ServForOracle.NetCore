@@ -91,15 +91,7 @@ namespace ServForOracle.NetCore
 
                         cmd.Parameters.AddRange(preparedParameter.Parameters.ToArray());
 
-                        if (param.Type.IsCollection())
-                        {
-                            body.AppendLine($"{name}.extend;");
-                            body.AppendLine($"{name}({name}.last) := {preparedParameter.ConstructorString}");
-                        }
-                        else
-                        {
-                            body.AppendLine($"{name} := {preparedParameter.ConstructorString}");
-                        }
+                        body.AppendLine(preparedParameter.ConstructionString);
 
                         counter = preparedParameter.LastNumber;
                     }
@@ -158,8 +150,8 @@ namespace ServForOracle.NetCore
             {
                 param.Parameter.SetOutputValue(param.OracleParameter.Value);
             }
-
-            return (T)returnMetadata.GetValueFromRefCursor(retOra.Value as OracleRefCursor);
+            
+            return (T)returnMetadata.GetValueFromRefCursor(returnType, retOra.Value as OracleRefCursor);
         }   
     }
 }

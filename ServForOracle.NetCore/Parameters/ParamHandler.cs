@@ -5,7 +5,7 @@ namespace ServForOracle.NetCore.Parameters
     {
         public PreparedParameter PrepareParameterForQuery<T>(string name, ParamObject<T> parameter, int startNumber)
         {
-            var (constructor, lastNumber) = parameter.Metadata.BuildConstructor(parameter.Value, startNumber);
+            var (constructor, lastNumber) = parameter.Metadata.BuildQueryConstructorString(parameter.Value, name, startNumber);
             var oracleParameters = parameter.Metadata.GetOracleParameters(parameter.Value, startNumber);
 
             return new PreparedParameter(constructor, startNumber, lastNumber, oracleParameters);

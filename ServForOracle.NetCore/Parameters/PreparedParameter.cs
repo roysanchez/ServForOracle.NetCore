@@ -5,15 +5,15 @@ namespace ServForOracle.NetCore.Parameters
 {
     public class PreparedParameter
     {
-        public PreparedParameter(string constructor, int startNumber, int lastNumber, IEnumerable<OracleParameter> parameters)
+        public PreparedParameter(string construction, int startNumber, int lastNumber, IEnumerable<OracleParameter> parameters)
         {
-            ConstructorString = constructor;
+            ConstructionString = construction;
             StartNumber = startNumber;
             LastNumber = lastNumber;
             Parameters = parameters;
         }
 
-        public string ConstructorString { get; private set; }
+        public string ConstructionString { get; private set; }
         public int StartNumber { get; private set; }
         public int LastNumber { get; private set; }
         public IEnumerable<OracleParameter> Parameters { get; private set; }
