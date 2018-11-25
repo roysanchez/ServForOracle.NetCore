@@ -16,6 +16,7 @@ namespace ServForOracle.NetCore
     {
         private readonly OracleConnection _Connection;
         private readonly MetadataBuilder _Builder;
+
         public ServForOracle(OracleConnection connection)
         {
             _Connection = connection;
@@ -28,7 +29,12 @@ namespace ServForOracle.NetCore
         private static readonly MethodInfo PrepareObject = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareParameterForQuery));
         private static readonly MethodInfo OutputObject = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareOutputParameter));
 
-        public T[] ExecuteFunction<T>(string function, string schema = null, string obj = null, string list = null, params Param[] parameters)
+        private void ProcessParameters(Param[] parameters)
+        {
+
+        }
+
+        public T ExecuteFunction<T>(string function, string schema = null, string obj = null, string list = null, params Param[] parameters)
         {
             if(_Connection.State != ConnectionState.Open)
             {
@@ -47,6 +53,8 @@ namespace ServForOracle.NetCore
             var body = new StringBuilder();
             var outparameters = new StringBuilder();
             var outputs = new List<PreparedOutputParameter>();
+
+            var returnType = typeof(T);
 
             var returnMetadata = _Builder.GetOrRegisterMetadataOracleObject<T>(schema, obj, list);
 
@@ -146,14 +154,12 @@ namespace ServForOracle.NetCore
 
             cmd.ExecuteNonQuery();
 
-            var zz = returnMetadata.GetListValueFromRefCursor(retOra.Value as OracleRefCursor);
-
             foreach (var param in outputs)
             {
                 param.Parameter.SetOutputValue(param.OracleParameter.Value);
             }
 
-            return zz;
+            return returnMetadata.GetValueFromRefCursor(retOra.Value as OracleRefCursor);
         }   
     }
 }

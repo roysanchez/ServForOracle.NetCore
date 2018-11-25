@@ -20,6 +20,7 @@ namespace ServForOracle.NetCore.Metadata
         {
             OracleConnection = connection;
             OracleUDTs = new ConcurrentBag<MetadataOracleTypeDefinition>();
+            TypeDefinitionsOracleUDT = new ConcurrentDictionary<Type, MetadataOracle>();
 
             var executing = Assembly.GetExecutingAssembly();
 
@@ -27,7 +28,6 @@ namespace ServForOracle.NetCore.Metadata
                     from assembly in AppDomain.CurrentDomain.GetAssemblies()
                     where assembly != executing
                        && !assembly.GlobalAssemblyCache
-                       //&& assembly.Location == executing.Location
                        && !assembly.FullName.StartsWith("Microsoft")
                        && !assembly.FullName.StartsWith("System")
                        && !assembly.FullName.StartsWith("Oracle")
@@ -41,18 +41,23 @@ namespace ServForOracle.NetCore.Metadata
 
             foreach (var type in collections)
             {
-                RegisterByType(type, connection);
+                Register(type, connection);
             }
 
             foreach (var type in types.Except(collections))
             {
-
+                Register(type, connection);
             }
         }
 
         public MetadataOracleObject<T> GetOrRegisterMetadataOracleObject<T>(string schema = null, string objectName = null, string collectionName = null)
         {
             var type = typeof(T);
+            if (type.IsCollection())
+            {
+                type = type.GetCollectionUnderType();
+            }
+
             TypeDefinitionsOracleUDT.TryGetValue(type, out var metadata);
 
             if (metadata == null)
@@ -65,11 +70,6 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        public MetadataOracle GetMetadataOracle()
-        {
-            return new MetadataOracle();
-        }
-
         private object Register(Type type, OracleConnection con, string objectSchema, string objectName, string collectionName)
         {
             var metadataGenericType = typeof(MetadataOracleObject<>).MakeGenericType(type);
@@ -80,7 +80,7 @@ namespace ServForOracle.NetCore.Metadata
             return metadata;
         }
 
-        private object RegisterByType(Type type, OracleConnection con)
+        private object Register(Type type, OracleConnection con)
         {
             var objectSchema = string.Empty;
             var objectName = type.GetCustomAttribute<UDTNameAttribute>().Name;
@@ -112,7 +112,7 @@ namespace ServForOracle.NetCore.Metadata
 
             while (reader.Read())
             {
-                var property = new MetadataOraclePropertyNetTypeDefinition
+                var property = new MetadataOraclePropertyTypeDefinition
                 {
                     Order = reader.GetInt32(0),
                     Name = reader.GetString(1)

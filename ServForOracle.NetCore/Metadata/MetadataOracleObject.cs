@@ -133,22 +133,15 @@ namespace ServForOracle.NetCore.Metadata
         public T GetValueFromRefCursor(OracleRefCursor refCursor)
         {
             dynamic instance = Type.CreateInstance();
-
+            
             var reader = refCursor.GetDataReader();
 
             if (Type.IsCollection())
             {
+                var subType = Type.GetCollectionUnderType();
                 while (reader.Read())
                 {
-                    dynamic tempValue = Type.GetCollectionUnderType().CreateInstance();
-                    var count = 0;
-                    foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
-                    {
-                        prop.NETProperty.SetValue(tempValue,
-                        ConvertOracleParameterToBaseType(prop.NETProperty.PropertyType, reader.GetOracleValue(count++)));
-                    }
-
-                    instance.Add(tempValue);
+                    instance.Add(ReadObjectInstance(subType, reader));
                 }
 
                 return Type.IsArray ? Enumerable.ToArray(instance) : Enumerable.AsEnumerable(instance);
@@ -157,36 +150,43 @@ namespace ServForOracle.NetCore.Metadata
             {
                 while (reader.Read())
                 {
-                    var count = 0;
-                    foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
-                    {
-                        prop.NETProperty.SetValue(instance,
-                            ConvertOracleParameterToBaseType(prop.NETProperty.PropertyType, reader.GetOracleValue(count++)));
-                    }
+                    ReadObjectInstance(Type, reader);
                 }
 
                 return (T)instance;
             }
         }
 
-        public T[] GetListValueFromRefCursor(OracleRefCursor refCursor)
+        private object ReadObjectInstance(Type type, OracleDataReader reader)
         {
-            var list = new List<T>();
-
-            var reader = refCursor.GetDataReader();
-            while (reader.Read())
+            int count = 0;
+            var instance = type.CreateInstance();
+            foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
             {
-                var count = 0;
-                var instance = Type.CreateInstance();
-                foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
-                {
-                    prop.NETProperty.SetValue(instance,
-                        ConvertOracleParameterToBaseType(prop.NETProperty.PropertyType, reader.GetOracleValue(count++)));
-                }
-                list.Add((T)instance);
+                prop.NETProperty.SetValue(instance,
+                    ConvertOracleParameterToBaseType(prop.NETProperty.PropertyType, reader.GetOracleValue(count++)));
             }
 
-            return list.ToArray();
+            return instance;
+
         }
+        //public T GetListValueFromRefCursor(OracleRefCursor refCursor)
+        //{
+        //    var retType = typeof(T);
+        //    dynamic list = retType.CreateInstance();
+
+        //    var reader = refCursor.GetDataReader();
+        //    while (reader.Read())
+        //    {
+        //        var count = 0;
+        //        var instance = Type.CreateInstance();
+        //        instance = ReadObjectInstance(reader);
+        //        list.Add((T)instance);
+        //    }
+
+        //    return retType.IsArray ? Enumerable.ToArray(list) : Enumerable.AsEnumerable(list);
+        //}
+
+
     }
 }

@@ -10,13 +10,6 @@ namespace ServForOracle.NetCore.Metadata
 {
     internal class MetadataOracle
     {
-        
-        
-        //public MetadataOracle(Type type, MetadataOracleTypeDefinition oracleTypeMetadata)
-        //{
-            
-        //}
-
         public object ConvertOracleParameterToBaseType(Type retType, object oracleParam)
         {
             bool isNullable = (retType.IsGenericType && retType.GetGenericTypeDefinition() == typeof(Nullable<>));

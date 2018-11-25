@@ -2,6 +2,7 @@
 using System;
 using System.Data;
 using ServForOracle.NetCore.Parameters;
+using System.Collections.Generic;
 
 namespace ServForOracle.NetCore
 {
@@ -26,5 +27,6 @@ namespace ServForOracle.NetCore
 
             Console.WriteLine("Hello World!");
         }
+
     }
 }
