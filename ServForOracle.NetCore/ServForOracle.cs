@@ -159,7 +159,7 @@ namespace ServForOracle.NetCore
                 param.Parameter.SetOutputValue(param.OracleParameter.Value);
             }
 
-            return returnMetadata.GetValueFromRefCursor(retOra.Value as OracleRefCursor);
+            return (T)returnMetadata.GetValueFromRefCursor(retOra.Value as OracleRefCursor);
         }   
     }
 }

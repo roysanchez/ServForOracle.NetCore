@@ -50,7 +50,7 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        public MetadataOracleObject<T> GetOrRegisterMetadataOracleObject<T>(string schema = null, string objectName = null, string collectionName = null)
+        public MetadataOracleObject GetOrRegisterMetadataOracleObject<T>(string schema = null, string objectName = null, string collectionName = null)
         {
             var type = typeof(T);
             if (type.IsCollection())
@@ -62,11 +62,11 @@ namespace ServForOracle.NetCore.Metadata
 
             if (metadata == null)
             {
-                return Register(type, OracleConnection, schema, objectName, collectionName) as MetadataOracleObject<T>;
+                return Register(type, OracleConnection, schema, objectName, collectionName) as MetadataOracleObject;
             }
             else
             {
-                return metadata as MetadataOracleObject<T>;
+                return metadata as MetadataOracleObject;
             }
         }
 

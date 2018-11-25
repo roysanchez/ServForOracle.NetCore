@@ -11,7 +11,7 @@ using ServForOracle.NetCore.Extensions;
 
 namespace ServForOracle.NetCore.Metadata
 {
-    internal class MetadataOracleObject<T>: MetadataOracle
+    internal class MetadataOracleObject<T>: MetadataOracleObject
     {
         private readonly Regex regex;
         private readonly string ConstructorString;
@@ -88,7 +88,7 @@ namespace ServForOracle.NetCore.Metadata
             return parameters.ToArray();
         }
 
-        public string GetRefCursorCollectionQuery(int startNumber, string fieldName)
+        public override string GetRefCursorCollectionQuery(int startNumber, string fieldName)
         {
             var query = new StringBuilder($"open :{startNumber++} for select ");
             var first = true;
@@ -109,7 +109,7 @@ namespace ServForOracle.NetCore.Metadata
             return query.ToString();
         }
 
-        public string GetRefCursorQuery(int startNumber, string fieldName)
+        public override string GetRefCursorQuery(int startNumber, string fieldName)
         {
             var query = new StringBuilder($"open :{startNumber++} for select ");
             var first = true;
@@ -130,7 +130,7 @@ namespace ServForOracle.NetCore.Metadata
             return query.ToString();
         }
 
-        public T GetValueFromRefCursor(OracleRefCursor refCursor)
+        public override object GetValueFromRefCursor(OracleRefCursor refCursor)
         {
             dynamic instance = Type.CreateInstance();
             
@@ -170,23 +170,12 @@ namespace ServForOracle.NetCore.Metadata
             return instance;
 
         }
-        //public T GetListValueFromRefCursor(OracleRefCursor refCursor)
-        //{
-        //    var retType = typeof(T);
-        //    dynamic list = retType.CreateInstance();
+    }
 
-        //    var reader = refCursor.GetDataReader();
-        //    while (reader.Read())
-        //    {
-        //        var count = 0;
-        //        var instance = Type.CreateInstance();
-        //        instance = ReadObjectInstance(reader);
-        //        list.Add((T)instance);
-        //    }
-
-        //    return retType.IsArray ? Enumerable.ToArray(list) : Enumerable.AsEnumerable(list);
-        //}
-
-
+    internal abstract class MetadataOracleObject: MetadataOracle
+    {
+        public abstract object GetValueFromRefCursor(OracleRefCursor refCursor);
+        public abstract string GetRefCursorQuery(int startNumber, string fieldName);
+        public abstract string GetRefCursorCollectionQuery(int startNumber, string fieldName);
     }
 }

@@ -40,7 +40,7 @@ namespace ServForOracle.NetCore.Parameters
 
         internal override void LoadObjectMetadata(MetadataBuilder builder)
         {
-            Metadata = builder.GetOrRegisterMetadataOracleObject<T>(_UserParameterSchema, _UserParameterObjectName, _UserParameterListName);
+            Metadata = builder.GetOrRegisterMetadataOracleObject<T>(_UserParameterSchema, _UserParameterObjectName, _UserParameterListName) as MetadataOracleObject<T>;
             MetadataLoaded = true;
         }
 
@@ -59,7 +59,7 @@ namespace ServForOracle.NetCore.Parameters
 
         internal override void SetOutputValue(object value)
         {
-            Value = Metadata.GetValueFromRefCursor(value as OracleRefCursor);
+            Value = (T)Metadata.GetValueFromRefCursor(value as OracleRefCursor);
         }
     }
 
