@@ -35,14 +35,16 @@ namespace ServForOracle.NetCore
                 return type.GetElementType();
         }
 
-        public static object CreateInstance(this Type proxyType)
+
+        public static object CreateInstance(this Type proxyType, params object[] arguments)
         {
             if (proxyType.IsCollection())
             {
-                return Activator.CreateInstance(proxyType.GetCollectionUnderType().CreateListType());
+                return Activator.CreateInstance(proxyType.GetCollectionUnderType().CreateListType(), arguments);
             }
-            else return Activator.CreateInstance(proxyType);
+            else return Activator.CreateInstance(proxyType, arguments);
         }
+
         public static Type CreateListType(this Type proxyUnderType)
         {
             return typeof(List<>).MakeGenericType(proxyUnderType);
@@ -128,7 +130,7 @@ namespace ServForOracle.NetCore
 
             var reader = cmd.ExecuteReader();
             var properties = new List<MetadataOracleTypeProperty>();
-            var NETProperties = Type.GetProperties();
+            var NETProperties = Type.IsCollection() ? Type.GetCollectionUnderType().GetProperties() : Type.GetProperties();
 
             while (reader.Read())
             {
@@ -188,9 +190,23 @@ namespace ServForOracle.NetCore
         public OracleParameter[] GetOracleParameters(T value, int startNumber)
         {
             var parameters = new List<OracleParameter>();
-            foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
+
+            if (Type.IsCollection())
             {
-                parameters.Add(new OracleParameter($":{startNumber++}", prop.NETProperty.GetValue(value)));
+                foreach (var temp in value as IEnumerable)
+                {
+                    foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
+                    {
+                        parameters.Add(new OracleParameter($":{startNumber++}", value != null ? prop.NETProperty.GetValue(temp) : null));
+                    }
+                }
+            }
+            else
+            {
+                foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
+                {
+                    parameters.Add(new OracleParameter($":{startNumber++}", value != null ? prop.NETProperty.GetValue(value) : null));
+                }
             }
 
             return parameters.ToArray();
@@ -248,20 +264,41 @@ namespace ServForOracle.NetCore
 
         public T GetValueFromRefCursor(OracleRefCursor refCursor)
         {
-            var instance = Type.CreateInstance();
+            dynamic instance = Type.CreateInstance();
 
             var reader = refCursor.GetDataReader();
-            while (reader.Read())
-            {
-                var count = 0;
-                foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
-                {
-                    prop.NETProperty.SetValue(instance,
-                        ConvertOracleParameterToBaseType(prop.NETProperty.PropertyType, reader.GetOracleValue(count++)));
-                }
-            }
 
-            return (T)instance;
+            if (Type.IsCollection())
+            {
+                while (reader.Read())
+                {
+                    dynamic tempValue = Type.GetCollectionUnderType().CreateInstance();
+                    var count = 0;
+                    foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
+                    {
+                        prop.NETProperty.SetValue(tempValue,
+                        ConvertOracleParameterToBaseType(prop.NETProperty.PropertyType, reader.GetOracleValue(count++)));
+                    }
+
+                    instance.Add(tempValue);
+                }
+
+                return Type.IsArray ? Enumerable.ToArray(instance) : Enumerable.AsEnumerable(instance);
+            }
+            else
+            {
+                while (reader.Read())
+                {
+                    var count = 0;
+                    foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
+                    {
+                        prop.NETProperty.SetValue(instance,
+                            ConvertOracleParameterToBaseType(prop.NETProperty.PropertyType, reader.GetOracleValue(count++)));
+                    }
+                }
+
+                return (T)instance;
+            }
         }
 
         public T[] GetListValueFromRefCursor(OracleRefCursor refCursor)
@@ -395,7 +432,7 @@ namespace ServForOracle.NetCore
         }
     }
 
-    public class ParamObject<T> : ParamObject where T : new()
+    public class ParamObject<T> : ParamObject
     {
         public MetadataOracleObject<T> Metadata { get; private set; }
 
@@ -430,7 +467,10 @@ namespace ServForOracle.NetCore
 
         public override string GetDeclareLine()
         {
-            return $"{_ParameterName} {_Schema}.{_ObjectName};";
+            if (Type.IsCollection())
+                return $"{_ParameterName} {_Schema}.{_ListName} := {_Schema}.{_ListName}();";
+            else
+                return $"{_ParameterName} {_Schema}.{_ObjectName};";
         }
 
         internal override void SetOutputValue(object value)
@@ -471,13 +511,6 @@ namespace ServForOracle.NetCore
 
     public class ParamHandler
     {
-        //public (string, int) ParameterBodyConstruction<T>(string name, Param<T> parameter, int startNumber)
-        //    where T : new()
-        //{
-        //    var constructor = parameter.Metadata.BuildConstructor(parameter.Value, startNumber);
-        //    return (name + " := " + constructor.Constructor, constructor.LastNumber);
-        //}
-
         public PreparedParameter PrepareParameterForQuery<T>(string name, ParamObject<T> parameter, int startNumber)
         {
             var (constructor, lastNumber) = parameter.Metadata.BuildConstructor(parameter.Value, startNumber);
@@ -561,7 +594,16 @@ namespace ServForOracle.NetCore
 
                         cmd.Parameters.AddRange(preparedParameter.Parameters.ToArray());
 
-                        body.AppendLine($"{name} := {preparedParameter.ConstructorString}");
+                        if (param.Type.IsCollection())
+                        {
+                            body.AppendLine($"{name}.extend;");
+                            body.AppendLine($"{name}({name}.last) := {preparedParameter.ConstructorString}");
+                        }
+                        else
+                        {
+                            body.AppendLine($"{name} := {preparedParameter.ConstructorString}");
+                        }
+
                         counter = preparedParameter.LastNumber;
                     }
 
@@ -575,8 +617,7 @@ namespace ServForOracle.NetCore
                         cmd.Parameters.Add(preparedOutput.OracleParameter);
                         outputs.Add(preparedOutput);
                     }
-
-                    //TODO commas
+                    
                     query.Append(name);
                 }
                 else
@@ -592,20 +633,6 @@ namespace ServForOracle.NetCore
                     {
                         outputs.Add(new PreparedOutputParameter(param, oracleParameter, null));
                     }
-                    //if (param.Direction == ParameterDirection.Input)
-                    //{
-                    //    cmd.Parameters.Add(new OracleParameter($":{counter++}", param.Value));
-                    //}
-                    //else
-                    //{
-                    //    var name = $"p{objCounter++}";
-                    //    var oracleParameter = new OracleParameter(name, param.Value)
-                    //    {
-                    //        Direction = param.Direction
-                    //    };
-                    //    outputs.Add(new PreparedOutputParameter(param, oracleParameter, null));
-
-                    //}
                 }
             }
 
@@ -654,24 +681,24 @@ namespace ServForOracle.NetCore
                 new ParamObject<RamoObj>(ramon, "UNISERV", "RAMO_OBJ", con, ParameterDirection.Input),
                 new Param<DateTime>(DateTime.Now, ParameterDirection.Input));
 
-            var zz = new MetadataOracleObject<RamoObj>("uniserv", "ramo_obj", con);
+            //var zz = new MetadataOracleObject<RamoObj>("uniserv", "ramo_obj", con);
 
 
 
-            var cmd = con.CreateCommand();
+            //var cmd = con.CreateCommand();
 
-            var xx = zz.BuildConstructor(ramon, 0).Constructor;
-            var props = zz.GetOracleParameters(ramon, 0);
-            cmd.CommandText = $@"
-            declare
-                ret uniserv.ramo_list := uniserv.ramo_list();
-            begin
-                ret.extend;
-                ret(ret.last) := {xx}
-                uniserv.prueba_net_core_proc_list(ret);
-            end;";
-            cmd.Parameters.AddRange(props.ToArray());
-            cmd.ExecuteNonQuery();
+            //var xx = zz.BuildConstructor(ramon, 0).Constructor;
+            //var props = zz.GetOracleParameters(ramon, 0);
+            //cmd.CommandText = $@"
+            //declare
+            //    ret uniserv.ramo_list := uniserv.ramo_list();
+            //begin
+            //    ret.extend;
+            //    ret(ret.last) := {xx}
+            //    uniserv.prueba_net_core_proc_list(ret);
+            //end;";
+            //cmd.Parameters.AddRange(props.ToArray());
+            //cmd.ExecuteNonQuery();
 
 
 
