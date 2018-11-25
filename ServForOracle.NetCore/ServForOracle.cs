@@ -14,15 +14,33 @@ namespace ServForOracle.NetCore
 {
     public class ServForOracle
     {
+        private readonly OracleConnection _Connection;
+        private readonly MetadataBuilder _Builder;
+        public ServForOracle(OracleConnection connection)
+        {
+            _Connection = connection;
+            _Builder = new MetadataBuilder(connection);
+        }
+
+
         private readonly ParamHandler _ParamHandler = new ParamHandler();
         
         private static readonly MethodInfo PrepareObject = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareParameterForQuery));
-        private static readonly MethodInfo OutputObj = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareOutputParameter));
+        private static readonly MethodInfo OutputObject = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareOutputParameter));
 
-        public T[] ExecuteFunction<T>(string function, string schema, string obj, string list, OracleConnection con,
-          params Param[] parameters)
+        public T[] ExecuteFunction<T>(string function, string schema = null, string obj = null, string list = null, params Param[] parameters)
         {
-            var cmd = con.CreateCommand();
+            if(_Connection.State != ConnectionState.Open)
+            {
+                _Connection.Open();
+            }
+
+            foreach(ParamObject param in parameters.Where(c => c is ParamObject))
+            {
+                param.LoadObjectMetadata(_Builder);
+            }
+
+            var cmd = _Connection.CreateCommand();
 
             var declare = new StringBuilder();
             var query = new StringBuilder($"ret := {function}(");
@@ -30,8 +48,7 @@ namespace ServForOracle.NetCore
             var outparameters = new StringBuilder();
             var outputs = new List<PreparedOutputParameter>();
 
-            var returnMetadata = new MetadataOracleObject<T>(schema, obj, list, con);
-
+            var returnMetadata = _Builder.GetOrRegisterMetadataOracleObject<T>(schema, obj, list);
 
             declare.AppendLine("declare");
             declare.AppendLine($"ret {schema}.{list} := {schema}.{list}();");
@@ -81,7 +98,7 @@ namespace ServForOracle.NetCore
 
                     if (param.Direction == ParameterDirection.Output || param.Direction == ParameterDirection.InputOutput)
                     {
-                        var outputMethod = OutputObj.MakeGenericMethod(param.Type);
+                        var outputMethod = OutputObject.MakeGenericMethod(param.Type);
                         var preparedOutput = outputMethod.Invoke(_ParamHandler, new object[] { name, param, counter++ })
                             as PreparedOutputParameter;
                         outparameters.AppendLine(preparedOutput.RefCursorString);
@@ -137,6 +154,6 @@ namespace ServForOracle.NetCore
             }
 
             return zz;
-        }
+        }   
     }
 }

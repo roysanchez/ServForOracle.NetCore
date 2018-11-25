@@ -6,14 +6,19 @@ namespace ServForOracle.NetCore.Parameters
 {
     public class Param<T> : Param
     {
-        public MetadataOracle Metadata { get; private set; }
+        internal MetadataOracle Metadata { get; private set; }
         public new T Value { get; private set; }
         public override bool IsOracleType { get => false; }
 
         public Param(T value, ParameterDirection direction)
-            : base(value, direction)
+            : this(value, direction, new MetadataOracle())
         {
-            Metadata = new MetadataOracle();
+        }
+
+        internal Param(T value, ParameterDirection direction, MetadataOracle metadata)
+            :base(value, direction)
+        {
+            Metadata = metadata;
             Value = value;
         }
 

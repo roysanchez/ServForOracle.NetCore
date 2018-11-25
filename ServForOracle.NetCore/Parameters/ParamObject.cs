@@ -9,30 +9,39 @@ namespace ServForOracle.NetCore.Parameters
 {
     public class ParamObject<T> : ParamObject
     {
-        public MetadataOracleObject<T> Metadata { get; private set; }
+        internal MetadataOracleObject<T> Metadata { get; private set; }
 
         public new T Value { get; private set; }
 
-        private readonly string _Schema;
-        private readonly string _ObjectName;
-        private readonly string _ListName;
+        private readonly string _UserParameterSchema;
+        private readonly string _UserParameterObjectName;
+        private readonly string _UserParameterListName;
         private string _ParameterName;
 
         public override bool IsOracleType => true;
-        public override string Schema => _Schema;
-        public override string ObjectName => base.ObjectName;
+        public override string ObjectName => Metadata?.OracleTypeNetMetadata.FullObjectName;
+        public override string CollectioName => Metadata?.OracleTypeNetMetadata.FullCollectionName;
         public override Type Type => typeof(T);
         public override string ParameterName => _ParameterName;
 
-        public ParamObject(T value, string schema, string objectName, OracleConnection con,
-            ParameterDirection direction, string listName = null)
+        public ParamObject(T value, ParameterDirection direction)
             : base(value, direction)
         {
-            _Schema = schema;
-            _ObjectName = objectName;
-            _ListName = listName;
-            Metadata = new MetadataOracleObject<T>(schema, objectName, con);
             Value = value;
+        }
+
+        public ParamObject(T value, ParameterDirection direction, string schema, string objectName, string listName = null)
+            :base(value, direction)
+        {
+            _UserParameterSchema = schema;
+            _UserParameterObjectName = objectName;
+            _UserParameterListName = listName;
+        }
+
+        internal override void LoadObjectMetadata(MetadataBuilder builder)
+        {
+            Metadata = builder.GetOrRegisterMetadataOracleObject<T>(_UserParameterSchema, _UserParameterObjectName, _UserParameterListName);
+            MetadataLoaded = true;
         }
 
         public override void SetParameterName(string name)
@@ -43,9 +52,9 @@ namespace ServForOracle.NetCore.Parameters
         public override string GetDeclareLine()
         {
             if (Type.IsCollection())
-                return $"{_ParameterName} {_Schema}.{_ListName} := {_Schema}.{_ListName}();";
+                return $"{_ParameterName} {_UserParameterSchema}.{_UserParameterListName} := {_UserParameterSchema}.{_UserParameterListName}();";
             else
-                return $"{_ParameterName} {_Schema}.{_ObjectName};";
+                return $"{_ParameterName} {_UserParameterSchema}.{_UserParameterObjectName};";
         }
 
         internal override void SetOutputValue(object value)
@@ -62,10 +71,15 @@ namespace ServForOracle.NetCore.Parameters
 
         }
 
-        public virtual string ParameterName { get; }
-        public virtual string Schema { get; }
         public virtual string ObjectName { get; }
+        public virtual string CollectioName { get; }
+        public virtual string ParameterName { get; }
+        //public virtual string Schema { get; }
+        //public virtual string ObjectName { get; }
         public abstract void SetParameterName(string name);
         public abstract string GetDeclareLine();
+
+        internal bool MetadataLoaded = false;
+        internal abstract void LoadObjectMetadata(MetadataBuilder builder);
     }
 }

@@ -1,10 +1,22 @@
-﻿using Oracle.ManagedDataAccess.Types;
+﻿using Oracle.ManagedDataAccess.Client;
+using Oracle.ManagedDataAccess.Types;
+using ServForOracle.NetCore.Extensions;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace ServForOracle.NetCore.Metadata
 {
-    public class MetadataOracle
+    internal class MetadataOracle
     {
+        
+        
+        //public MetadataOracle(Type type, MetadataOracleTypeDefinition oracleTypeMetadata)
+        //{
+            
+        //}
+
         public object ConvertOracleParameterToBaseType(Type retType, object oracleParam)
         {
             bool isNullable = (retType.IsGenericType && retType.GetGenericTypeDefinition() == typeof(Nullable<>));
@@ -91,6 +103,14 @@ namespace ServForOracle.NetCore.Metadata
             }
 
             return value;
+        }
+
+        public OracleParameter GetOracleParameterForRefCursor(int starNumber)
+        {
+            return new OracleParameter($":{starNumber}", DBNull.Value)
+            {
+                OracleDbType = OracleDbType.RefCursor
+            };
         }
     }
 }

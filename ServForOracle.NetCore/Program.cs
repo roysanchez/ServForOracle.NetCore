@@ -18,13 +18,10 @@ namespace ServForOracle.NetCore
     {
         static void Main(string[] args)
         {
-            var con = new OracleConnection("");
-            con.Open();
-
-            var serv = new ServForOracle();
+            var serv = new ServForOracle(new OracleConnection(""));
             var ramon = new RamoObj() { CodRamo = "BABB" };
-            var x = serv.ExecuteFunction<RamoObj>("uniserv.prueba_net_core_list_param", "UNISERV", "RAMO_OBJ", "RAMO_LIST", con,
-                new ParamObject<RamoObj>(ramon, "UNISERV", "RAMO_OBJ", con, ParameterDirection.Input),
+            var x = serv.ExecuteFunction<RamoObj>("uniserv.prueba_net_core_list_param", "UNISERV", "RAMO_OBJ", "RAMO_LIST",
+                new ParamObject<RamoObj>(ramon, ParameterDirection.Input, "UNISERV", "RAMO_OBJ"),
                 new Param<DateTime>(DateTime.Now, ParameterDirection.Input));
 
             Console.WriteLine("Hello World!");
