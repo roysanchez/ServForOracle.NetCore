@@ -573,6 +573,7 @@ namespace ServForOracle.NetCore
             execute.AppendLine(body.ToString());
             execute.Append(query.ToString());
             execute.AppendLine(");");
+            execute.Append(outparameters.ToString());
 
             var retOra = new OracleParameter($":{counter}", DBNull.Value)
             {
@@ -581,8 +582,6 @@ namespace ServForOracle.NetCore
 
             cmd.Parameters.Add(retOra);
             execute.AppendLine(returnMetadata.GetRefCursorCollectionQuery(counter, "ret"));
-
-            //var returnMetadata = new MetadataOracleObject<T>(schema, obj, con);
 
             execute.Append("end;");
 
