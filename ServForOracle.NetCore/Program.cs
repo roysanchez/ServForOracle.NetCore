@@ -255,6 +255,11 @@ namespace ServForOracle.NetCore
 
             object value = null;
 
+            if (retType == oracleParam.GetType())
+            {
+                return oracleParam;
+            }
+            
             switch (oracleParam)
             {
                 case DBNull nulo:
