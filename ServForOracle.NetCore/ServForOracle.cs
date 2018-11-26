@@ -86,7 +86,7 @@ namespace ServForOracle.NetCore
                     if (param.Direction == ParameterDirection.Input || param.Direction == ParameterDirection.InputOutput)
                     {
                         var genericMethod = PrepareObject.MakeGenericMethod(param.Type);
-                        var preparedParameter = genericMethod.Invoke(_ParamHandler, new object[] { name, param, counter })
+                        var preparedParameter = genericMethod.Invoke(_ParamHandler, new object[] { name, paramObject, counter })
                             as PreparedParameter;
 
                         cmd.Parameters.AddRange(preparedParameter.Parameters.ToArray());
@@ -99,7 +99,7 @@ namespace ServForOracle.NetCore
                     if (param.Direction == ParameterDirection.Output || param.Direction == ParameterDirection.InputOutput)
                     {
                         var outputMethod = OutputObject.MakeGenericMethod(param.Type);
-                        var preparedOutput = outputMethod.Invoke(_ParamHandler, new object[] { name, param, counter++ })
+                        var preparedOutput = outputMethod.Invoke(_ParamHandler, new object[] { name, paramObject, counter++ })
                             as PreparedOutputParameter;
                         outparameters.AppendLine(preparedOutput.RefCursorString);
 

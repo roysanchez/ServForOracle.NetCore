@@ -13,14 +13,18 @@ namespace ServForOracle.NetCore.Metadata
     internal class MetadataBuilder
     {
         public OracleConnection OracleConnection { get; set; }
-        public ConcurrentBag<MetadataOracleTypeDefinition> OracleUDTs { get; private set; }
-        public ConcurrentDictionary<Type, MetadataOracle> TypeDefinitionsOracleUDT { get; private set; }
+        public static ConcurrentBag<MetadataOracleTypeDefinition> OracleUDTs { get; private set; }
+        public static ConcurrentDictionary<Type, MetadataOracle> TypeDefinitionsOracleUDT { get; private set; }
+
+        static MetadataBuilder()
+        {
+            OracleUDTs = new ConcurrentBag<MetadataOracleTypeDefinition>();
+            TypeDefinitionsOracleUDT = new ConcurrentDictionary<Type, MetadataOracle>();
+        }
 
         public MetadataBuilder(OracleConnection connection)
         {
             OracleConnection = connection;
-            OracleUDTs = new ConcurrentBag<MetadataOracleTypeDefinition>();
-            TypeDefinitionsOracleUDT = new ConcurrentDictionary<Type, MetadataOracle>();
 
             var executing = Assembly.GetExecutingAssembly();
 
@@ -50,23 +54,26 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        public MetadataOracleObject GetOrRegisterMetadataOracleObject<T>(string schema = null, string objectName = null, string collectionName = null)
+        public MetadataOracleObject<T> GetOrRegisterMetadataOracleObject<T>(string schema = null, string objectName = null, string collectionName = null)
         {
             var type = typeof(T);
+            MetadataOracle metadata;
             if (type.IsCollection())
             {
-                type = type.GetCollectionUnderType();
-            }
-
-            TypeDefinitionsOracleUDT.TryGetValue(type, out var metadata);
-
-            if (metadata == null)
-            {
-                return Register(type, OracleConnection, schema, objectName, collectionName) as MetadataOracleObject;
+                TypeDefinitionsOracleUDT.TryGetValue(type.GetCollectionUnderType(), out metadata);
             }
             else
             {
-                return metadata as MetadataOracleObject;
+                TypeDefinitionsOracleUDT.TryGetValue(type, out metadata);
+            }
+
+            if (metadata == null)
+            {
+                return Register(type, OracleConnection, schema, objectName, collectionName) as MetadataOracleObject<T>;
+            }
+            else
+            {
+                return metadata as MetadataOracleObject<T>;
             }
         }
 

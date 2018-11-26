@@ -8,22 +8,14 @@ namespace ServForOracle.NetCore.Metadata
     {
         public MetadataOracleNetTypeDefinition(Type type, MetadataOracleTypeDefinition baseMetadataDefinition)
         {
-            var properties = new List<MetadataOraclePropertyNetTypeDefinition>();
-            foreach(var prop in type.GetProperties())
-            {
-                var baseProp = baseMetadataDefinition.Properties
-                    .Where(c => c.Name.Equals(prop.Name, StringComparison.InvariantCultureIgnoreCase))
-                    .FirstOrDefault();
-                if (baseProp != null)
+            Properties = 
+                from ora in baseMetadataDefinition.Properties
+                join net in type.GetProperties() on ora.Name.ToUpper() equals net.Name.ToUpper() into jn
+                from net in jn.DefaultIfEmpty()
+                select new MetadataOraclePropertyNetTypeDefinition(ora)
                 {
-                    properties.Add(new MetadataOraclePropertyNetTypeDefinition(baseProp)
-                    {
-                        NETProperty = prop
-                    });
-                }
-            }
-
-            Properties = properties;
+                    NETProperty = net
+                };
         }
 
         public new IEnumerable<MetadataOraclePropertyNetTypeDefinition> Properties { get; set; }

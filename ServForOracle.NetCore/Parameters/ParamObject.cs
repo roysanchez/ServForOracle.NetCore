@@ -31,7 +31,7 @@ namespace ServForOracle.NetCore.Parameters
         }
 
         public ParamObject(T value, ParameterDirection direction, string schema, string objectName, string listName = null)
-            :base(value, direction)
+            :this(value, direction)
         {
             _UserParameterSchema = schema;
             _UserParameterObjectName = objectName;
@@ -40,7 +40,7 @@ namespace ServForOracle.NetCore.Parameters
 
         internal override void LoadObjectMetadata(MetadataBuilder builder)
         {
-            Metadata = builder.GetOrRegisterMetadataOracleObject<T>(_UserParameterSchema, _UserParameterObjectName, _UserParameterListName) as MetadataOracleObject<T>;
+            Metadata = builder.GetOrRegisterMetadataOracleObject<T>(_UserParameterSchema, _UserParameterObjectName, _UserParameterListName);
             MetadataLoaded = true;
         }
 

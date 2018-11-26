@@ -21,7 +21,14 @@ namespace ServForOracle.NetCore.Metadata
         public MetadataOracleObject(MetadataOracleTypeDefinition metadataOracleType)
         {
             Type = typeof(T);
-            OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(Type, metadataOracleType);
+            if (Type.IsCollection())
+            {
+                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(Type.GetCollectionUnderType(), metadataOracleType);
+            }
+            else
+            {
+                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(Type, metadataOracleType);
+            }
 
             regex = new Regex(Regex.Escape("$"));
 
@@ -69,11 +76,14 @@ namespace ServForOracle.NetCore.Metadata
             
             if(Type.IsCollection())
             {
-                foreach(var v in value as IEnumerable)
+                if (value != null)
                 {
-                    var baseConstructor = BuildConstructor(ref startNumber);
-                    baseString.AppendLine($"{name}.extend;");
-                    baseString.AppendLine($"{name}({name}.last) := {baseConstructor}");
+                    foreach (var v in value as IEnumerable)
+                    {
+                        var baseConstructor = BuildConstructor(ref startNumber);
+                        baseString.AppendLine($"{name}.extend;");
+                        baseString.AppendLine($"{name}({name}.last) := {baseConstructor}");
+                    }
                 }
             }
             else
@@ -91,11 +101,14 @@ namespace ServForOracle.NetCore.Metadata
 
             if (Type.IsCollection())
             {
-                foreach (var temp in value as IEnumerable)
+                if (value != null)
                 {
-                    foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
+                    foreach (var temp in value as IEnumerable)
                     {
-                        parameters.Add(new OracleParameter($":{startNumber++}", value != null ? prop.NETProperty.GetValue(temp) : null));
+                        foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
+                        {
+                            parameters.Add(new OracleParameter($":{startNumber++}", value != null ? prop.NETProperty.GetValue(temp) : null));
+                        }
                     }
                 }
             }
@@ -179,7 +192,7 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        private object ReadObjectInstance(Type type, OracleDataReader reader)
+        private dynamic ReadObjectInstance(Type type, OracleDataReader reader)
         {
             int count = 0;
             var instance = type.CreateInstance();
