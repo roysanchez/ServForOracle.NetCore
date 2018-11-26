@@ -4,10 +4,14 @@ namespace ServForOracle.NetCore.Parameters
 {
     public class PreparedOutputParameter
     {
-        public PreparedOutputParameter(Param parameter, OracleParameter oracleParameter, string refCursorString)
+        public PreparedOutputParameter(Param parameter, OracleParameter oracleParameter
         {
             Parameter = parameter;
             OracleParameter = oracleParameter;
+        }
+        public PreparedOutputParameter(Param parameter, OracleParameter oracleParameter, string refCursorString)
+            :this(parameter, oracleParameter)
+        {
             RefCursorString = refCursorString;
         }
 

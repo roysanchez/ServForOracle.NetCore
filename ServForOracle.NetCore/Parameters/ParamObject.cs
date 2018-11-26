@@ -1,5 +1,4 @@
-﻿using Oracle.ManagedDataAccess.Client;
-using Oracle.ManagedDataAccess.Types;
+﻿using Oracle.ManagedDataAccess.Types;
 using ServForOracle.NetCore.Extensions;
 using ServForOracle.NetCore.Metadata;
 using System;
@@ -19,8 +18,11 @@ namespace ServForOracle.NetCore.Parameters
         private string _ParameterName;
 
         public override bool IsOracleType => true;
-        public override string ObjectName => Metadata?.OracleTypeNetMetadata.FullObjectName;
-        public override string CollectioName => Metadata?.OracleTypeNetMetadata.FullCollectionName;
+        public override string ObjectName => string.IsNullOrWhiteSpace(_UserParameterSchema) ? Metadata?.OracleTypeNetMetadata.FullObjectName
+            : $"{_UserParameterSchema}.{_UserParameterObjectName}";
+        public override string CollectioName =>
+            string.IsNullOrWhiteSpace(_UserParameterSchema) ? Metadata?.OracleTypeNetMetadata.FullCollectionName
+            : $"{_UserParameterSchema}.{_UserParameterListName}";
         public override Type Type => typeof(T);
         public override string ParameterName => _ParameterName;
 
@@ -31,7 +33,7 @@ namespace ServForOracle.NetCore.Parameters
         }
 
         public ParamObject(T value, ParameterDirection direction, string schema, string objectName, string listName = null)
-            :this(value, direction)
+            : this(value, direction)
         {
             _UserParameterSchema = schema;
             _UserParameterObjectName = objectName;
@@ -52,9 +54,9 @@ namespace ServForOracle.NetCore.Parameters
         public override string GetDeclareLine()
         {
             if (Type.IsCollection())
-                return $"{_ParameterName} {_UserParameterSchema}.{_UserParameterListName} := {_UserParameterSchema}.{_UserParameterListName}();";
+                return $"{_ParameterName} {CollectioName} := {CollectioName}();";
             else
-                return $"{_ParameterName} {_UserParameterSchema}.{_UserParameterObjectName};";
+                return $"{_ParameterName} {ObjectName};";
         }
 
         internal override void SetOutputValue(object value)

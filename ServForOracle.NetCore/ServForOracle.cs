@@ -23,25 +23,20 @@ namespace ServForOracle.NetCore
             _Builder = new MetadataBuilder(connection);
         }
 
-
         private readonly ParamHandler _ParamHandler = new ParamHandler();
-        
+
         private static readonly MethodInfo PrepareObject = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareParameterForQuery));
         private static readonly MethodInfo OutputObject = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareOutputParameter));
 
-        private void ProcessParameters(Param[] parameters)
-        {
-
-        }
 
         public T ExecuteFunction<T>(string function, string schema = null, string obj = null, string list = null, params Param[] parameters)
         {
-            if(_Connection.State != ConnectionState.Open)
+            if (_Connection.State != ConnectionState.Open)
             {
                 _Connection.Open();
             }
 
-            foreach(ParamObject param in parameters.Where(c => c is ParamObject))
+            foreach (ParamObject param in parameters.Where(c => c is ParamObject))
             {
                 param.LoadObjectMetadata(_Builder);
             }
@@ -66,6 +61,27 @@ namespace ServForOracle.NetCore
             var objCounter = 0;
             var counter = 0;
             bool first = true;
+            foreach (ParamObject param in parameters
+                .Where(c => c is ParamObject))
+            {
+                var name = $"p{objCounter++}";
+                param.SetParameterName(name);
+
+                declare.AppendLine(param.GetDeclareLine());
+
+                if (param.Direction == ParameterDirection.Input || param.Direction == ParameterDirection.InputOutput)
+                {
+                    var genericMethod = PrepareObject.MakeGenericMethod(param.Type);
+                    var preparedParameter = genericMethod.Invoke(_ParamHandler, new object[] { name, param, counter })
+                        as PreparedParameter;
+
+                    cmd.Parameters.AddRange(preparedParameter.Parameters.ToArray());
+
+                    body.AppendLine(preparedParameter.ConstructionString);
+                    counter = preparedParameter.LastNumber;
+                }
+            }
+
             foreach (var param in parameters)
             {
                 if (first)
@@ -78,36 +94,7 @@ namespace ServForOracle.NetCore
                 }
                 if (param.IsOracleType && param is ParamObject paramObject)
                 {
-                    var name = $"p{objCounter++}";
-                    paramObject.SetParameterName(name);
-
-                    declare.AppendLine(paramObject.GetDeclareLine());
-
-                    if (param.Direction == ParameterDirection.Input || param.Direction == ParameterDirection.InputOutput)
-                    {
-                        var genericMethod = PrepareObject.MakeGenericMethod(param.Type);
-                        var preparedParameter = genericMethod.Invoke(_ParamHandler, new object[] { name, paramObject, counter })
-                            as PreparedParameter;
-
-                        cmd.Parameters.AddRange(preparedParameter.Parameters.ToArray());
-
-                        body.AppendLine(preparedParameter.ConstructionString);
-
-                        counter = preparedParameter.LastNumber;
-                    }
-
-                    if (param.Direction == ParameterDirection.Output || param.Direction == ParameterDirection.InputOutput)
-                    {
-                        var outputMethod = OutputObject.MakeGenericMethod(param.Type);
-                        var preparedOutput = outputMethod.Invoke(_ParamHandler, new object[] { name, paramObject, counter++ })
-                            as PreparedOutputParameter;
-                        outparameters.AppendLine(preparedOutput.RefCursorString);
-
-                        cmd.Parameters.Add(preparedOutput.OracleParameter);
-                        outputs.Add(preparedOutput);
-                    }
-                    
-                    query.Append(name);
+                    query.Append(paramObject.ParameterName);
                 }
                 else
                 {
@@ -118,11 +105,24 @@ namespace ServForOracle.NetCore
                         Direction = param.Direction
                     };
                     cmd.Parameters.Add(oracleParameter);
-                    if(param.Direction == ParameterDirection.Output || param.Direction == ParameterDirection.InputOutput)
+                    if (param.Direction == ParameterDirection.Output || param.Direction == ParameterDirection.InputOutput)
                     {
                         outputs.Add(new PreparedOutputParameter(param, oracleParameter, null));
                     }
                 }
+            }
+
+            foreach (ParamObject param in parameters
+                .Where(c => c is ParamObject)
+                .Where(c => c.Direction == ParameterDirection.Output || c.Direction == ParameterDirection.InputOutput))
+            {
+                var outputMethod = OutputObject.MakeGenericMethod(param.Type);
+                var preparedOutput = outputMethod.Invoke(_ParamHandler, new object[] { param.ParameterName, param, counter++ })
+                    as PreparedOutputParameter;
+                outparameters.AppendLine(preparedOutput.RefCursorString);
+
+                cmd.Parameters.Add(preparedOutput.OracleParameter);
+                outputs.Add(preparedOutput);
             }
 
             var execute = new StringBuilder();
@@ -150,8 +150,8 @@ namespace ServForOracle.NetCore
             {
                 param.Parameter.SetOutputValue(param.OracleParameter.Value);
             }
-            
+
             return (T)returnMetadata.GetValueFromRefCursor(returnType, retOra.Value as OracleRefCursor);
-        }   
+        }
     }
 }

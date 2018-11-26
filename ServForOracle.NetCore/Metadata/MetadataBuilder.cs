@@ -57,15 +57,7 @@ namespace ServForOracle.NetCore.Metadata
         public MetadataOracleObject<T> GetOrRegisterMetadataOracleObject<T>(string schema = null, string objectName = null, string collectionName = null)
         {
             var type = typeof(T);
-            MetadataOracle metadata;
-            if (type.IsCollection())
-            {
-                TypeDefinitionsOracleUDT.TryGetValue(type.GetCollectionUnderType(), out metadata);
-            }
-            else
-            {
-                TypeDefinitionsOracleUDT.TryGetValue(type, out metadata);
-            }
+            TypeDefinitionsOracleUDT.TryGetValue(type, out MetadataOracle metadata);
 
             if (metadata == null)
             {
