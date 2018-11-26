@@ -12,17 +12,11 @@ namespace ServForOracle.NetCore.Parameters
 
         public new T Value { get; private set; }
 
-        private readonly string _UserParameterSchema;
-        private readonly string _UserParameterObjectName;
-        private readonly string _UserParameterListName;
         private string _ParameterName;
 
+        private OracleUDTInfo _UDTInfo;
+        internal override OracleUDTInfo UDTInfo => _UDTInfo;
         public override bool IsOracleType => true;
-        public override string ObjectName => string.IsNullOrWhiteSpace(_UserParameterSchema) ? Metadata?.OracleTypeNetMetadata.FullObjectName
-            : $"{_UserParameterSchema}.{_UserParameterObjectName}";
-        public override string CollectioName =>
-            string.IsNullOrWhiteSpace(_UserParameterSchema) ? Metadata?.OracleTypeNetMetadata.FullCollectionName
-            : $"{_UserParameterSchema}.{_UserParameterListName}";
         public override Type Type => typeof(T);
         public override string ParameterName => _ParameterName;
 
@@ -32,17 +26,22 @@ namespace ServForOracle.NetCore.Parameters
             Value = value;
         }
 
-        public ParamObject(T value, ParameterDirection direction, string schema, string objectName, string listName = null)
+        public ParamObject(T value, ParameterDirection direction, OracleUDTInfo udtInfo)
             : this(value, direction)
         {
-            _UserParameterSchema = schema;
-            _UserParameterObjectName = objectName;
-            _UserParameterListName = listName;
+            _UDTInfo = udtInfo ?? throw new ArgumentNullException(nameof(udtInfo));
+
+            if(Type.IsCollection() && !_UDTInfo.IsCollectionValid)
+            {
+                throw new ArgumentException($"For the type {Type.FullName} array you must especify the UDT collection name",
+                    nameof(udtInfo));
+            }
         }
 
         internal override void LoadObjectMetadata(MetadataBuilder builder)
         {
-            Metadata = builder.GetOrRegisterMetadataOracleObject<T>(_UserParameterSchema, _UserParameterObjectName, _UserParameterListName);
+            Metadata = builder.GetOrRegisterMetadataOracleObject<T>(UDTInfo);
+            _UDTInfo = Metadata.OracleTypeNetMetadata.UDTInfo;
             MetadataLoaded = true;
         }
 
@@ -53,10 +52,7 @@ namespace ServForOracle.NetCore.Parameters
 
         public override string GetDeclareLine()
         {
-            if (Type.IsCollection())
-                return $"{_ParameterName} {CollectioName} := {CollectioName}();";
-            else
-                return $"{_ParameterName} {ObjectName};";
+            return Metadata.GetDeclareLine(Type, _ParameterName, UDTInfo);
         }
 
         internal override void SetOutputValue(object value)
@@ -73,11 +69,8 @@ namespace ServForOracle.NetCore.Parameters
 
         }
 
-        public virtual string ObjectName { get; }
-        public virtual string CollectioName { get; }
+        internal virtual OracleUDTInfo UDTInfo { get; }
         public virtual string ParameterName { get; }
-        //public virtual string Schema { get; }
-        //public virtual string ObjectName { get; }
         public abstract void SetParameterName(string name);
         public abstract string GetDeclareLine();
 

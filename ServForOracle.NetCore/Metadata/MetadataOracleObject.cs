@@ -32,7 +32,7 @@ namespace ServForOracle.NetCore.Metadata
 
             regex = new Regex(Regex.Escape("$"));
 
-            var constructor = new StringBuilder($"{metadataOracleType.FullObjectName}(");
+            var constructor = new StringBuilder($"{metadataOracleType.UDTInfo.FullObjectName}(");
             var properties = metadataOracleType.Properties.ToArray();
 
             for (var counter = 0; counter < properties.Count(); counter++)
@@ -204,6 +204,14 @@ namespace ServForOracle.NetCore.Metadata
 
             return instance;
 
+        }
+
+        public string GetDeclareLine(Type type, string parameterName, OracleUDTInfo udtInfo)
+        {
+            if (type.IsCollection())
+                return $"{parameterName} {udtInfo.CollectionName} := {udtInfo.CollectionName}();";
+            else
+                return $"{parameterName} {udtInfo.ObjectName};";
         }
     }
 

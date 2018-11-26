@@ -8,6 +8,7 @@ namespace ServForOracle.NetCore.Metadata
     {
         public MetadataOracleNetTypeDefinition(Type type, MetadataOracleTypeDefinition baseMetadataDefinition)
         {
+            UDTInfo = baseMetadataDefinition.UDTInfo;
             Properties = 
                 from ora in baseMetadataDefinition.Properties
                 join net in type.GetProperties() on ora.Name.ToUpper() equals net.Name.ToUpper() into jn

@@ -4,7 +4,7 @@ namespace ServForOracle.NetCore.Parameters
 {
     public class PreparedOutputParameter
     {
-        public PreparedOutputParameter(Param parameter, OracleParameter oracleParameter
+        public PreparedOutputParameter(Param parameter, OracleParameter oracleParameter)
         {
             Parameter = parameter;
             OracleParameter = oracleParameter;

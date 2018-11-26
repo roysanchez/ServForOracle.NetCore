@@ -29,7 +29,7 @@ namespace ServForOracle.NetCore
         private static readonly MethodInfo OutputObject = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareOutputParameter));
 
 
-        public T ExecuteFunction<T>(string function, string schema = null, string obj = null, string list = null, params Param[] parameters)
+        public T ExecuteFunction<T>(string function, OracleUDTInfo udtInfo = null, params Param[] parameters)
         {
             if (_Connection.State != ConnectionState.Open)
             {
@@ -51,10 +51,14 @@ namespace ServForOracle.NetCore
 
             var returnType = typeof(T);
 
-            var returnMetadata = _Builder.GetOrRegisterMetadataOracleObject<T>(schema, obj, list);
+            var returnMetadata = _Builder.GetOrRegisterMetadataOracleObject<T>(udtInfo);
+            if (udtInfo == null)
+            {
+                udtInfo = returnMetadata.OracleTypeNetMetadata.UDTInfo;
+            }
 
             declare.AppendLine("declare");
-            declare.AppendLine($"ret {schema}.{list} := {schema}.{list}();");
+            declare.AppendLine(returnMetadata.GetDeclareLine(returnType, "ret", udtInfo));
 
             body.AppendLine("begin");
 

@@ -26,42 +26,49 @@ namespace ServForOracle.NetCore.Metadata
         {
             OracleConnection = connection;
 
-            var executing = Assembly.GetExecutingAssembly();
+            //var executing = Assembly.GetExecutingAssembly();
 
-            var assemblies =
-                    from assembly in AppDomain.CurrentDomain.GetAssemblies()
-                    where assembly != executing
-                       && !assembly.GlobalAssemblyCache
-                       && !assembly.FullName.StartsWith("Microsoft")
-                       && !assembly.FullName.StartsWith("System")
-                       && !assembly.FullName.StartsWith("Oracle")
-                       && !assembly.FullName.StartsWith("xunit")
-                    select assembly;
+            //var assemblies =
+            //        from assembly in AppDomain.CurrentDomain.GetAssemblies()
+            //        where assembly != executing
+            //           && !assembly.GlobalAssemblyCache
+            //           && !assembly.FullName.StartsWith("Microsoft")
+            //           && !assembly.FullName.StartsWith("System")
+            //           && !assembly.FullName.StartsWith("Oracle")
+            //           && !assembly.FullName.StartsWith("xunit")
+            //        select assembly;
 
-            var types = assemblies.SelectMany(a => a.GetTypes())
-                        .Where(t => t.IsClass && !t.IsSealed && !t.IsAbstract);
+            //var types = assemblies.SelectMany(a => a.GetTypes())
+            //            .Where(t => t.IsClass && !t.IsSealed && !t.IsAbstract);
 
-            var collections = types.Where(t => t.GetCustomAttribute<UDTCollectionNameAttribute>() != null);
+            //var collections = types.Where(t => t.GetCustomAttribute<UDTCollectionNameAttribute>() != null);
 
-            foreach (var type in collections)
-            {
-                Register(type, connection);
-            }
+            //foreach (var type in collections)
+            //{
+            //    Register(type, connection);
+            //}
 
-            foreach (var type in types.Except(collections))
-            {
-                Register(type, connection);
-            }
+            //foreach (var type in types.Except(collections))
+            //{
+            //    Register(type, connection);
+            //}
         }
 
-        public MetadataOracleObject<T> GetOrRegisterMetadataOracleObject<T>(string schema = null, string objectName = null, string collectionName = null)
+        public MetadataOracleObject<T> GetOrRegisterMetadataOracleObject<T>(OracleUDTInfo udtInfo)
         {
             var type = typeof(T);
             TypeDefinitionsOracleUDT.TryGetValue(type, out MetadataOracle metadata);
 
             if (metadata == null)
             {
-                return Register(type, OracleConnection, schema, objectName, collectionName) as MetadataOracleObject<T>;
+                if (udtInfo != null)
+                {
+                    return Register(type, OracleConnection, udtInfo) as MetadataOracleObject<T>;
+                }
+                else
+                {
+                    return Register(type, OracleConnection) as MetadataOracleObject<T>;
+                }
             }
             else
             {
@@ -69,10 +76,10 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        private object Register(Type type, OracleConnection con, string objectSchema, string objectName, string collectionName)
+        private object Register(Type type, OracleConnection con, OracleUDTInfo udtInfo)
         {
             var metadataGenericType = typeof(MetadataOracleObject<>).MakeGenericType(type);
-            var metadata = metadataGenericType.CreateInstance(GetOrCreateOracleTypeMetadata(con, objectSchema, objectName, collectionName));
+            var metadata = metadataGenericType.CreateInstance(GetOrCreateOracleTypeMetadata(con, udtInfo));
 
             TypeDefinitionsOracleUDT.TryAdd(type, metadata as MetadataOracle);
 
@@ -82,29 +89,27 @@ namespace ServForOracle.NetCore.Metadata
         private object Register(Type type, OracleConnection con)
         {
             var objectSchema = string.Empty;
-            var objectName = type.GetCustomAttribute<UDTNameAttribute>().Name;
-            var collectionName = type.GetCustomAttribute<UDTCollectionNameAttribute>()?.Name;
+            var udtInfo = type.GetCustomAttribute<OracleUDTAttribute>().UDTInfo;
 
-            return Register(type, con, objectSchema, objectName, collectionName);
+            return Register(type, con, udtInfo);
         }
 
-        private MetadataOracleTypeDefinition GetOrCreateOracleTypeMetadata(OracleConnection connection, string schema, string objectName,
-            string collectionName)
+        private MetadataOracleTypeDefinition GetOrCreateOracleTypeMetadata(OracleConnection connection, OracleUDTInfo udtInfo)
         {
             if (OracleConnection.State != ConnectionState.Open)
             {
                 OracleConnection.Open();
             }
 
-            var checkExists = OracleUDTs.FirstOrDefault(c => c.Schema == schema && c.ObjectName == objectName);
-            if (checkExists != null)
-                return checkExists;
+            var exists = OracleUDTs.FirstOrDefault(c => c.UDTInfo.Equals(udtInfo));
+            if (exists != null)
+                return exists;
 
             var cmd = connection.CreateCommand();
             cmd.CommandText = "select attr_no, attr_name, attr_type_name from all_type_attrs where owner = "
                 + "upper(:1) and type_name = upper(:2)";
-            cmd.Parameters.Add(new OracleParameter(":1", schema));
-            cmd.Parameters.Add(new OracleParameter(":2", objectName));
+            cmd.Parameters.Add(new OracleParameter(":1", udtInfo.ObjectSchema));
+            cmd.Parameters.Add(new OracleParameter(":2", udtInfo.ObjectName));
 
             var reader = cmd.ExecuteReader();
             var properties = new List<MetadataOraclePropertyTypeDefinition>();
@@ -123,9 +128,8 @@ namespace ServForOracle.NetCore.Metadata
             var metadata = new MetadataOracleTypeDefinition
             {
                 Properties = properties,
-                ObjectName = objectName,
-                CollectionName = collectionName,
-                Schema = schema
+                UDTInfo = udtInfo
+                
             };
 
             OracleUDTs.Add(metadata);
