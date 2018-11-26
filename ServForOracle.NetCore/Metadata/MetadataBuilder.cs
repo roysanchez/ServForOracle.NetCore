@@ -25,33 +25,6 @@ namespace ServForOracle.NetCore.Metadata
         public MetadataBuilder(OracleConnection connection)
         {
             OracleConnection = connection;
-
-            //var executing = Assembly.GetExecutingAssembly();
-
-            //var assemblies =
-            //        from assembly in AppDomain.CurrentDomain.GetAssemblies()
-            //        where assembly != executing
-            //           && !assembly.GlobalAssemblyCache
-            //           && !assembly.FullName.StartsWith("Microsoft")
-            //           && !assembly.FullName.StartsWith("System")
-            //           && !assembly.FullName.StartsWith("Oracle")
-            //           && !assembly.FullName.StartsWith("xunit")
-            //        select assembly;
-
-            //var types = assemblies.SelectMany(a => a.GetTypes())
-            //            .Where(t => t.IsClass && !t.IsSealed && !t.IsAbstract);
-
-            //var collections = types.Where(t => t.GetCustomAttribute<UDTCollectionNameAttribute>() != null);
-
-            //foreach (var type in collections)
-            //{
-            //    Register(type, connection);
-            //}
-
-            //foreach (var type in types.Except(collections))
-            //{
-            //    Register(type, connection);
-            //}
         }
 
         public MetadataOracleObject<T> GetOrRegisterMetadataOracleObject<T>(OracleUDTInfo udtInfo)
@@ -89,7 +62,22 @@ namespace ServForOracle.NetCore.Metadata
         private object Register(Type type, OracleConnection con)
         {
             var objectSchema = string.Empty;
-            var udtInfo = type.GetCustomAttribute<OracleUDTAttribute>().UDTInfo;
+            OracleUDTInfo udtInfo;
+
+            if(type.IsCollection())
+            {
+                udtInfo = type.GetCollectionUnderType().GetCustomAttribute<OracleUDTAttribute>()?.UDTInfo;
+            }
+            else
+            {
+                udtInfo = type.GetCustomAttribute<OracleUDTAttribute>()?.UDTInfo;
+            }
+
+            if(udtInfo == null)
+            {
+                throw new ArgumentException($"The type {type.FullName} needs to have the {nameof(OracleUDTAttribute)}" +
+                    $" attribute set or pass the {nameof(OracleUDTInfo)} class to the execute method.");
+            }
 
             return Register(type, con, udtInfo);
         }

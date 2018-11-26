@@ -30,18 +30,18 @@ namespace ServForOracle.NetCore.Extensions
         }
 
 
-        public static object CreateInstance(this Type proxyType, params object[] arguments)
+        public static object CreateInstance(this Type type, params object[] arguments)
         {
-            if (proxyType.IsCollection())
+            if (type.IsCollection())
             {
-                return Activator.CreateInstance(proxyType.GetCollectionUnderType().CreateListType(), arguments);
+                return Activator.CreateInstance(type.GetCollectionUnderType().CreateListType(), arguments);
             }
-            else return Activator.CreateInstance(proxyType, arguments);
+            else return Activator.CreateInstance(type, arguments);
         }
 
-        public static Type CreateListType(this Type proxyUnderType)
+        public static Type CreateListType(this Type underType)
         {
-            return typeof(List<>).MakeGenericType(proxyUnderType);
+            return typeof(List<>).MakeGenericType(underType);
         }
     }
 }

@@ -28,8 +28,12 @@ namespace ServForOracle.NetCore
         private static readonly MethodInfo PrepareObject = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareParameterForQuery));
         private static readonly MethodInfo OutputObject = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareOutputParameter));
 
+        public T ExecuteFunction<T>(string function, params Param[] parameters)
+        {
+            return ExecuteFunction<T>(function, null, parameters);
+        }
 
-        public T ExecuteFunction<T>(string function, OracleUDTInfo udtInfo = null, params Param[] parameters)
+        public T ExecuteFunction<T>(string function, OracleUDTInfo udtInfo, params Param[] parameters)
         {
             if (_Connection.State != ConnectionState.Open)
             {
