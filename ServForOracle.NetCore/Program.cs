@@ -7,6 +7,7 @@ using System.Collections.Generic;
 namespace ServForOracle.NetCore
 {
 
+    [OracleUDT("ramo_obj", "ramo_list", "uniserv")]
     public class RamoObj
     {
         public string CodRamo { get; set; }
@@ -21,9 +22,9 @@ namespace ServForOracle.NetCore
         {
             var serv = new ServForOracle(new OracleConnection(""));
             var ramon = new RamoObj() { CodRamo = "BABB" };
-            var x = serv.ExecuteFunction<RamoObj>("uniserv.prueba_net_core_list_param", "UNISERV", "RAMO_OBJ", "RAMO_LIST",
-                new ParamObject<RamoObj>(ramon, ParameterDirection.Input, "UNISERV", "RAMO_OBJ"),
-                new Param<DateTime>(DateTime.Now, ParameterDirection.Input));
+            var x = serv.ExecuteFunction<RamoObj>("uniserv.prueba_net_core_list_param",
+                new ParamObject<RamoObj>(ramon, ParameterDirection.Input),
+                new ParamCLRType<DateTime>(DateTime.Now, ParameterDirection.Input));
 
             Console.WriteLine("Hello World!");
         }

@@ -221,9 +221,9 @@ namespace ServForOracle.NetCore.Metadata
         public string GetDeclareLine(Type type, string parameterName, OracleUDTInfo udtInfo)
         {
             if (type.IsCollection())
-                return $"{parameterName} {udtInfo.CollectionName} := {udtInfo.CollectionName}();";
+                return $"{parameterName} {udtInfo.FullCollectionName} := {udtInfo.FullCollectionName}();";
             else
-                return $"{parameterName} {udtInfo.ObjectName};";
+                return $"{parameterName} {udtInfo.FullObjectName};";
         }
     }
 
