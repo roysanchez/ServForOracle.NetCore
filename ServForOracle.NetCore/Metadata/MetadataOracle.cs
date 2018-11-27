@@ -20,7 +20,9 @@ namespace ServForOracle.NetCore.Metadata
             {
                 return oracleParam;
             }
-            
+
+            var castError = new InvalidCastException($"Can't cast a null value to {retType.FullName}");
+
             switch (oracleParam)
             {
                 case DBNull nulo:
@@ -31,11 +33,11 @@ namespace ServForOracle.NetCore.Metadata
                         if (isNullable || !retType.IsValueType || retType == typeof(string))
                             value = null;
                         else
-                            throw new InvalidCastException($"Can't cast a null value to {retType.Name}");
+                            throw castError;
                     }
                     else if (retType == typeof(int) || retType == typeof(int?))
                         value = dec.ToInt32();
-                    else if (retType == typeof(float) || retType == typeof(float?) || retType == typeof(Single))
+                    else if (retType == typeof(float) || retType == typeof(float?))
                         value = dec.ToSingle();
                     else if (retType == typeof(double) || retType == typeof(double?))
                         value = dec.ToDouble();
@@ -46,7 +48,8 @@ namespace ServForOracle.NetCore.Metadata
                     else if (retType == typeof(string))
                         value = dec.ToString();
                     else
-                        throw new InvalidCastException($"Can't cast OracleDecimal to {retType.Name}");
+                        throw new InvalidCastException($"Can't cast an OracleDecimal to {retType.FullName}, received val:"
+                            + dec.ToString());
                     break;
                 case OracleString str when retType == typeof(string):
                     if (str.IsNull)
@@ -54,44 +57,60 @@ namespace ServForOracle.NetCore.Metadata
                     else
                         value = str.ToString();
                     break;
-                //case OracleClob clob when retType == typeof(string):
-                //    value = ExtractValue(clob);
-                //    break;
-                //case OracleBFile file when retType == typeof(byte[]):
-                //    value = ExtractValue(file);
-                //    break;
-                //case OracleBlob blob when retType == typeof(byte[]):
-                //    value = ExtractValue(blob);
-                //    break;
-                //case OracleDate date when retType == typeof(DateTime) || retType == typeof(DateTime?):
-                //    value = ExtractNullableValue(date, isNullable);
-                //    break;
-                //case OracleIntervalDS interval when retType == typeof(TimeSpan) || retType == typeof(TimeSpan?):
-                //    value = ExtractNullableValue(interval, isNullable);
-                //    break;
-                //case OracleIntervalYM intervalYM when (
-                //        retType == typeof(long) || retType == typeof(long?) ||
-                //        retType == typeof(float) || retType == typeof(float?) ||
-                //        retType == typeof(double) || retType == typeof(double?)
-                //    ):
-                //    value = ExtractNullableValue(intervalYM, isNullable);
-                //    break;
-                //case OracleBinary binary when retType == typeof(byte[]):
-                //    value = ExtractValue(binary);
-                //    break;
-                //case OracleRef reff when retType == typeof(string):
-                //    value = ExtractValue(reff);
-                //    break;
-                //case OracleTimeStamp timestamp when retType == typeof(DateTime) || retType == typeof(DateTime?):
-                //    ExtractNullableValue(timestamp, isNullable);
-                //    break;
-                //case OracleTimeStampLTZ timestampLTZ when retType == typeof(DateTime) || retType == typeof(DateTime?):
-                //    ExtractNullableValue(timestampLTZ, isNullable);
-                //    break;
-                //case OracleTimeStampTZ timestampTZ when retType == typeof(DateTime) || retType == typeof(DateTime?):
-                //    ExtractNullableValue(timestampTZ, isNullable);
-                //    break;
+                case OracleClob clob when retType == typeof(string):
+                        value = clob.Value;
+                    break;
+                case OracleBFile file when retType == typeof(byte[]):
+                    value = file.Value;
+                    break;
+                case OracleBlob blob when retType == typeof(byte[]):
+                    value = blob.Value;
+                    break;
+                case OracleDate date when retType == typeof(DateTime) || retType == typeof(DateTime?):
+                    if (isNullable || !date.IsNull)
+                        value = date.Value;
+                    else
+                        throw castError;
+                    break;
+                case OracleIntervalDS interval when retType == typeof(TimeSpan) || retType == typeof(TimeSpan?):
+                    if(isNullable || !interval.IsNull)
+                        value = interval.Value;
+                    else
+                        throw new InvalidCastException($"Can't cast a null value to {retType.FullName}");
+                    break;
+                case OracleIntervalYM intervalYM when (
+                        retType == typeof(long) || retType == typeof(long?) ||
+                        retType == typeof(float) || retType == typeof(float?) ||
+                        retType == typeof(double) || retType == typeof(double?)
+                    ):
+                    if (isNullable || !intervalYM.IsNull)
+                        value = intervalYM.Value;
+                    else
+                        throw castError;
+                    break;
+                case OracleBinary binary when retType == typeof(byte[]):
+                    value = binary.Value;
+                    break;
+                case OracleTimeStamp timestamp when retType == typeof(DateTime) || retType == typeof(DateTime?):
+                    if (isNullable || !timestamp.IsNull)
+                        value = timestamp;
+                    else
+                        throw castError;
+                    break;
+                case OracleTimeStampLTZ timestampLTZ when retType == typeof(DateTime) || retType == typeof(DateTime?):
+                    if (isNullable || !timestampLTZ.IsNull)
+                        value = timestampLTZ;
+                    else
+                        throw castError;
+                    break;
+                case OracleTimeStampTZ timestampTZ when retType == typeof(DateTime) || retType == typeof(DateTime?):
+                    if (isNullable || !timestampTZ.IsNull)
+                        value = timestampTZ;
+                    else
+                        throw castError;
+                    break;
                 default:
+                    //Log errors
                     break;
             }
 
