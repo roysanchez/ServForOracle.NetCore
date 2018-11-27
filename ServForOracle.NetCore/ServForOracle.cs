@@ -156,7 +156,7 @@ namespace ServForOracle.NetCore
                 .Where(c => c is ParamObject)
                 .Where(c => c.Direction == ParameterDirection.Output || c.Direction == ParameterDirection.InputOutput))
             {
-                var preparedOutput = param.PrepareOutputParameter(info.ParameterCounter);
+                var preparedOutput = param.PrepareOutputParameter(info.ParameterCounter++);
                 outparameters.AppendLine(preparedOutput.RefCursorString);
 
                 info.OracleParameterList.Add(preparedOutput.OracleParameter);
