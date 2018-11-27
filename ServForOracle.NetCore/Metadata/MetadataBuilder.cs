@@ -16,11 +16,19 @@ namespace ServForOracle.NetCore.Metadata
         public OracleConnection OracleConnection { get; set; }
         public static ConcurrentBag<MetadataOracleTypeDefinition> OracleUDTs { get; private set; }
         public static ConcurrentDictionary<Type, MetadataOracle> TypeDefinitionsOracleUDT { get; private set; }
+        public static ConcurrentDictionary<Type, OracleUDTInfo> PresetUDTs { get; private set; }
 
         static MetadataBuilder()
         {
             OracleUDTs = new ConcurrentBag<MetadataOracleTypeDefinition>();
             TypeDefinitionsOracleUDT = new ConcurrentDictionary<Type, MetadataOracle>();
+            PresetUDTs = new ConcurrentDictionary<Type, OracleUDTInfo>();
+        }
+
+        internal static void AddOracleUDTPresets(params (Type Type, OracleUDTInfo Info)[] udts)
+        {
+            foreach (var udt in udts)
+                PresetUDTs.TryAdd(udt.Type, udt.Info);
         }
 
         public MetadataBuilder(OracleConnection connection)
@@ -111,17 +119,21 @@ namespace ServForOracle.NetCore.Metadata
             OracleUDTInfo udtInfo;
             if (type.IsCollection())
             {
-                udtInfo = type.GetCollectionUnderType().GetCustomAttribute<OracleUDTAttribute>()?.UDTInfo;
+                var underType = type.GetCollectionUnderType();
+                udtInfo = underType.GetCustomAttribute<OracleUDTAttribute>()?.UDTInfo
+                    ?? PresetUDTs.GetValueOrDefault(underType);
             }
             else
             {
-                udtInfo = type.GetCustomAttribute<OracleUDTAttribute>()?.UDTInfo;
+                udtInfo = type.GetCustomAttribute<OracleUDTAttribute>()?.UDTInfo
+                    ?? PresetUDTs.GetValueOrDefault(type);
             }
 
             if (udtInfo == null)
             {
                 throw new ArgumentException($"The type {type.FullName} needs to have the {nameof(OracleUDTAttribute)}" +
                     $" attribute set or pass the {nameof(OracleUDTInfo)} class to the execute method.");
+
             }
 
             return udtInfo;
