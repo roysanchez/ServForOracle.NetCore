@@ -17,11 +17,10 @@ namespace ServForOracle.NetCore.Parameters
 
         private OracleUDTInfo _UDTInfo;
         internal override OracleUDTInfo UDTInfo => _UDTInfo;
-        public override Type Type => typeof(T);
         public override string ParameterName => _ParameterName;
 
         public ParamObject(T value, ParameterDirection direction)
-            : base(value, direction)
+            : base(typeof(T), value, direction)
         {
             Value = value;
         }
@@ -82,8 +81,8 @@ namespace ServForOracle.NetCore.Parameters
 
     public abstract class ParamObject : Param
     {
-        public ParamObject(object value, ParameterDirection direction)
-            : base(value, direction)
+        public ParamObject(Type type, object value, ParameterDirection direction)
+            : base(type, value, direction)
         {
 
         }

@@ -49,6 +49,7 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
+        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleTypeDefinition)>"
         private object Register(Type type, OracleConnection con, OracleUDTInfo udtInfo)
         {
             var metadataGenericType = typeof(MetadataOracleObject<>).MakeGenericType(type);
@@ -100,11 +101,11 @@ namespace ServForOracle.NetCore.Metadata
             cmd.Parameters.Add(new OracleParameter(":2", udtInfo.ObjectName));
 
             var reader = cmd.ExecuteReader();
-            var properties = new List<MetadataOraclePropertyTypeDefinition>();
+            var properties = new List<MetadataOracleTypePropertyDefinition>();
 
             while (reader.Read())
             {
-                var property = new MetadataOraclePropertyTypeDefinition
+                var property = new MetadataOracleTypePropertyDefinition
                 {
                     Order = reader.GetInt32(0),
                     Name = reader.GetString(1)

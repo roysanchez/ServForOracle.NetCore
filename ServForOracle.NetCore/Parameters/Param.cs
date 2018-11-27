@@ -8,8 +8,9 @@ namespace ServForOracle.NetCore.Parameters
     public abstract class Param
     {
         public ParameterDirection Direction { get; private set; }
-        protected internal Param(object value, ParameterDirection direction)
+        protected internal Param(Type type, object value, ParameterDirection direction)
         {
+            Type = type;
             Value = value;
             Direction = direction;
         }

@@ -14,13 +14,11 @@ namespace ServForOracle.NetCore
     {
         private readonly OracleConnection _Connection;
         private readonly MetadataBuilder _Builder;
-        private readonly ParamHandler _ParamHandler;
 
         public ServForOracle(OracleConnection connection)
         {
             _Connection = connection;
             _Builder = new MetadataBuilder(connection);
-            _ParamHandler = new ParamHandler();
         }
 
         public void ExecuteProcedure(string procedure, params Param[] parameters)

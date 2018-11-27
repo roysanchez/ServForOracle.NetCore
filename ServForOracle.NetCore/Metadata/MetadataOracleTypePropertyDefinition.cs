@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ServForOracle.NetCore.Metadata
 {
-    internal class MetadataOraclePropertyTypeDefinition
+    internal class MetadataOracleTypePropertyDefinition
     {
         public int Order { get; set; }
         public string Name { get; set; }
