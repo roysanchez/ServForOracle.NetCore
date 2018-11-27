@@ -4,9 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
-using System.Reflection;
 using System.Text;
-using ServForOracle.NetCore.Extensions;
 using ServForOracle.NetCore.Parameters;
 using ServForOracle.NetCore.Metadata;
 
@@ -16,246 +14,212 @@ namespace ServForOracle.NetCore
     {
         private readonly OracleConnection _Connection;
         private readonly MetadataBuilder _Builder;
+        private readonly ParamHandler _ParamHandler;
 
         public ServForOracle(OracleConnection connection)
         {
             _Connection = connection;
             _Builder = new MetadataBuilder(connection);
+            _ParamHandler = new ParamHandler();
         }
 
-        private readonly ParamHandler _ParamHandler = new ParamHandler();
-
-        //private static readonly MethodInfo PrepareObject = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareParameterForQuery));
-        //private static readonly MethodInfo OutputObject = typeof(ParamHandler).GetMethod(nameof(ParamHandler.PrepareOutputParameter));
+        public void ExecuteProcedure(string procedure, params Param[] parameters)
+        {
+            Execute(procedure, parameters);
+        }
 
         public T ExecuteFunction<T>(string function, params Param[] parameters)
         {
             return ExecuteFunction<T>(function, null, parameters);
         }
 
-        public void ExecuteProcedure(string procedure, params Param[] parameters)
-        {
-            if (_Connection.State != ConnectionState.Open)
-            {
-                _Connection.Open();
-            }
-
-            foreach (ParamObject param in parameters.Where(c => c is ParamObject))
-            {
-                param.LoadObjectMetadata(_Builder);
-            }
-
-            var cmd = _Connection.CreateCommand();
-
-            var declare = new StringBuilder();
-            var query = new StringBuilder($"{procedure}(");
-            var body = new StringBuilder();
-            var outparameters = new StringBuilder();
-            var outputs = new List<PreparedOutputParameter>();
-
-            declare.AppendLine("declare");
-            body.AppendLine("begin");
-
-            var objCounter = 0;
-            var counter = 0;
-            bool first = true;
-            foreach (ParamObject param in parameters
-                .Where(c => c is ParamObject))
-            {
-                var name = $"p{objCounter++}";
-                param.SetParameterName(name);
-
-                declare.AppendLine(param.GetDeclareLine());
-
-                if (param.Direction == ParameterDirection.Input || param.Direction == ParameterDirection.InputOutput)
-                {
-                    var (Constructor, LastNumber) = param.BuildQueryConstructorString(name, counter);
-                    var oraParameters = param.GetOracleParameters(counter);
-
-                    cmd.Parameters.AddRange(oraParameters);
-
-                    body.AppendLine(Constructor);
-                    counter = LastNumber;
-                }
-            }
-
-            foreach (var param in parameters)
-            {
-                if (first)
-                {
-                    first = false;
-                }
-                else
-                {
-                    query.Append(",");
-                }
-                if (param is ParamObject paramObject)
-                {
-                    query.Append(paramObject.ParameterName);
-                }
-                else if(param is ParamCLRType clr)
-                {
-                    var name = $":{counter++}";
-                    query.Append(name);
-                    var oracleParameter = clr.GetOracleParameter(name);
-                    cmd.Parameters.Add(oracleParameter);
-                    if (clr.Direction == ParameterDirection.Output || clr.Direction == ParameterDirection.InputOutput)
-                    {
-                        outputs.Add(new PreparedOutputParameter(clr, oracleParameter));
-                    }
-                }
-            }
-
-            foreach (ParamObject param in parameters
-                .Where(c => c is ParamObject)
-                .Where(c => c.Direction == ParameterDirection.Output || c.Direction == ParameterDirection.InputOutput))
-            {
-                var preparedOutput = param.PrepareOutputParameter(counter);
-                outparameters.AppendLine(preparedOutput.RefCursorString);
-
-                cmd.Parameters.Add(preparedOutput.OracleParameter);
-                outputs.Add(preparedOutput);
-            }
-
-            var execute = new StringBuilder();
-            execute.AppendLine(declare.ToString());
-            execute.AppendLine(body.ToString());
-            execute.Append(query.ToString());
-            execute.AppendLine(");");
-            execute.Append(outparameters.ToString());
-            execute.Append("end;");
-
-            cmd.CommandText = execute.ToString();
-
-            cmd.ExecuteNonQuery();
-
-            foreach (var param in outputs)
-            {
-                param.Parameter.SetOutputValue(param.OracleParameter.Value);
-            }
-        }
-
         public T ExecuteFunction<T>(string function, OracleUDTInfo udtInfo, params Param[] parameters)
         {
-            if (_Connection.State != ConnectionState.Open)
-            {
-                _Connection.Open();
-            }
-
-            foreach (ParamObject param in parameters.Where(c => c is ParamObject))
-            {
-                param.LoadObjectMetadata(_Builder);
-            }
-
-            var cmd = _Connection.CreateCommand();
-
-            var declare = new StringBuilder();
-            var query = new StringBuilder($"ret := {function}(");
-            var body = new StringBuilder();
-            var outparameters = new StringBuilder();
-            var outputs = new List<PreparedOutputParameter>();
-
             var returnType = typeof(T);
-
             var returnMetadata = _Builder.GetOrRegisterMetadataOracleObject<T>(udtInfo);
-            if (udtInfo == null)
+            OracleParameter retOra = null;
+
+            Execute($"ret := {function}", parameters, (info) =>
             {
-                udtInfo = returnMetadata.OracleTypeNetMetadata.UDTInfo;
-            }
-
-            declare.AppendLine("declare");
-            declare.AppendLine(returnMetadata.GetDeclareLine(returnType, "ret", udtInfo));
-
-            body.AppendLine("begin");
-
-            var objCounter = 0;
-            var counter = 0;
-            bool first = true;
-            foreach (ParamObject param in parameters
-                .Where(c => c is ParamObject))
-            {
-                var name = $"p{objCounter++}";
-                param.SetParameterName(name);
-
-                declare.AppendLine(param.GetDeclareLine());
-
-                if (param.Direction == ParameterDirection.Input || param.Direction == ParameterDirection.InputOutput)
+                retOra = new OracleParameter($":{info.ParameterCounter}", DBNull.Value)
                 {
-                    var (Constructor, LastNumber) = param.BuildQueryConstructorString(name, counter);
-                    var oraParameters = param.GetOracleParameters(counter);
+                    OracleDbType = OracleDbType.RefCursor
+                };
+                info.OracleParameterList.Add(retOra);
 
-                    cmd.Parameters.AddRange(oraParameters);
-
-                    body.AppendLine(Constructor);
-                    counter = LastNumber;
-                }
-            }
-
-            foreach (var param in parameters)
-            {
-                if (first)
+                var returnInfo = new AdditionalInformation
                 {
-                    first = false;
-                }
-                else
-                {
-                    query.Append(",");
-                }
-                if (param is ParamObject paramObject)
-                {
-                    query.Append(paramObject.ParameterName);
-                }
-                else if(param is ParamCLRType clrType)
-                {
-                    var name = $":{counter++}";
-                    query.Append(name);
-                    var oracleParameter = clrType.GetOracleParameter(name);
-                    cmd.Parameters.Add(oracleParameter);
-                    if (clrType.Direction == ParameterDirection.Output || clrType.Direction == ParameterDirection.InputOutput)
-                    {
-                        outputs.Add(new PreparedOutputParameter(clrType, oracleParameter, null));
-                    }
-                }
-            }
+                    Declare = returnMetadata.GetDeclareLine(returnType, "ret", udtInfo ?? returnMetadata.OracleTypeNetMetadata.UDTInfo),
+                    Output = returnMetadata.GetRefCursorQuery(info.ParameterCounter, "ret")
+                };
 
-            foreach (ParamObject param in parameters
-                .Where(c => c is ParamObject)
-                .Where(c => c.Direction == ParameterDirection.Output || c.Direction == ParameterDirection.InputOutput))
-            {
-                var preparedOutput = param.PrepareOutputParameter(counter);
-                outparameters.AppendLine(preparedOutput.RefCursorString);
-
-                cmd.Parameters.Add(preparedOutput.OracleParameter);
-                outputs.Add(preparedOutput);
-            }
-
-            var execute = new StringBuilder();
-            execute.AppendLine(declare.ToString());
-            execute.AppendLine(body.ToString());
-            execute.Append(query.ToString());
-            execute.AppendLine(");");
-            execute.Append(outparameters.ToString());
-
-            var retOra = new OracleParameter($":{counter}", DBNull.Value)
-            {
-                OracleDbType = OracleDbType.RefCursor
-            };
-
-            cmd.Parameters.Add(retOra);
-            execute.AppendLine(returnMetadata.GetRefCursorCollectionQuery(counter, "ret"));
-
-            execute.Append("end;");
-
-            cmd.CommandText = execute.ToString();
-
-            cmd.ExecuteNonQuery();
-
-            foreach (var param in outputs)
-            {
-                param.Parameter.SetOutputValue(param.OracleParameter.Value);
-            }
+                return returnInfo;
+            });
 
             return (T)returnMetadata.GetValueFromRefCursor(returnType, retOra.Value as OracleRefCursor);
         }
+
+        private static void ProcessOutParameters(List<PreparedOutputParameter> outputs)
+        {
+            foreach (var param in outputs)
+            {
+                param.Parameter.SetOutputValue(param.OracleParameter.Value);
+            }
+        }
+
+        private void ExecuteNonQuery(List<OracleParameter> oracleParameterList, string execute)
+        {
+            if (_Connection.State != ConnectionState.Open)
+            {
+                _Connection.Open();
+            }
+
+            var cmd = _Connection.CreateCommand();
+            cmd.Parameters.AddRange(oracleParameterList.ToArray());
+            cmd.CommandText = execute;
+
+            cmd.ExecuteNonQuery();
+        }
+
+        private void Execute(string method, Param[] parameters, Func<ExecutionInformation, AdditionalInformation> beforeEnd = null)
+        {
+            LoadObjectParametersMetadata(parameters);
+
+            var info = new ExecutionInformation();
+            var (declare, body) = ProcessDeclarationAndBody(parameters, info);
+            var query = ProcessQuery(method, parameters, info);
+            var outparameters = ProcessOutputParameters(parameters, info);
+
+            var additionalInfo = beforeEnd?.Invoke(info);
+            if (additionalInfo != null)
+            {
+                declare.AppendLine(additionalInfo.Declare);
+                outparameters.AppendLine(additionalInfo.Output);
+            }
+
+            var execute = new StringBuilder();
+            execute.AppendLine(declare.ToString());
+            execute.AppendLine(body);
+            execute.AppendLine(query);
+            execute.AppendLine(outparameters.ToString());
+            execute.Append("end;");
+
+            ExecuteNonQuery(info.OracleParameterList, execute.ToString());
+
+            ProcessOutParameters(info.Outputs);
+        }
+
+        private void LoadObjectParametersMetadata(Param[] parameters)
+        {
+            foreach (ParamObject param in parameters.Where(c => c is ParamObject))
+            {
+                param.LoadObjectMetadata(_Builder);
+            }
+        }
+
+        private (StringBuilder declaration, string body) ProcessDeclarationAndBody(Param[] parameters, ExecutionInformation info)
+        {
+            var body = new StringBuilder();
+            var declaration = new StringBuilder();
+            var objCounter = 0;
+
+            declaration.AppendLine("declare");
+            body.AppendLine("begin");
+
+            foreach (ParamObject param in parameters
+                .Where(c => c is ParamObject))
+            {
+                var name = $"p{objCounter++}";
+                param.SetParameterName(name);
+
+                declaration.AppendLine(param.GetDeclareLine());
+
+                if (param.Direction == ParameterDirection.Input || param.Direction == ParameterDirection.InputOutput)
+                {
+                    var (Constructor, LastNumber) = param.BuildQueryConstructorString(name, info.ParameterCounter);
+                    var oraParameters = param.GetOracleParameters(info.ParameterCounter);
+
+                    info.OracleParameterList.AddRange(oraParameters);
+
+                    body.AppendLine(Constructor);
+                    info.ParameterCounter = LastNumber;
+                }
+            }
+
+            return (declaration, body.ToString());
+        }
+
+        private StringBuilder ProcessOutputParameters(Param[] parameters, ExecutionInformation info)
+        {
+            var outparameters = new StringBuilder();
+            foreach (ParamObject param in parameters
+                .Where(c => c is ParamObject)
+                .Where(c => c.Direction == ParameterDirection.Output || c.Direction == ParameterDirection.InputOutput))
+            {
+                var preparedOutput = param.PrepareOutputParameter(info.ParameterCounter);
+                outparameters.AppendLine(preparedOutput.RefCursorString);
+
+                info.OracleParameterList.Add(preparedOutput.OracleParameter);
+                info.Outputs.Add(preparedOutput);
+            }
+
+            return outparameters;
+        }
+
+        private string ProcessQuery(string method, Param[] parameters, ExecutionInformation info)
+        {
+            var query = new StringBuilder(method + "(");
+            bool first = true;
+            foreach (var param in parameters)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    query.Append(",");
+                }
+                if (param is ParamObject paramObject)
+                {
+                    query.Append(paramObject.ParameterName);
+                }
+                else if (param is ParamCLRType clrType)
+                {
+                    var name = $":{info.ParameterCounter++}";
+                    query.Append(name);
+                    var oracleParameter = clrType.GetOracleParameter(name);
+                    info.OracleParameterList.Add(oracleParameter);
+                    if (clrType.Direction == ParameterDirection.Output || clrType.Direction == ParameterDirection.InputOutput)
+                    {
+                        info.Outputs.Add(new PreparedOutputParameter(clrType, oracleParameter, null));
+                    }
+                }
+            }
+
+            query.Append(");");
+
+            return query.ToString();
+        }
+    }
+
+    internal class ExecutionInformation
+    {
+        public ExecutionInformation()
+        {
+            OracleParameterList = new List<OracleParameter>();
+            Outputs = new List<PreparedOutputParameter>();
+            ParameterCounter = 0;
+        }
+
+        public List<PreparedOutputParameter> Outputs { get; set; }
+        public int ParameterCounter { get; set; }
+        public List<OracleParameter> OracleParameterList { get; set; }
+    }
+
+    internal class AdditionalInformation
+    {
+        public string Declare { get; set; }
+        public string Output { get; set; }
     }
 }

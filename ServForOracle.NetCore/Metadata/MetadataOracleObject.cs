@@ -123,7 +123,7 @@ namespace ServForOracle.NetCore.Metadata
             return parameters.ToArray();
         }
 
-        public override string GetRefCursorCollectionQuery(int startNumber, string fieldName)
+        private string GetRefCursorCollectionQuery(int startNumber, string fieldName)
         {
             var query = new StringBuilder($"open :{startNumber++} for select ");
             var first = true;
@@ -144,7 +144,7 @@ namespace ServForOracle.NetCore.Metadata
             return query.ToString();
         }
 
-        public override string GetRefCursorQuery(int startNumber, string fieldName)
+        private string GetRefCursorObjectQuery(int startNumber, string fieldName)
         {
             var query = new StringBuilder($"open :{startNumber++} for select ");
             var first = true;
@@ -163,6 +163,18 @@ namespace ServForOracle.NetCore.Metadata
             query.Append(" from dual;");
 
             return query.ToString();
+        }
+
+        public override string GetRefCursorQuery(int startNumber, string fieldName)
+        {
+            if(Type.IsCollection())
+            {
+                return GetRefCursorCollectionQuery(startNumber, fieldName);
+            }
+            else
+            {
+                return GetRefCursorObjectQuery(startNumber, fieldName);
+            }
         }
 
         public override object GetValueFromRefCursor(Type type, OracleRefCursor refCursor)
@@ -218,7 +230,6 @@ namespace ServForOracle.NetCore.Metadata
     internal abstract class MetadataOracleObject: MetadataOracle
     {
         public abstract object GetValueFromRefCursor(Type type, OracleRefCursor refCursor);
-        public abstract string GetRefCursorQuery(int startNumber, string fieldName);
-        public abstract string GetRefCursorCollectionQuery(int startNumber, string fieldName);
+        public abstract string GetRefCursorQuery(int startNumber, string fieldName);      
     }
 }

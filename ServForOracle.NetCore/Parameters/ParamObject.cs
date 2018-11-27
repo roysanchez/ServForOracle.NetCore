@@ -70,18 +70,10 @@ namespace ServForOracle.NetCore.Parameters
         {
             return Metadata.BuildQueryConstructorString(Value, name, startNumber);
         }
+
         internal override PreparedOutputParameter PrepareOutputParameter(int startNumber)
         {
-            string query = string.Empty;
-            if (typeof(T).IsArray)
-            {
-                query = Metadata.GetRefCursorCollectionQuery(startNumber, ParameterName);
-            }
-            else
-            {
-                query = Metadata.GetRefCursorQuery(startNumber, ParameterName);
-            }
-
+            var query = Metadata.GetRefCursorQuery(startNumber, ParameterName);
             var oracleParameter = Metadata.GetOracleParameterForRefCursor(startNumber);
 
             return new PreparedOutputParameter(this, oracleParameter, query);
