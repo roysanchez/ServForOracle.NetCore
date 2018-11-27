@@ -20,12 +20,7 @@ namespace ServForOracle.NetCore.Parameters
         public virtual object Value { get; protected set; }
         internal abstract Task SetOutputValueAsync(object value);
         internal abstract void SetOutputValue(object value);
-
-        public static void AddOracleUDTConfiguration(params (Type Type, OracleUDTInfo Info)[] udts)
-        {
-            MetadataBuilder.AddOracleUDTPresets(udts);
-        }
-
+        
         public static Param Create<T>(T value, ParameterDirection direction)
         {
             var type = typeof(T);

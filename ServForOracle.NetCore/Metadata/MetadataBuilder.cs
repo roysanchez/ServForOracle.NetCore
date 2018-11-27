@@ -16,19 +16,17 @@ namespace ServForOracle.NetCore.Metadata
         public OracleConnection OracleConnection { get; set; }
         public static ConcurrentBag<MetadataOracleTypeDefinition> OracleUDTs { get; private set; }
         public static ConcurrentDictionary<Type, MetadataOracle> TypeDefinitionsOracleUDT { get; private set; }
-        public static ConcurrentDictionary<Type, OracleUDTInfo> PresetUDTs { get; private set; }
+        public static ConcurrentDictionary<Type, (OracleUDTInfo Info, UDTPropertyNetPropertyMap[] Props)> PresetUDTs { get; private set; }
 
         static MetadataBuilder()
         {
             OracleUDTs = new ConcurrentBag<MetadataOracleTypeDefinition>();
             TypeDefinitionsOracleUDT = new ConcurrentDictionary<Type, MetadataOracle>();
-            PresetUDTs = new ConcurrentDictionary<Type, OracleUDTInfo>();
+            PresetUDTs = new ConcurrentDictionary<Type, (OracleUDTInfo Info, UDTPropertyNetPropertyMap[] Props)>();
         }
-
-        internal static void AddOracleUDTPresets(params (Type Type, OracleUDTInfo Info)[] udts)
+        internal static void AddOracleUDTPresets(Type Type, OracleUDTInfo Info, UDTPropertyNetPropertyMap[] Props)
         {
-            foreach (var udt in udts)
-                PresetUDTs.TryAdd(udt.Type, udt.Info);
+                PresetUDTs.TryAdd(Type, (Info, Props));
         }
 
         public MetadataBuilder(OracleConnection connection)
@@ -80,26 +78,38 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleTypeDefinition)>"
+        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleTypeDefinition, UDTPropertyNetPropertyMap[])>"
         private async Task<object> RegisterAsync(Type type, OracleConnection con, OracleUDTInfo udtInfo)
         {
             var metadataGenericType = typeof(MetadataOracleObject<>).MakeGenericType(type);
-            var metadata = metadataGenericType.CreateInstance(await GetOrCreateOracleTypeMetadataAsync(con, udtInfo));
+            var metadata = metadataGenericType.CreateInstance(await GetOrCreateOracleTypeMetadataAsync(con, udtInfo), GetPresetProperties(type));
 
             TypeDefinitionsOracleUDT.TryAdd(type, metadata as MetadataOracle);
 
             return metadata;
         }
 
-        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleTypeDefinition)>"
+        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleTypeDefinition, UDTPropertyNetPropertyMap[])>"
         private object Register(Type type, OracleConnection con, OracleUDTInfo udtInfo)
         {
             var metadataGenericType = typeof(MetadataOracleObject<>).MakeGenericType(type);
-            var metadata = metadataGenericType.CreateInstance(GetOrCreateOracleTypeMetadata(con, udtInfo));
+            var metadata = metadataGenericType.CreateInstance(GetOrCreateOracleTypeMetadata(con, udtInfo), GetPresetProperties(type));
 
             TypeDefinitionsOracleUDT.TryAdd(type, metadata as MetadataOracle);
 
             return metadata;
+        }
+
+        private UDTPropertyNetPropertyMap[] GetPresetProperties(Type type)
+        {
+            if (type.IsCollection())
+            {
+                return PresetUDTs.GetValueOrDefault(type.GetCollectionUnderType()).Props;
+            }
+            else
+            {
+                return PresetUDTs.GetValueOrDefault(type).Props;
+            }
         }
 
         private async Task<object> RegisterAsync(Type type, OracleConnection con)
@@ -121,12 +131,12 @@ namespace ServForOracle.NetCore.Metadata
             {
                 var underType = type.GetCollectionUnderType();
                 udtInfo = underType.GetCustomAttribute<OracleUDTAttribute>()?.UDTInfo
-                    ?? PresetUDTs.GetValueOrDefault(underType);
+                    ?? PresetUDTs.GetValueOrDefault(underType).Info;
             }
             else
             {
                 udtInfo = type.GetCustomAttribute<OracleUDTAttribute>()?.UDTInfo
-                    ?? PresetUDTs.GetValueOrDefault(type);
+                    ?? PresetUDTs.GetValueOrDefault(type).Info;
             }
 
             if (udtInfo == null)

@@ -12,23 +12,25 @@ using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore.Metadata
 {
-    internal class MetadataOracleObject<T>: MetadataOracleObject
+    internal class MetadataOracleObject<T> : MetadataOracleObject
     {
         private readonly Regex regex;
         private readonly string ConstructorString;
         private readonly Type Type;
         internal readonly MetadataOracleNetTypeDefinition OracleTypeNetMetadata;
 
-        public MetadataOracleObject(MetadataOracleTypeDefinition metadataOracleType)
+        public MetadataOracleObject(MetadataOracleTypeDefinition metadataOracleType, UDTPropertyNetPropertyMap[] customProperties)
         {
             Type = typeof(T);
             if (Type.IsCollection())
             {
-                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(Type.GetCollectionUnderType(), metadataOracleType);
+                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(Type.GetCollectionUnderType(), metadataOracleType,
+                    customProperties ?? new UDTPropertyNetPropertyMap[] { });
             }
             else
             {
-                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(Type, metadataOracleType);
+                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(Type, metadataOracleType,
+                    customProperties ?? new UDTPropertyNetPropertyMap[] { });
             }
 
             regex = new Regex(Regex.Escape("$"));
@@ -74,8 +76,8 @@ namespace ServForOracle.NetCore.Metadata
         public (string Constructor, int LastNumber) BuildQueryConstructorString(T value, string name, int startNumber)
         {
             var baseString = new StringBuilder();
-            
-            if(Type.IsCollection())
+
+            if (Type.IsCollection())
             {
                 if (value != null)
                 {
@@ -168,7 +170,7 @@ namespace ServForOracle.NetCore.Metadata
 
         public override string GetRefCursorQuery(int startNumber, string fieldName)
         {
-            if(Type.IsCollection())
+            if (Type.IsCollection())
             {
                 return GetRefCursorCollectionQuery(startNumber, fieldName);
             }
@@ -208,7 +210,7 @@ namespace ServForOracle.NetCore.Metadata
         public override object GetValueFromRefCursor(Type type, OracleRefCursor refCursor)
         {
             dynamic instance = type.CreateInstance();
-            
+
             var reader = refCursor.GetDataReader();
 
             if (type.IsCollection())
@@ -255,10 +257,10 @@ namespace ServForOracle.NetCore.Metadata
         }
     }
 
-    internal abstract class MetadataOracleObject: MetadataOracle
+    internal abstract class MetadataOracleObject : MetadataOracle
     {
         public abstract Task<object> GetValueFromRefCursorAsync(Type type, OracleRefCursor refCursor);
         public abstract object GetValueFromRefCursor(Type type, OracleRefCursor refCursor);
-        public abstract string GetRefCursorQuery(int startNumber, string fieldName);      
+        public abstract string GetRefCursorQuery(int startNumber, string fieldName);
     }
 }
