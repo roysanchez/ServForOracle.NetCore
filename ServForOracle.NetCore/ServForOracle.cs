@@ -165,10 +165,10 @@ namespace ServForOracle.NetCore
 
         private void ProcessOutParameters(List<PreparedOutputParameter> outputs)
         {
-            foreach (var param in outputs)
+            Parallel.ForEach(outputs, (param) =>
             {
                 param.Parameter.SetOutputValue(param.OracleParameter.Value);
-            }
+            });
         }
 
         private async Task ExecuteNonQueryAsync(List<OracleParameter> oracleParameterList, string execute)
@@ -212,10 +212,10 @@ namespace ServForOracle.NetCore
 
         private void LoadObjectParametersMetadata(Param[] parameters)
         {
-            foreach (ParamObject param in parameters.Where(c => c is ParamObject))
+            Parallel.ForEach(parameters.Where(c => c is ParamObject).Cast<ParamObject>(), param =>
             {
                 param.LoadObjectMetadata(_Builder);
-            }
+            });
         }
 
         private (StringBuilder declaration, string body) ProcessDeclarationAndBody(Param[] parameters, ExecutionInformation info)
