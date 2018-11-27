@@ -4,6 +4,7 @@ using ServForOracle.NetCore.Extensions;
 using ServForOracle.NetCore.Metadata;
 using System;
 using System.Data;
+using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore.Parameters
 {
@@ -44,6 +45,13 @@ namespace ServForOracle.NetCore.Parameters
             MetadataLoaded = true;
         }
 
+        internal override async Task LoadObjectMetadataAsync(MetadataBuilder builder)
+        {
+            Metadata = await builder.GetOrRegisterMetadataOracleObjectAsync<T>(UDTInfo);
+            _UDTInfo = Metadata.OracleTypeNetMetadata.UDTInfo;
+            MetadataLoaded = true;
+        }
+
         public override void SetParameterName(string name)
         {
             _ParameterName = name;
@@ -52,6 +60,12 @@ namespace ServForOracle.NetCore.Parameters
         public override string GetDeclareLine()
         {
             return Metadata.GetDeclareLine(Type, _ParameterName, UDTInfo);
+        }
+
+        internal override async Task SetOutputValueAsync(object value)
+        {
+            Value = (T)(await Metadata.GetValueFromRefCursorAsync(Type, value as OracleRefCursor));
+            base.Value = Value;
         }
 
         internal override void SetOutputValue(object value)
@@ -94,6 +108,7 @@ namespace ServForOracle.NetCore.Parameters
 
         internal bool MetadataLoaded = false;
         internal abstract void LoadObjectMetadata(MetadataBuilder builder);
+        internal abstract Task LoadObjectMetadataAsync(MetadataBuilder builder);
         internal abstract (string Constructor, int LastNumber) BuildQueryConstructorString(string name, int startNumber);
         internal abstract OracleParameter[] GetOracleParameters(int startNumber);
         internal abstract PreparedOutputParameter PrepareOutputParameter(int startNumber);

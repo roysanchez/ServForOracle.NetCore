@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using ServForOracle.NetCore.Parameters;
 using ServForOracle.NetCore.Metadata;
+using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore
 {
@@ -26,10 +27,39 @@ namespace ServForOracle.NetCore
             Execute(procedure, parameters);
         }
 
+        public async Task<T> ExecuteFunctionAsync<T>(string function, params Param[] parameters)
+        {
+            return await ExecuteFunctionAsync<T>(function, null, parameters);
+        }
+
         public T ExecuteFunction<T>(string function, params Param[] parameters)
         {
             return ExecuteFunction<T>(function, null, parameters);
         }
+
+        public async Task<T> ExecuteFunctionAsync<T>(string function, OracleUDTInfo udtInfo, params Param[] parameters)
+        {
+            var returnType = typeof(T);
+            var returnMetadata = await _Builder.GetOrRegisterMetadataOracleObjectAsync<T>(udtInfo);
+            OracleParameter retOra = null;
+
+            await ExecuteAsync($"ret := {function}", parameters, (info) =>
+            {
+                retOra = FunctionReturnOracleParameter(info);
+
+                AdditionalInformation returnInfo = new AdditionalInformation
+                {
+                    Declare = returnMetadata.GetDeclareLine(returnType, "ret", udtInfo ?? returnMetadata.OracleTypeNetMetadata.UDTInfo),
+                    Output = returnMetadata.GetRefCursorQuery(info.ParameterCounter, "ret")
+                };
+
+                return Task.FromResult(returnInfo);
+            });
+
+            return (T)(await returnMetadata.GetValueFromRefCursorAsync(returnType, retOra.Value as OracleRefCursor));
+        }
+
+        
 
         public T ExecuteFunction<T>(string function, OracleUDTInfo udtInfo, params Param[] parameters)
         {
@@ -39,11 +69,7 @@ namespace ServForOracle.NetCore
 
             Execute($"ret := {function}", parameters, (info) =>
             {
-                retOra = new OracleParameter($":{info.ParameterCounter}", DBNull.Value)
-                {
-                    OracleDbType = OracleDbType.RefCursor
-                };
-                info.OracleParameterList.Add(retOra);
+                retOra = FunctionReturnOracleParameter(info);
 
                 var returnInfo = new AdditionalInformation
                 {
@@ -57,26 +83,39 @@ namespace ServForOracle.NetCore
             return (T)returnMetadata.GetValueFromRefCursor(returnType, retOra.Value as OracleRefCursor);
         }
 
-        private static void ProcessOutParameters(List<PreparedOutputParameter> outputs)
+        private OracleParameter FunctionReturnOracleParameter(ExecutionInformation info)
         {
-            foreach (var param in outputs)
+            OracleParameter retOra = new OracleParameter($":{info.ParameterCounter}", DBNull.Value)
             {
-                param.Parameter.SetOutputValue(param.OracleParameter.Value);
-            }
+                OracleDbType = OracleDbType.RefCursor
+            };
+            info.OracleParameterList.Add(retOra);
+            return retOra;
         }
 
-        private void ExecuteNonQuery(List<OracleParameter> oracleParameterList, string execute)
+        private async Task ExecuteAsync(string method, Param[] parameters,
+            Func<ExecutionInformation, Task<AdditionalInformation>> beforeEnd = null)
         {
-            if (_Connection.State != ConnectionState.Open)
+            await LoadObjectParametersMetadataAsync(parameters);
+
+            var info = new ExecutionInformation();
+            var (declare, body) = ProcessDeclarationAndBody(parameters, info);
+            var query = ProcessQuery(method, parameters, info);
+            var outparameters = ProcessOutputParameters(parameters, info);
+
+            var additionalInfo = await beforeEnd?.Invoke(info);
+            if (additionalInfo != null)
             {
-                _Connection.Open();
+                declare.AppendLine(additionalInfo.Declare);
+                outparameters.AppendLine(additionalInfo.Output);
             }
 
-            var cmd = _Connection.CreateCommand();
-            cmd.Parameters.AddRange(oracleParameterList.ToArray());
-            cmd.CommandText = execute;
+            var execute = PrepareStatement(declare.ToString(), body, query, outparameters.ToString());
 
-            cmd.ExecuteNonQuery();
+            await ExecuteNonQueryAsync(info.OracleParameterList, execute);
+
+            await ProcessOutParametersAsync(info.Outputs);
+
         }
 
         private void Execute(string method, Param[] parameters, Func<ExecutionInformation, AdditionalInformation> beforeEnd = null)
@@ -95,16 +134,80 @@ namespace ServForOracle.NetCore
                 outparameters.AppendLine(additionalInfo.Output);
             }
 
+            var execute = PrepareStatement(declare.ToString(), body, query, outparameters.ToString());
+
+            ExecuteNonQuery(info.OracleParameterList, execute.ToString());
+
+            ProcessOutParameters(info.Outputs);
+        }
+
+        private string PrepareStatement(string declare, string body, string query, string outparameters)
+        {
             var execute = new StringBuilder();
             execute.AppendLine(declare.ToString());
             execute.AppendLine(body);
             execute.AppendLine(query);
             execute.AppendLine(outparameters.ToString());
             execute.Append("end;");
+            return execute.ToString();
+        }
 
-            ExecuteNonQuery(info.OracleParameterList, execute.ToString());
+        private async Task ProcessOutParametersAsync(List<PreparedOutputParameter> outputs)
+        {
+            var taskList = new List<Task>(outputs.Count);
+            foreach (var param in outputs)
+            {
+                taskList.Add(param.Parameter.SetOutputValueAsync(param.OracleParameter.Value));
+            }
 
-            ProcessOutParameters(info.Outputs);
+            await Task.WhenAll(taskList.ToArray());
+        }
+
+        private void ProcessOutParameters(List<PreparedOutputParameter> outputs)
+        {
+            foreach (var param in outputs)
+            {
+                param.Parameter.SetOutputValue(param.OracleParameter.Value);
+            }
+        }
+
+        private async Task ExecuteNonQueryAsync(List<OracleParameter> oracleParameterList, string execute)
+        {
+            if (_Connection.State != ConnectionState.Open)
+            {
+                await _Connection.OpenAsync();
+            }
+
+            var cmd = _Connection.CreateCommand();
+            cmd.Parameters.AddRange(oracleParameterList.ToArray());
+            cmd.CommandText = execute;
+
+            await cmd.ExecuteNonQueryAsync();
+        }
+
+        private void ExecuteNonQuery(List<OracleParameter> oracleParameterList, string execute)
+        {
+            if (_Connection.State != ConnectionState.Open)
+            {
+                _Connection.Open();
+            }
+
+            var cmd = _Connection.CreateCommand();
+            cmd.Parameters.AddRange(oracleParameterList.ToArray());
+            cmd.CommandText = execute;
+
+            cmd.ExecuteNonQuery();
+        }
+
+        private async Task LoadObjectParametersMetadataAsync(Param[] parameters)
+        {
+            var tasksList = new List<Task>(parameters.Length);
+            foreach (ParamObject param in parameters.Where(c => c is ParamObject))
+            {
+                tasksList.Add(param.LoadObjectMetadataAsync(_Builder));
+            }
+
+            await Task.WhenAll(tasksList.ToArray());
         }
 
         private void LoadObjectParametersMetadata(Param[] parameters)

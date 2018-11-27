@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using ServForOracle.NetCore.Extensions;
+using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore.Metadata
 {
@@ -177,6 +178,33 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
+        public override async Task<object> GetValueFromRefCursorAsync(Type type, OracleRefCursor refCursor)
+        {
+            dynamic instance = type.CreateInstance();
+
+            var reader = refCursor.GetDataReader();
+
+            if (type.IsCollection())
+            {
+                var subType = type.GetCollectionUnderType();
+                while (await reader.ReadAsync())
+                {
+                    instance.Add(ReadObjectInstance(subType, reader));
+                }
+
+                return type.IsArray ? Enumerable.ToArray(instance) : Enumerable.AsEnumerable(instance);
+            }
+            else
+            {
+                while (await reader.ReadAsync())
+                {
+                    ReadObjectInstance(type, reader);
+                }
+
+                return (T)instance;
+            }
+        }
+
         public override object GetValueFromRefCursor(Type type, OracleRefCursor refCursor)
         {
             dynamic instance = type.CreateInstance();
@@ -229,6 +257,7 @@ namespace ServForOracle.NetCore.Metadata
 
     internal abstract class MetadataOracleObject: MetadataOracle
     {
+        public abstract Task<object> GetValueFromRefCursorAsync(Type type, OracleRefCursor refCursor);
         public abstract object GetValueFromRefCursor(Type type, OracleRefCursor refCursor);
         public abstract string GetRefCursorQuery(int startNumber, string fieldName);      
     }

@@ -7,6 +7,7 @@ using System.Data;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore.Metadata
 {
@@ -25,6 +26,28 @@ namespace ServForOracle.NetCore.Metadata
         public MetadataBuilder(OracleConnection connection)
         {
             OracleConnection = connection;
+        }
+
+        public async Task<MetadataOracleObject<T>> GetOrRegisterMetadataOracleObjectAsync<T>(OracleUDTInfo udtInfo)
+        {
+            var type = typeof(T);
+            TypeDefinitionsOracleUDT.TryGetValue(type, out MetadataOracle metadata);
+
+            if (metadata == null)
+            {
+                if (udtInfo != null)
+                {
+                    return await RegisterAsync(type, OracleConnection, udtInfo) as MetadataOracleObject<T>;
+                }
+                else
+                {
+                    return await RegisterAsync(type, OracleConnection) as MetadataOracleObject<T>;
+                }
+            }
+            else
+            {
+                return metadata as MetadataOracleObject<T>;
+            }
         }
 
         public MetadataOracleObject<T> GetOrRegisterMetadataOracleObject<T>(OracleUDTInfo udtInfo)
@@ -50,6 +73,17 @@ namespace ServForOracle.NetCore.Metadata
         }
 
         /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleTypeDefinition)>"
+        private async Task<object> RegisterAsync(Type type, OracleConnection con, OracleUDTInfo udtInfo)
+        {
+            var metadataGenericType = typeof(MetadataOracleObject<>).MakeGenericType(type);
+            var metadata = metadataGenericType.CreateInstance(await GetOrCreateOracleTypeMetadataAsync(con, udtInfo));
+
+            TypeDefinitionsOracleUDT.TryAdd(type, metadata as MetadataOracle);
+
+            return metadata;
+        }
+
+        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleTypeDefinition)>"
         private object Register(Type type, OracleConnection con, OracleUDTInfo udtInfo)
         {
             var metadataGenericType = typeof(MetadataOracleObject<>).MakeGenericType(type);
@@ -60,12 +94,22 @@ namespace ServForOracle.NetCore.Metadata
             return metadata;
         }
 
+        private async Task<object> RegisterAsync(Type type, OracleConnection con)
+        {
+            var udtInfo = GetUDTInfo(type);
+            return await RegisterAsync(type, con, udtInfo);
+        }
+
         private object Register(Type type, OracleConnection con)
         {
-            var objectSchema = string.Empty;
-            OracleUDTInfo udtInfo;
+            var udtInfo = GetUDTInfo(type);
+            return Register(type, con, udtInfo);
+        }
 
-            if(type.IsCollection())
+        private OracleUDTInfo GetUDTInfo(Type type)
+        {
+            OracleUDTInfo udtInfo;
+            if (type.IsCollection())
             {
                 udtInfo = type.GetCollectionUnderType().GetCustomAttribute<OracleUDTAttribute>()?.UDTInfo;
             }
@@ -74,13 +118,30 @@ namespace ServForOracle.NetCore.Metadata
                 udtInfo = type.GetCustomAttribute<OracleUDTAttribute>()?.UDTInfo;
             }
 
-            if(udtInfo == null)
+            if (udtInfo == null)
             {
                 throw new ArgumentException($"The type {type.FullName} needs to have the {nameof(OracleUDTAttribute)}" +
                     $" attribute set or pass the {nameof(OracleUDTInfo)} class to the execute method.");
             }
 
-            return Register(type, con, udtInfo);
+            return udtInfo;
+        }
+
+        private async Task<MetadataOracleTypeDefinition> GetOrCreateOracleTypeMetadataAsync(OracleConnection connection, OracleUDTInfo udtInfo)
+        {
+            if (OracleConnection.State != ConnectionState.Open)
+            {
+                await OracleConnection.OpenAsync();
+            }
+
+            var exists = OracleUDTs.FirstOrDefault(c => c.UDTInfo.Equals(udtInfo));
+            if (exists != null)
+                return exists;
+
+            var cmd = CreateCommand(connection, udtInfo);
+
+            var properties = await ExecuteReaderAndLoadTypeDefinitionAsync(cmd);
+            return CreateAndSaveMetadata(udtInfo, properties);
         }
 
         private MetadataOracleTypeDefinition GetOrCreateOracleTypeMetadata(OracleConnection connection, OracleUDTInfo udtInfo)
@@ -94,12 +155,37 @@ namespace ServForOracle.NetCore.Metadata
             if (exists != null)
                 return exists;
 
+            var cmd = CreateCommand(connection, udtInfo);
+
+            var properties = ExecuteReaderAndLoadTypeDefinition(cmd);
+            return CreateAndSaveMetadata(udtInfo, properties);
+        }
+
+        private OracleCommand CreateCommand(OracleConnection connection, OracleUDTInfo udtInfo)
+        {
             var cmd = connection.CreateCommand();
             cmd.CommandText = "select attr_no, attr_name, attr_type_name from all_type_attrs where owner = "
                 + "upper(:1) and type_name = upper(:2)";
             cmd.Parameters.Add(new OracleParameter(":1", udtInfo.ObjectSchema));
             cmd.Parameters.Add(new OracleParameter(":2", udtInfo.ObjectName));
+            return cmd;
+        }
 
+        private MetadataOracleTypeDefinition CreateAndSaveMetadata(OracleUDTInfo udtInfo, List<MetadataOracleTypePropertyDefinition> properties)
+        {
+            var metadata = new MetadataOracleTypeDefinition
+            {
+                Properties = properties,
+                UDTInfo = udtInfo
+            };
+
+            OracleUDTs.Add(metadata);
+
+            return metadata;
+        }
+
+        private List<MetadataOracleTypePropertyDefinition> ExecuteReaderAndLoadTypeDefinition(OracleCommand cmd)
+        {
             var reader = cmd.ExecuteReader();
             var properties = new List<MetadataOracleTypePropertyDefinition>();
 
@@ -114,16 +200,26 @@ namespace ServForOracle.NetCore.Metadata
                 properties.Add(property);
             }
 
-            var metadata = new MetadataOracleTypeDefinition
+            return properties;
+        }
+
+        private async Task<List<MetadataOracleTypePropertyDefinition>> ExecuteReaderAndLoadTypeDefinitionAsync(OracleCommand cmd)
+        {
+            var reader = cmd.ExecuteReader();
+            var properties = new List<MetadataOracleTypePropertyDefinition>();
+
+            while (await reader.ReadAsync())
             {
-                Properties = properties,
-                UDTInfo = udtInfo
-                
-            };
+                var property = new MetadataOracleTypePropertyDefinition
+                {
+                    Order = reader.GetInt32(0),
+                    Name = reader.GetString(1)
+                };
 
-            OracleUDTs.Add(metadata);
+                properties.Add(property);
+            }
 
-            return metadata;
+            return properties;
         }
     }
 }

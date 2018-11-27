@@ -2,6 +2,7 @@
 using ServForOracle.NetCore.Metadata;
 using System;
 using System.Data;
+using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore.Parameters
 {
@@ -16,6 +17,7 @@ namespace ServForOracle.NetCore.Parameters
         }
         public virtual Type Type { get; }
         public virtual object Value { get; protected set; }
+        internal abstract Task SetOutputValueAsync(object value);
         internal abstract void SetOutputValue(object value);
 
         public static Param Create<T>(T value, ParameterDirection direction)

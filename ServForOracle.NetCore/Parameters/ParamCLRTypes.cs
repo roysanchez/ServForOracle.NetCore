@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore.Parameters
 {
@@ -23,6 +24,12 @@ namespace ServForOracle.NetCore.Parameters
         {
             Metadata = metadata;
             Value = value;
+        }
+
+        internal override async Task SetOutputValueAsync(object value)
+        {
+            SetOutputValue(value);
+            await Task.CompletedTask;
         }
 
         internal override void SetOutputValue(object value)
