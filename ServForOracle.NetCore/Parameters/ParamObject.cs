@@ -1,4 +1,5 @@
-﻿using Oracle.ManagedDataAccess.Types;
+﻿using Oracle.ManagedDataAccess.Client;
+using Oracle.ManagedDataAccess.Types;
 using ServForOracle.NetCore.Extensions;
 using ServForOracle.NetCore.Metadata;
 using System;
@@ -16,7 +17,6 @@ namespace ServForOracle.NetCore.Parameters
 
         private OracleUDTInfo _UDTInfo;
         internal override OracleUDTInfo UDTInfo => _UDTInfo;
-        public override bool IsOracleType => true;
         public override Type Type => typeof(T);
         public override string ParameterName => _ParameterName;
 
@@ -31,7 +31,7 @@ namespace ServForOracle.NetCore.Parameters
         {
             _UDTInfo = udtInfo ?? throw new ArgumentNullException(nameof(udtInfo));
 
-            if(Type.IsCollection() && !_UDTInfo.IsCollectionValid)
+            if (Type.IsCollection() && !_UDTInfo.IsCollectionValid)
             {
                 throw new ArgumentException($"For the type {Type.FullName} array you must especify the UDT collection name",
                     nameof(udtInfo));
@@ -58,6 +58,33 @@ namespace ServForOracle.NetCore.Parameters
         internal override void SetOutputValue(object value)
         {
             Value = (T)Metadata.GetValueFromRefCursor(Type, value as OracleRefCursor);
+            base.Value = Value;
+        }
+
+        internal override OracleParameter[] GetOracleParameters(int startNumber)
+        {
+            return Metadata.GetOracleParameters(Value, startNumber);
+        }
+
+        internal override (string Constructor, int LastNumber) BuildQueryConstructorString(string name, int startNumber)
+        {
+            return Metadata.BuildQueryConstructorString(Value, name, startNumber);
+        }
+        internal override PreparedOutputParameter PrepareOutputParameter(int startNumber)
+        {
+            string query = string.Empty;
+            if (typeof(T).IsArray)
+            {
+                query = Metadata.GetRefCursorCollectionQuery(startNumber, ParameterName);
+            }
+            else
+            {
+                query = Metadata.GetRefCursorQuery(startNumber, ParameterName);
+            }
+
+            var oracleParameter = Metadata.GetOracleParameterForRefCursor(startNumber);
+
+            return new PreparedOutputParameter(this, oracleParameter, query);
         }
     }
 
@@ -76,5 +103,8 @@ namespace ServForOracle.NetCore.Parameters
 
         internal bool MetadataLoaded = false;
         internal abstract void LoadObjectMetadata(MetadataBuilder builder);
+        internal abstract (string Constructor, int LastNumber) BuildQueryConstructorString(string name, int startNumber);
+        internal abstract OracleParameter[] GetOracleParameters(int startNumber);
+        internal abstract PreparedOutputParameter PrepareOutputParameter(int startNumber);
     }
 }
