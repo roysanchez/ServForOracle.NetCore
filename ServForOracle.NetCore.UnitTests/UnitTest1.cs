@@ -9,9 +9,9 @@ namespace ServForOracle.NetCore.UnitTests
         [Fact]
         public void Test1()
         {
-            var serv = new ServForOracle(new OracleConnection(""));
-            var roy = "1234";
-            serv.ExecuteProcedure("uniserv.proc_prueba_net_core_out_1", roy);
+            //var serv = new ServForOracle(new OracleConnection(""));
+            //var roy = "1234";
+            //serv.ExecuteProcedure("uniserv.proc_prueba_net_core_out_1", roy);
 
             //PresetMappings.AddOracleUDTConfiguration<RamoObj>(new OracleUDTInfo("ramo_obj", "uniserv", "ramo_list"),
             //    (c => c.TipoRamo2, "tiporamo"));
