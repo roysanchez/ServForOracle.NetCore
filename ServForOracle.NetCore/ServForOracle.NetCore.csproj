@@ -3,12 +3,28 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>7.1</LangVersion>
+    <PackageId>ServForOracle.NetCore</PackageId>
+    <Version>0.5-beta</Version>
+    <Title>ServForOracle.NetCore - Oracle Package and Type wrapper for .NET</Title>
+    <Authors>Roy Sánchez</Authors>
+    <Description>A wrapper over Oracle ODP.NET to make easier the calls to packages and enable the use of UDTs (User Define Types)</Description>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <Copyright>Copyright 2018 (c) Roy Sanchez. All rights reserved.</Copyright>
+    <PackageReleaseNotes>
+      First release, tried to make the library has as much feature parity as possible with the full framework version, and added extra features to take advantage of .NET Core.
+    </PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/roysanchez/ServForOracle/</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/roysanchez/ServForOracle/</PackageProjectUrl>
+    <PackageTags>Oracle; ODP.NET Managed; Oracle UDT; Oracle User Defined Types;NetCore</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="2.18.3" />
     <PackageReference Include="System.Collections.Concurrent" Version="4.3.0" />
   </ItemGroup>
-
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta-63127-02" PrivateAssets="All"/>
+  </ItemGroup>
 </Project>
