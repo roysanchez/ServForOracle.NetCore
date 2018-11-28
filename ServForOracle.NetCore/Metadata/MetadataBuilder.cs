@@ -100,15 +100,22 @@ namespace ServForOracle.NetCore.Metadata
             return metadata;
         }
 
+        //GetValueOrDefault doesn't exists in net standard
+        private (OracleUDTInfo Info, UDTPropertyNetPropertyMap[] Props) PresetGetValueOrDefault(Type type)
+        {
+            PresetUDTs.TryGetValue(type, out var preset);
+            return preset;
+        }
+
         private UDTPropertyNetPropertyMap[] GetPresetProperties(Type type)
         {
             if (type.IsCollection())
             {
-                return PresetUDTs.GetValueOrDefault(type.GetCollectionUnderType()).Props;
+                return PresetGetValueOrDefault(type.GetCollectionUnderType()).Props;
             }
             else
             {
-                return PresetUDTs.GetValueOrDefault(type).Props;
+                return PresetGetValueOrDefault(type).Props;
             }
         }
 
@@ -131,12 +138,12 @@ namespace ServForOracle.NetCore.Metadata
             {
                 var underType = type.GetCollectionUnderType();
                 udtInfo = underType.GetCustomAttribute<OracleUDTAttribute>()?.UDTInfo
-                    ?? PresetUDTs.GetValueOrDefault(underType).Info;
+                    ?? PresetGetValueOrDefault(underType).Info;
             }
             else
             {
                 udtInfo = type.GetCustomAttribute<OracleUDTAttribute>()?.UDTInfo
-                    ?? PresetUDTs.GetValueOrDefault(type).Info;
+                    ?? PresetGetValueOrDefault(type).Info;
             }
 
             if (udtInfo == null)

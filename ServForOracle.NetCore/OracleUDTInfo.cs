@@ -85,10 +85,14 @@ namespace ServForOracle.NetCore
                    CollectionSchema == other.CollectionSchema &&
                    CollectionName == other.CollectionName;
         }
-
         public override int GetHashCode()
         {
-            return HashCode.Combine(ObjectSchema, ObjectName, CollectionSchema, CollectionName);
+            var hashCode = -1158407366;
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(ObjectSchema);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(ObjectName);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(CollectionSchema);
+            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(CollectionName);
+            return hashCode;
         }
     }
 }
