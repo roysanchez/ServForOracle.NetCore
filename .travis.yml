@@ -8,10 +8,9 @@ addons:
     organization: "roysanchez-github"
 install:
   - dotnet tool install dotnet-sonarscanner --version 4.4.2 --tool-path tools
-  - echo "export PATH=\"\$PATH:\$TRAVIS_BUILD_DIR/tools\"" >> ~/.bash_profile
   - dotnet restore
 script:
-  - $TRAVIS_BUILD_DIR/tools/dotnet-sonarscanner begin /k:"roysanchez_ServForOracle.NetCore" /n:"ServForOracle.NetCore" /d:sonar.login="$SONAR_TOKEN" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.log.level="DEBUG"
+  - $TRAVIS_BUILD_DIR/tools/dotnet-sonarscanner begin /k:"roysanchez_ServForOracle.NetCore" /n:"ServForOracle.NetCore" /d:sonar.login="$SONAR_TOKEN" /d:sonar.host.url="https://sonarcloud.io"
   - dotnet build
   - $TRAVIS_BUILD_DIR/tools/dotnet-sonarscanner end /d:sonar.login="$SONAR_TOKEN"
 notifications:
