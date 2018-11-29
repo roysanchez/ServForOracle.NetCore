@@ -14,12 +14,13 @@ namespace ServForOracle.NetCore
         /// <summary>
         /// The Oracle UDT object name
         /// </summary>
-        internal OracleUDTInfo UDTInfo { get; private set; }
+        public OracleUDTInfo UDTInfo { get; private set; }
 
         public OracleUDTAttribute(string objectName, string collectionName = null, string schema = null,
             string collectionSchema = null)
         {
-            UDTInfo = new OracleUDTInfo(objectName, schema, collectionName, collectionSchema);
+
+            UDTInfo = new OracleUDTInfo(schema, objectName, collectionName, collectionSchema);
         }
     }
 }

@@ -11,62 +11,68 @@ namespace ServForOracle.NetCore
         public string CollectionSchema { get; private set; }
         public string CollectionName { get; private set; }
 
-        public OracleUDTInfo(string objectName, string objectSchema = null, string collectionName = null,
-            string collectionSchema = null)
+        public OracleUDTInfo(string objectName)
         {
             if (string.IsNullOrWhiteSpace(objectName))
             {
                 throw new ArgumentNullException(nameof(objectName));
             }
 
-            if (string.IsNullOrWhiteSpace(objectSchema))
+            var objectParts = objectName.ToUpper().Split('.');
+            if (objectParts.Length != 2)
             {
-                var objectParts = objectName.ToUpper().Split('.');
-                if (objectParts.Length != 2)
-                {
-                    throw new ArgumentException("The object name is invalid");
-                }
-
-                if (string.IsNullOrWhiteSpace(objectParts[0]))
-                {
-                    throw new ArgumentNullException("The object schema is invalid");
-                }
-                if (string.IsNullOrWhiteSpace(objectParts[1]))
-                {
-                    throw new ArgumentNullException("the object name is invalid");
-                }
-                ObjectSchema = objectParts[0];
-                ObjectName = objectParts[1];
-            }
-            else
-            {
-                ObjectName = objectName.ToUpper();
-                ObjectSchema = objectSchema.ToUpper();
+                throw new ArgumentException("The object name is invalid");
             }
 
-            if (!string.IsNullOrWhiteSpace(collectionName))
+            if (string.IsNullOrWhiteSpace(objectParts[0]))
             {
-                if (string.IsNullOrWhiteSpace(collectionSchema))
-                {
-                    var listParts = collectionName.ToUpper().Split('.');
-                    if (listParts.Length > 1)
-                    {
-                        CollectionSchema = listParts[0];
-                        CollectionName = listParts[1];
-                    }
-                    else
-                    {
-                        CollectionName = listParts[0];
-                        CollectionSchema = ObjectSchema;
-                    }
-                }
-                else
-                {
-                    CollectionName = collectionName.ToUpper();
-                    CollectionSchema = collectionSchema.ToUpper();
-                }
+                throw new ArgumentNullException("The object schema is invalid");
+            }
+            if (string.IsNullOrWhiteSpace(objectParts[1]))
+            {
+                throw new ArgumentNullException("the object name is invalid");
+            }
+            ObjectSchema = objectParts[0];
+            ObjectName = objectParts[1];
+
+        }
+
+        public OracleUDTInfo(string schema, string objectName)
+        {
+            if (string.IsNullOrWhiteSpace(objectName))
+            {
+                throw new ArgumentNullException(nameof(objectName));
+            }
+            if (string.IsNullOrWhiteSpace(schema))
+            {
+                throw new ArgumentNullException(nameof(objectName));
             }
 
+            ObjectName = objectName.ToUpper();
+            ObjectSchema = schema.ToUpper();
+        }
+
+        public OracleUDTInfo(string schema, string objectName, string collectionName)
+            :this(schema, objectName)
+        {
+            if(string.IsNullOrWhiteSpace(collectionName))
+            {
+                throw new ArgumentNullException(nameof(collectionName));
+            }
+
+            CollectionName = collectionName.ToUpper();
+            CollectionSchema = ObjectSchema;
+        }
+
+        public OracleUDTInfo(string objectSchema, string objectName, string collectionSchema, string collectionName)
+            :this(objectSchema, objectName, collectionName)
+        {
+            if(string.IsNullOrWhiteSpace(collectionSchema))
+            {
+                throw new ArgumentNullException(nameof(collectionSchema));
+            }
+
+            CollectionSchema = collectionSchema;
         }
 
         public bool IsCollectionValid => !string.IsNullOrWhiteSpace(CollectionName);
