@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore
 {
-    public class ServForOracle
+    public class ServForOracle: IServForOracle
     {
         private readonly OracleConnection _Connection;
         private readonly MetadataBuilder _Builder;
@@ -20,6 +20,11 @@ namespace ServForOracle.NetCore
         {
             _Connection = connection;
             _Builder = new MetadataBuilder(connection);
+        }
+
+        public async Task ExecuteProcedureAsync(string procedure, params Param[] parameters)
+        {
+            await ExecuteAsync(procedure, parameters);
         }
 
         public void ExecuteProcedure(string procedure, params Param[] parameters)
@@ -58,8 +63,6 @@ namespace ServForOracle.NetCore
 
             return (T)(await returnMetadata.GetValueFromRefCursorAsync(returnType, retOra.Value as OracleRefCursor));
         }
-
-        
 
         public T ExecuteFunction<T>(string function, OracleUDTInfo udtInfo, params Param[] parameters)
         {
