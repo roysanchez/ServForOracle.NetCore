@@ -9,7 +9,7 @@ namespace ServForOracle.NetCore.Parameters
 {
     public abstract class Param
     {
-        protected internal Param(Type type, object value, ParameterDirection direction)
+        protected Param(Type type, object value, ParameterDirection direction)
         {
             Type = type;
             Value = value;
@@ -26,7 +26,7 @@ namespace ServForOracle.NetCore.Parameters
             var type = typeof(T);
             if(type.IsValueType || type == typeof(string))
             {
-                return new ParamCLRType<T>(value, direction);
+                return new ParamClrType<T>(value, direction);
             }
             else
             {

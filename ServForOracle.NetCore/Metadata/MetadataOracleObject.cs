@@ -110,7 +110,7 @@ namespace ServForOracle.NetCore.Metadata
                     {
                         foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
                         {
-                            parameters.Add(new OracleParameter($":{startNumber++}", value != null ? prop.NETProperty.GetValue(temp) : null));
+                            parameters.Add(new OracleParameter($":{startNumber++}", temp != null ? prop.NETProperty.GetValue(temp) : null));
                         }
                     }
                 }

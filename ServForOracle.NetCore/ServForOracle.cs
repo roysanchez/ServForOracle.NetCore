@@ -285,7 +285,7 @@ namespace ServForOracle.NetCore
                 {
                     query.Append(paramObject.ParameterName);
                 }
-                else if (param is ParamCLRType clrType)
+                else if (param is ParamClrType clrType)
                 {
                     var name = $":{info.ParameterCounter++}";
                     query.Append(name);

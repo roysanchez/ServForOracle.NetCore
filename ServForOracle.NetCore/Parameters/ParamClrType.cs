@@ -8,18 +8,18 @@ using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore.Parameters
 {
-    public class ParamCLRType<T> : ParamCLRType
+    public class ParamClrType<T> : ParamClrType
     {
         private const int VARCHAR_MAX_SIZE = 32000;
         internal MetadataOracle Metadata { get; private set; }
         public new T Value { get; private set; }
 
-        public ParamCLRType(T value, ParameterDirection direction)
+        public ParamClrType(T value, ParameterDirection direction)
             : this(value, direction, new MetadataOracle())
         {
         }
 
-        internal ParamCLRType(T value, ParameterDirection direction, MetadataOracle metadata)
+        internal ParamClrType(T value, ParameterDirection direction, MetadataOracle metadata)
             : base(typeof(T), value, direction)
         {
             Metadata = metadata;
@@ -44,7 +44,7 @@ namespace ServForOracle.NetCore.Parameters
             {
                 Direction = Direction
             };
-            
+
             if (Type.IsValueType)
             {
                 if (Type == typeof(char) || Type == typeof(char?))
@@ -64,7 +64,7 @@ namespace ServForOracle.NetCore.Parameters
                 {
                     param.OracleDbType = OracleDbType.Int32;
                 }
-                else if (Type == typeof(long) || Type == typeof(long))
+                else if (Type == typeof(long) || Type == typeof(long?))
                 {
                     param.OracleDbType = OracleDbType.Int64;
                 }
@@ -88,8 +88,7 @@ namespace ServForOracle.NetCore.Parameters
                 {
                     param.OracleDbType = OracleDbType.Boolean;
                 }
-                //else
-                //    throw new Exception(string.Format(TypeNotConfiguredMessage, type.Name));
+                // TODO Log Error
             }
             else if (Type.IsArray && Type == typeof(byte[]))
             {
@@ -107,17 +106,16 @@ namespace ServForOracle.NetCore.Parameters
                     param.Size = default;
                 }
             }
-            //else
-            //    throw new Exception(string.Format(InvalidClassMessage, type.Name));
+            //TODO Log Error
 
             return param;
         }
     }
 
-    public abstract class ParamCLRType: Param
+    public abstract class ParamClrType : Param
     {
-        public ParamCLRType(Type type, object value, ParameterDirection direction)
-            :base(type, value, direction)
+        public ParamClrType(Type type, object value, ParameterDirection direction)
+            : base(type, value, direction)
         {
         }
 
