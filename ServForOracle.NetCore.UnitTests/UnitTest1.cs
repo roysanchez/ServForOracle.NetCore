@@ -1,14 +1,22 @@
 using Oracle.ManagedDataAccess.Client;
 using System;
 using Xunit;
+using ServForOracle.NetCore.Config;
 
 namespace ServForOracle.NetCore.UnitTests
 {
     public class UnitTest1
     {
+        public class TestClass
+        {
+            public string Roy { get; set; }
+        }
         [Fact]
         public void Test1()
         {
+            var PresetConfiguration = new ConfigurePresetMappings();
+            var test = new PresetMap<TestClass>(new OracleUDTInfo("uniserv.Roy"), (c => c.Roy, "Roy2"));
+
             //var serv = new ServForOracle(new OracleConnection(""));
             //var roy = "1234";
             //serv.ExecuteProcedure("uniserv.proc_prueba_net_core_out_1", roy);
