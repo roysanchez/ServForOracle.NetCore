@@ -1,41 +1,24 @@
 ﻿using ServForOracle.NetCore.Metadata;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 
 namespace ServForOracle.NetCore.Config
 {
-    public class PresetMappings
+
+    
+
+    public class ConfigurePresetMappings
     {
-        public void AddOracleUDT<T>(OracleUDTInfo info,
-            params (Expression<Func<T, object>> action, string propertyName)[] propiedades)
-        {
-            AddOracleUDTConfiguration(info, propiedades);
-        }
+        public void AddOracleUDT<T>(params PresetMap[] presets)
+            => AddOracleUDTConfiguration(typeof(T), presets);
 
-        public static void AddOracleUDTConfiguration<T>(OracleUDTInfo info,
-            params (Expression<Func<T, object>> action, string propertyName)[] propiedades)
+        public void AddOracleUDTConfiguration(Type type, params PresetMap[] presets)
         {
-            MetadataBuilder.AddOracleUDTPresets(typeof(T), info, ConvertToUDTPropertyMapArray(propiedades));
-        }
-
-        private static UDTPropertyNetPropertyMap[] ConvertToUDTPropertyMapArray<T>(
-                (Expression<Func<T, object>> action, string newName)[] replacedPropertiesUdtNames)
-        {
-            return replacedPropertiesUdtNames.Select(
-                c =>
-                {
-                    if (!(c.action.Body is MemberExpression memberExpression))
-                    {
-                        var unaryExpression = c.action.Body as UnaryExpression;
-                        memberExpression = unaryExpression.Operand as MemberExpression;
-                    }
-
-                    return new UDTPropertyNetPropertyMap(memberExpression.Member.Name, c.newName);
-                }
-            ).ToArray();
+            foreach(var p in presets)
+            {
+                MetadataBuilder.AddOracleUDTPresets(type, p.Info, p.ReplacedProperties);
+            }
         }
     }
 }
