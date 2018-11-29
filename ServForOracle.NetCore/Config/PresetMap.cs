@@ -48,6 +48,7 @@ namespace ServForOracle.NetCore.Config
         private UDTPropertyNetPropertyMap[] ConvertToUDTPropertyMapArray(
                 (Expression<Func<T, object>> action, string newName)[] replacedPropertiesUdtNames)
         {
+            Type = typeof(T);
             return replacedPropertiesUdtNames.Select(
                 c =>
                 {
@@ -65,6 +66,7 @@ namespace ServForOracle.NetCore.Config
 
     public abstract class PresetMap
     {
+        public Type Type { get; set; }
         public OracleUDTInfo Info { get; internal set; }
         internal UDTPropertyNetPropertyMap[] ReplacedProperties { get; set; }
     }

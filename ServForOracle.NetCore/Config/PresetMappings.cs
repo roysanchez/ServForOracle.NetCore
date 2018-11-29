@@ -10,14 +10,18 @@ namespace ServForOracle.NetCore.Config
 
     public class ConfigurePresetMappings
     {
-        public void AddOracleUDT<T>(params PresetMap[] presets)
-            => AddOracleUDTConfiguration(typeof(T), presets);
-
-        public void AddOracleUDTConfiguration(Type type, params PresetMap[] presets)
+        public void AddOracleUDT(params PresetMap[] presets)
         {
-            foreach(var p in presets)
+            if (presets != null)
             {
-                MetadataBuilder.AddOracleUDTPresets(type, p.Info, p.ReplacedProperties);
+                foreach (var p in presets)
+                {
+                    MetadataBuilder.AddOracleUDTPresets(p.Type, p.Info, p.ReplacedProperties);
+                }
+            }
+            else
+            {
+                //TODO Throw warning
             }
         }
     }
