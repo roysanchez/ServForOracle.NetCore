@@ -5,7 +5,7 @@
     <LangVersion>7.1</LangVersion>
     <PackageId>ServForOracle.NetCore</PackageId>
     <ProjectGuid>{9A19103F-16F7-4668-BE54-9A1E7A4F7556}</ProjectGuid>
-    <Version>0.5-beta</Version>
+    <Version>0.6-beta</Version>
     <Title>ServForOracle.NetCore - Oracle Package and Type wrapper for .NET</Title>
     <Authors>Roy Sánchez</Authors>
     <Description>A wrapper over Oracle ODP.NET to make easier the calls to packages and enable the use of UDTs (User Define Types)</Description>
