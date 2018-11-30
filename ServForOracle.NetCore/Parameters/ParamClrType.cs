@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore.Parameters
 {
-    public class ParamClrType<T> : ParamClrType
+    public class ParamClrType<T> : ParamClrType, IParam<T>
     {
         private const int VARCHAR_MAX_SIZE = 32000;
         internal MetadataOracle Metadata { get; private set; }

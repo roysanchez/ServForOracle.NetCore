@@ -22,27 +22,27 @@ namespace ServForOracle.NetCore
             _Builder = new MetadataBuilder(connection);
         }
 
-        public async Task ExecuteProcedureAsync(string procedure, params Param[] parameters)
+        public async Task ExecuteProcedureAsync(string procedure, params IParam[] parameters)
         {
             await ExecuteAsync(procedure, parameters);
         }
 
-        public void ExecuteProcedure(string procedure, params Param[] parameters)
+        public void ExecuteProcedure(string procedure, params IParam[] parameters)
         {
             Execute(procedure, parameters);
         }
 
-        public async Task<T> ExecuteFunctionAsync<T>(string function, params Param[] parameters)
+        public async Task<T> ExecuteFunctionAsync<T>(string function, params IParam[] parameters)
         {
             return await ExecuteFunctionAsync<T>(function, null, parameters);
         }
 
-        public T ExecuteFunction<T>(string function, params Param[] parameters)
+        public T ExecuteFunction<T>(string function, params IParam[] parameters)
         {
             return ExecuteFunction<T>(function, null, parameters);
         }
 
-        public async Task<T> ExecuteFunctionAsync<T>(string function, OracleUdtInfo udtInfo, params Param[] parameters)
+        public async Task<T> ExecuteFunctionAsync<T>(string function, OracleUdtInfo udtInfo, params IParam[] parameters)
         {
             var returnType = typeof(T);
             var returnMetadata = await _Builder.GetOrRegisterMetadataOracleObjectAsync<T>(udtInfo);
@@ -64,7 +64,7 @@ namespace ServForOracle.NetCore
             return (T)(await returnMetadata.GetValueFromRefCursorAsync(returnType, retOra.Value as OracleRefCursor));
         }
 
-        public T ExecuteFunction<T>(string function, OracleUdtInfo udtInfo, params Param[] parameters)
+        public T ExecuteFunction<T>(string function, OracleUdtInfo udtInfo, params IParam[] parameters)
         {
             var returnType = typeof(T);
             var returnMetadata = _Builder.GetOrRegisterMetadataOracleObject<T>(udtInfo);
@@ -96,7 +96,7 @@ namespace ServForOracle.NetCore
             return retOra;
         }
 
-        private async Task ExecuteAsync(string method, Param[] parameters,
+        private async Task ExecuteAsync(string method, IParam[] parameters,
             Func<ExecutionInformation, Task<AdditionalInformation>> beforeEnd = null)
         {
             await LoadObjectParametersMetadataAsync(parameters);
@@ -121,7 +121,7 @@ namespace ServForOracle.NetCore
 
         }
 
-        private void Execute(string method, Param[] parameters, Func<ExecutionInformation, AdditionalInformation> beforeEnd = null)
+        private void Execute(string method, IParam[] parameters, Func<ExecutionInformation, AdditionalInformation> beforeEnd = null)
         {
             LoadObjectParametersMetadata(parameters);
 
@@ -202,7 +202,7 @@ namespace ServForOracle.NetCore
             cmd.ExecuteNonQuery();
         }
 
-        private async Task LoadObjectParametersMetadataAsync(Param[] parameters)
+        private async Task LoadObjectParametersMetadataAsync(IParam[] parameters)
         {
             var tasksList = new List<Task>(parameters.Length);
             foreach (var param in parameters.Where(c => c is ParamObject).Cast<ParamObject>())
@@ -213,7 +213,7 @@ namespace ServForOracle.NetCore
             await Task.WhenAll(tasksList.ToArray());
         }
 
-        private void LoadObjectParametersMetadata(Param[] parameters)
+        private void LoadObjectParametersMetadata(IParam[] parameters)
         {
             Parallel.ForEach(parameters.Where(c => c is ParamObject).Cast<ParamObject>(), param =>
             {
@@ -221,7 +221,7 @@ namespace ServForOracle.NetCore
             });
         }
 
-        private (StringBuilder declaration, string body) ProcessDeclarationAndBody(Param[] parameters, ExecutionInformation info)
+        private (StringBuilder declaration, string body) ProcessDeclarationAndBody(IParam[] parameters, ExecutionInformation info)
         {
             var body = new StringBuilder();
             var declaration = new StringBuilder();
@@ -252,7 +252,7 @@ namespace ServForOracle.NetCore
             return (declaration, body.ToString());
         }
 
-        private StringBuilder ProcessOutputParameters(Param[] parameters, ExecutionInformation info)
+        private StringBuilder ProcessOutputParameters(IParam[] parameters, ExecutionInformation info)
         {
             var outparameters = new StringBuilder();
             foreach (var param in parameters.Where(c => c is ParamObject).Cast<ParamObject>()
@@ -268,7 +268,7 @@ namespace ServForOracle.NetCore
             return outparameters;
         }
 
-        private string ProcessQuery(string method, Param[] parameters, ExecutionInformation info)
+        private string ProcessQuery(string method, IParam[] parameters, ExecutionInformation info)
         {
             var query = new StringBuilder(method + "(");
             bool first = true;

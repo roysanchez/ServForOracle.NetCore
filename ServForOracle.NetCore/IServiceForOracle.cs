@@ -8,11 +8,11 @@ namespace ServForOracle.NetCore
 {
     public interface IServiceForOracle
     {
-        void ExecuteProcedure(string procedure, params Param[] parameters);
-        Task ExecuteProcedureAsync(string procedure, params Param[] parameters);
-        T ExecuteFunction<T>(string function, params Param[] parameters);
-        T ExecuteFunction<T>(string function, OracleUdtInfo udtInfo, params Param[] parameters);
-        Task<T> ExecuteFunctionAsync<T>(string function, params Param[] parameters);
-        Task<T> ExecuteFunctionAsync<T>(string function, OracleUdtInfo udtInfo, params Param[] parameters);
+        void ExecuteProcedure(string procedure, params IParam[] parameters);
+        Task ExecuteProcedureAsync(string procedure, params IParam[] parameters);
+        T ExecuteFunction<T>(string function, params IParam[] parameters);
+        T ExecuteFunction<T>(string function, OracleUdtInfo udtInfo, params IParam[] parameters);
+        Task<T> ExecuteFunctionAsync<T>(string function, params IParam[] parameters);
+        Task<T> ExecuteFunctionAsync<T>(string function, OracleUdtInfo udtInfo, params IParam[] parameters);
     }
 }

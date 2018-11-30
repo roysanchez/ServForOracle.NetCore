@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore.Parameters
 {
-    public class ParamObject<T> : ParamObject
+    public class ParamObject<T> : ParamObject, IParam<T>
     {
         internal MetadataOracleObject<T> Metadata { get; private set; }
 

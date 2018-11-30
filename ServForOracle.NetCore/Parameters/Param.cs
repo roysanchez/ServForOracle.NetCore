@@ -7,7 +7,18 @@ using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore.Parameters
 {
-    public abstract class Param
+    public interface IParam<T> : IParam
+    {
+        T Value { get; }
+    }
+
+    public interface IParam
+    {
+        Type Type { get; }
+        ParameterDirection Direction { get; }
+    }
+
+    public abstract class Param: IParam
     {
         protected Param(Type type, object value, ParameterDirection direction)
         {
@@ -20,11 +31,11 @@ namespace ServForOracle.NetCore.Parameters
         public virtual object Value { get; protected set; }
         internal abstract Task SetOutputValueAsync(object value);
         internal abstract void SetOutputValue(object value);
-        
-        public static Param Create<T>(T value, ParameterDirection direction)
+
+        public static IParam<T> Create<T>(T value, ParameterDirection direction)
         {
             var type = typeof(T);
-            if(type.IsValueType || type == typeof(string))
+            if (type.IsValueType || type == typeof(string))
             {
                 return new ParamClrType<T>(value, direction);
             }
@@ -34,8 +45,8 @@ namespace ServForOracle.NetCore.Parameters
             }
         }
 
-        public static Param Input<T>(T value) => Create(value, ParameterDirection.Input);
-        public static Param Output<T>() => Create(default(T), ParameterDirection.Output);
-        public static Param InputOutput<T>(T value) => Create(value, ParameterDirection.InputOutput);
+        public static IParam<T> Input<T>(T value) => Create(value, ParameterDirection.Input);
+        public static IParam<T> Output<T>() => Create(default(T), ParameterDirection.Output);
+        public static IParam<T> InputOutput<T>(T value) => Create(value, ParameterDirection.InputOutput);
     }
 }
