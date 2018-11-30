@@ -4,7 +4,7 @@ using System.Text;
 
 namespace ServForOracle.NetCore
 {
-    public class OracleUDTInfo : IEquatable<OracleUDTInfo>
+    public class OracleUDTInfo : IEquatable<OracleUDTInfo>, IEqualityComparer<OracleUDTInfo>
     {
         public string ObjectSchema { get; private set; }
         public string ObjectName { get; private set; }
@@ -18,20 +18,23 @@ namespace ServForOracle.NetCore
                 throw new ArgumentNullException(nameof(objectName));
             }
 
+            var errorString = $"The object {objectName} is invalid, it needs to havet the format SCHEMA.OBJECT_NAME";
+
             var objectParts = objectName.ToUpper().Split('.');
             if (objectParts.Length != 2)
             {
-                throw new ArgumentException("The object name is invalid");
+                throw new ArgumentException(nameof(objectName), errorString);
             }
 
             if (string.IsNullOrWhiteSpace(objectParts[0]))
             {
-                throw new ArgumentNullException("The object schema is invalid");
+                throw new ArgumentException(nameof(objectName), errorString);
             }
             if (string.IsNullOrWhiteSpace(objectParts[1]))
             {
-                throw new ArgumentNullException("the object name is invalid");
+                throw new ArgumentException(nameof(objectName), errorString);
             }
+
             ObjectSchema = objectParts[0];
             ObjectName = objectParts[1];
 
@@ -99,6 +102,30 @@ namespace ServForOracle.NetCore
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(CollectionSchema);
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(CollectionName);
             return hashCode;
+        }
+
+        public bool Equals(OracleUDTInfo x, OracleUDTInfo y)
+        {
+            if (x is null && y is null)
+            {
+                return true;
+            }
+            else
+            {
+                return x.Equals(y);
+            }
+        }
+
+        public int GetHashCode(OracleUDTInfo obj)
+        {
+            if (obj is null)
+            {
+                return 0;
+            }
+            else
+            {
+                return obj.GetHashCode();
+            }
         }
     }
 }

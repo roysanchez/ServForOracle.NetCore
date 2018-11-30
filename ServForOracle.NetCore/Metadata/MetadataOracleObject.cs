@@ -128,7 +128,7 @@ namespace ServForOracle.NetCore.Metadata
 
         private string GetRefCursorCollectionQuery(int startNumber, string fieldName)
         {
-            var query = new StringBuilder($"open :{startNumber++} for select ");
+            var query = new StringBuilder($"open :{startNumber} for select ");
             var first = true;
             foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null))
             {
@@ -149,7 +149,7 @@ namespace ServForOracle.NetCore.Metadata
 
         private string GetRefCursorObjectQuery(int startNumber, string fieldName)
         {
-            var query = new StringBuilder($"open :{startNumber++} for select ");
+            var query = new StringBuilder($"open :{startNumber} for select ");
             var first = true;
             foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null))
             {

@@ -16,10 +16,23 @@ namespace ServForOracle.NetCore
         /// </summary>
         public OracleUDTInfo UDTInfo { get; private set; }
 
-        public OracleUDTAttribute(string objectName, string collectionName = null, string schema = null,
-            string collectionSchema = null)
+        public OracleUDTAttribute(string objectName)
+            :this(string.Empty, objectName)
         {
+        }
 
+        public OracleUDTAttribute(string schema, string objectName)
+            :this(schema, objectName, string.Empty)
+        {
+        }
+
+        public OracleUDTAttribute(string schema, string objectName, string collectionName)
+            :this(schema, objectName, string.Empty, collectionName)
+        {
+        }
+
+        public OracleUDTAttribute(string schema, string objectName, string collectionSchema, string collectionName)
+        {
             UDTInfo = new OracleUDTInfo(schema, objectName, collectionName, collectionSchema);
         }
     }

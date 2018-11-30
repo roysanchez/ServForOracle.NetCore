@@ -95,10 +95,9 @@ namespace ServForOracle.NetCore.Parameters
 
     public abstract class ParamObject : Param
     {
-        public ParamObject(Type type, object value, ParameterDirection direction)
+        protected ParamObject(Type type, object value, ParameterDirection direction)
             : base(type, value, direction)
         {
-
         }
 
         internal virtual OracleUDTInfo UDTInfo { get; }

@@ -9,6 +9,9 @@ namespace ServForOracle.NetCore.Metadata
     {
         private UDTPropertyNetPropertyMap[] GetUDTPropertyNames(PropertyInfo[] properties)
         {
+            if (properties == null || properties.Length == 0)
+                return new UDTPropertyNetPropertyMap[0];
+
             return properties.Select(c =>
             {
                 var attribute = c.GetCustomAttribute<OracleUDTPropertyAttribute>();

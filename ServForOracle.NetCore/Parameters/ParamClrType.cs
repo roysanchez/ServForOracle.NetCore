@@ -114,7 +114,7 @@ namespace ServForOracle.NetCore.Parameters
 
     public abstract class ParamClrType : Param
     {
-        public ParamClrType(Type type, object value, ParameterDirection direction)
+        protected ParamClrType(Type type, object value, ParameterDirection direction)
             : base(type, value, direction)
         {
         }
