@@ -7,17 +7,6 @@ using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore.Parameters
 {
-    public interface IParam<T> : IParam
-    {
-        T Value { get; }
-    }
-
-    public interface IParam
-    {
-        Type Type { get; }
-        ParameterDirection Direction { get; }
-    }
-
     public abstract class Param: IParam
     {
         protected Param(Type type, object value, ParameterDirection direction)
