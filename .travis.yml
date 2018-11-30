@@ -10,8 +10,9 @@ install:
   - dotnet tool install dotnet-sonarscanner --version 4.4.2 --tool-path .tools
   - dotnet restore
 script:
-  - $TRAVIS_BUILD_DIR/.tools/dotnet-sonarscanner begin /k:"roysanchez_ServForOracle.NetCore" /n:"ServForOracle.NetCore" /d:sonar.login="$SONAR_TOKEN" /d:sonar.host.url="https://sonarcloud.io"
+  - $TRAVIS_BUILD_DIR/.tools/dotnet-sonarscanner begin /k:"roysanchez_ServForOracle.NetCore" /n:"ServForOracle.NetCore" /d:sonar.login="$SONAR_TOKEN" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.xunit.reportsPaths="$TRAVIS_BUILD_DIR/XUnitResults.xml"
   - dotnet build
+  - dotnet test --logger:"xunit;LogFilePath=test_result.xml"
   - $TRAVIS_BUILD_DIR/.tools/dotnet-sonarscanner end /d:sonar.login="$SONAR_TOKEN"
 notifications:
   email: false
