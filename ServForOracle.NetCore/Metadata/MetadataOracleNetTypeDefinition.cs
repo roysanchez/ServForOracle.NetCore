@@ -7,16 +7,16 @@ namespace ServForOracle.NetCore.Metadata
 {
     internal class MetadataOracleNetTypeDefinition : MetadataOracleTypeDefinition
     {
-        private UDTPropertyNetPropertyMap[] GetUDTPropertyNames(PropertyInfo[] properties)
+        private UdtPropertyNetPropertyMap[] GetUDTPropertyNames(PropertyInfo[] properties)
         {
             if (properties == null || properties.Length == 0)
-                return new UDTPropertyNetPropertyMap[0];
+                return new UdtPropertyNetPropertyMap[0];
 
             return properties.Select(c =>
             {
-                var attribute = c.GetCustomAttribute<OracleUDTPropertyAttribute>();
+                var attribute = c.GetCustomAttribute<OracleUdtPropertyAttributeAttribute>();
                 if (attribute != null)
-                    return new UDTPropertyNetPropertyMap(c.Name, attribute.PropertyName);
+                    return new UdtPropertyNetPropertyMap(c.Name, attribute.PropertyName);
                 else
                     return null;
             })
@@ -25,7 +25,7 @@ namespace ServForOracle.NetCore.Metadata
         }
 
         public MetadataOracleNetTypeDefinition(Type type, MetadataOracleTypeDefinition baseMetadataDefinition,
-           UDTPropertyNetPropertyMap[] presetProperties)
+           UdtPropertyNetPropertyMap[] presetProperties)
         {
             UDTInfo = baseMetadataDefinition.UDTInfo;
 

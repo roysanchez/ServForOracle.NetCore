@@ -15,7 +15,7 @@ namespace ServForOracle.NetCore.UnitTests
         public void Test1()
         {
             var PresetConfiguration = new ConfigurePresetMappings();
-            var test = new PresetMap<TestClass>(new OracleUDTInfo("uniserv.Roy"), (c => c.Roy, "Roy2"));
+            var test = new PresetMap<TestClass>(new OracleUdtInfo("uniserv.Roy"), (c => c.Roy, "Roy2"));
 
             //var serv = new ServForOracle(new OracleConnection(""));
             //var roy = "1234";

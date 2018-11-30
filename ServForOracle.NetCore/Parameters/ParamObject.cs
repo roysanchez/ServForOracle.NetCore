@@ -16,8 +16,8 @@ namespace ServForOracle.NetCore.Parameters
 
         private string _ParameterName;
 
-        private OracleUDTInfo _UDTInfo;
-        internal override OracleUDTInfo UDTInfo => _UDTInfo;
+        private OracleUdtInfo _UDTInfo;
+        internal override OracleUdtInfo UDTInfo => _UDTInfo;
         public override string ParameterName => _ParameterName;
 
         public ParamObject(T value, ParameterDirection direction)
@@ -26,7 +26,7 @@ namespace ServForOracle.NetCore.Parameters
             Value = value;
         }
 
-        public ParamObject(T value, ParameterDirection direction, OracleUDTInfo udtInfo)
+        public ParamObject(T value, ParameterDirection direction, OracleUdtInfo udtInfo)
             : this(value, direction)
         {
             _UDTInfo = udtInfo ?? throw new ArgumentNullException(nameof(udtInfo));
@@ -100,7 +100,7 @@ namespace ServForOracle.NetCore.Parameters
         {
         }
 
-        internal virtual OracleUDTInfo UDTInfo { get; }
+        internal virtual OracleUdtInfo UDTInfo { get; }
         public virtual string ParameterName { get; }
         public abstract void SetParameterName(string name);
         public abstract string GetDeclareLine();

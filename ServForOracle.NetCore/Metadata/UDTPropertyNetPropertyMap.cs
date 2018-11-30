@@ -4,9 +4,9 @@ using System.Text;
 
 namespace ServForOracle.NetCore.Metadata
 {
-    internal class UDTPropertyNetPropertyMap: IEquatable<UDTPropertyNetPropertyMap>
+    internal class UdtPropertyNetPropertyMap: IEquatable<UdtPropertyNetPropertyMap>
     {
-        public UDTPropertyNetPropertyMap(string netPropertyName, string udtPropertyName)
+        public UdtPropertyNetPropertyMap(string netPropertyName, string udtPropertyName)
         {
             UDTPropertyName = udtPropertyName.ToUpper();
             NetPropertyName = netPropertyName.ToUpper();
@@ -15,7 +15,7 @@ namespace ServForOracle.NetCore.Metadata
         public string UDTPropertyName { get; private set; }
         public string NetPropertyName { get; private set; }
 
-        public bool Equals(UDTPropertyNetPropertyMap other)
+        public bool Equals(UdtPropertyNetPropertyMap other)
         {
             return other != null &&
                 UDTPropertyName == other.UDTPropertyName &&

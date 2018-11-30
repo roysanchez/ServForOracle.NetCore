@@ -4,14 +4,14 @@ using System.Text;
 
 namespace ServForOracle.NetCore
 {
-    public class OracleUDTInfo : IEquatable<OracleUDTInfo>, IEqualityComparer<OracleUDTInfo>
+    public class OracleUdtInfo : IEquatable<OracleUdtInfo>, IEqualityComparer<OracleUdtInfo>
     {
         public string ObjectSchema { get; private set; }
         public string ObjectName { get; private set; }
         public string CollectionSchema { get; private set; }
         public string CollectionName { get; private set; }
 
-        public OracleUDTInfo(string objectName)
+        public OracleUdtInfo(string objectName)
         {
             if (string.IsNullOrWhiteSpace(objectName))
             {
@@ -40,7 +40,7 @@ namespace ServForOracle.NetCore
 
         }
 
-        public OracleUDTInfo(string schema, string objectName)
+        public OracleUdtInfo(string schema, string objectName)
         {
             if (string.IsNullOrWhiteSpace(objectName))
             {
@@ -55,7 +55,7 @@ namespace ServForOracle.NetCore
             ObjectSchema = schema.ToUpper();
         }
 
-        public OracleUDTInfo(string schema, string objectName, string collectionName)
+        public OracleUdtInfo(string schema, string objectName, string collectionName)
             :this(schema, objectName)
         {
             if(string.IsNullOrWhiteSpace(collectionName))
@@ -67,7 +67,7 @@ namespace ServForOracle.NetCore
             CollectionSchema = ObjectSchema;
         }
 
-        public OracleUDTInfo(string objectSchema, string objectName, string collectionSchema, string collectionName)
+        public OracleUdtInfo(string objectSchema, string objectName, string collectionSchema, string collectionName)
             :this(objectSchema, objectName, collectionName)
         {
             if(string.IsNullOrWhiteSpace(collectionSchema))
@@ -84,10 +84,10 @@ namespace ServForOracle.NetCore
 
         public override bool Equals(object obj)
         {
-            return Equals(obj as OracleUDTInfo);
+            return Equals(obj as OracleUdtInfo);
         }
 
-        public bool Equals(OracleUDTInfo other)
+        public virtual bool Equals(OracleUdtInfo other)
         {
             return ObjectSchema == other.ObjectSchema &&
                    ObjectName == other.ObjectName &&
@@ -104,7 +104,7 @@ namespace ServForOracle.NetCore
             return hashCode;
         }
 
-        public bool Equals(OracleUDTInfo x, OracleUDTInfo y)
+        public virtual bool Equals(OracleUdtInfo x, OracleUdtInfo y)
         {
             if (x is null && y is null)
             {
@@ -120,7 +120,7 @@ namespace ServForOracle.NetCore
             }
         }
 
-        public int GetHashCode(OracleUDTInfo obj)
+        public int GetHashCode(OracleUdtInfo obj)
         {
             if (obj is null)
             {

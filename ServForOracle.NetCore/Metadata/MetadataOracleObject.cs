@@ -19,18 +19,18 @@ namespace ServForOracle.NetCore.Metadata
         private readonly Type Type;
         internal readonly MetadataOracleNetTypeDefinition OracleTypeNetMetadata;
 
-        public MetadataOracleObject(MetadataOracleTypeDefinition metadataOracleType, UDTPropertyNetPropertyMap[] customProperties)
+        public MetadataOracleObject(MetadataOracleTypeDefinition metadataOracleType, UdtPropertyNetPropertyMap[] customProperties)
         {
             Type = typeof(T);
             if (Type.IsCollection())
             {
                 OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(Type.GetCollectionUnderType(), metadataOracleType,
-                    customProperties ?? new UDTPropertyNetPropertyMap[] { });
+                    customProperties ?? new UdtPropertyNetPropertyMap[] { });
             }
             else
             {
                 OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(Type, metadataOracleType,
-                    customProperties ?? new UDTPropertyNetPropertyMap[] { });
+                    customProperties ?? new UdtPropertyNetPropertyMap[] { });
             }
 
             regex = new Regex(Regex.Escape("$"));
@@ -258,7 +258,7 @@ namespace ServForOracle.NetCore.Metadata
 
         }
 
-        public string GetDeclareLine(Type type, string parameterName, OracleUDTInfo udtInfo)
+        public string GetDeclareLine(Type type, string parameterName, OracleUdtInfo udtInfo)
         {
             if (type.IsCollection())
                 return $"{parameterName} {udtInfo.FullCollectionName} := {udtInfo.FullCollectionName}();";

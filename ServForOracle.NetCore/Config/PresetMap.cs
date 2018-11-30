@@ -9,27 +9,27 @@ namespace ServForOracle.NetCore.Config
     {
         public PresetMap(string objectSchema, string objectName, string collectionSchema, string collectionName,
             params (Expression<Func<T, object>> property, string UDTPropertyName)[] replacedProperties)
-            : this(new OracleUDTInfo(objectSchema, objectName, collectionSchema, collectionName), replacedProperties)
+            : this(new OracleUdtInfo(objectSchema, objectName, collectionSchema, collectionName), replacedProperties)
         {
         }
 
         public PresetMap(string schema, string objectName, string collectionName,
             params (Expression<Func<T, object>> property, string UDTPropertyName)[] replacedProperties)
-            : this(new OracleUDTInfo(schema, objectName, collectionName), replacedProperties)
+            : this(new OracleUdtInfo(schema, objectName, collectionName), replacedProperties)
         {
         }
 
         public PresetMap(string schema, string objectName, params (Expression<Func<T, object>> property, string UDTPropertyName)[] replacedProperties)
-            : this(new OracleUDTInfo(schema, objectName), replacedProperties)
+            : this(new OracleUdtInfo(schema, objectName), replacedProperties)
         {
         }
 
         public PresetMap(string objectName, params (Expression<Func<T, object>> property, string UDTPropertyName)[] replacedProperties)
-            : this(new OracleUDTInfo(objectName), replacedProperties)
+            : this(new OracleUdtInfo(objectName), replacedProperties)
         {
         }
 
-        public PresetMap(OracleUDTInfo info, params (Expression<Func<T, object>> property, string UDTPropertyName)[] replacedProperties)
+        public PresetMap(OracleUdtInfo info, params (Expression<Func<T, object>> property, string UDTPropertyName)[] replacedProperties)
             : this(replacedProperties)
         {
             Info = info;
@@ -45,7 +45,7 @@ namespace ServForOracle.NetCore.Config
             ReplacedProperties = ConvertToUDTPropertyMapArray(replacedProperties);
         }
 
-        private UDTPropertyNetPropertyMap[] ConvertToUDTPropertyMapArray(
+        private UdtPropertyNetPropertyMap[] ConvertToUDTPropertyMapArray(
                 (Expression<Func<T, object>> action, string newName)[] replacedPropertiesUdtNames)
         {
             Type = typeof(T);
@@ -58,7 +58,7 @@ namespace ServForOracle.NetCore.Config
                         memberExpression = unaryExpression.Operand as MemberExpression;
                     }
 
-                    return new UDTPropertyNetPropertyMap(memberExpression.Member.Name, c.newName);
+                    return new UdtPropertyNetPropertyMap(memberExpression.Member.Name, c.newName);
                 }
             ).ToArray();
         }
@@ -67,7 +67,7 @@ namespace ServForOracle.NetCore.Config
     public abstract class PresetMap
     {
         public Type Type { get; set; }
-        public OracleUDTInfo Info { get; internal set; }
-        internal UDTPropertyNetPropertyMap[] ReplacedProperties { get; set; }
+        public OracleUdtInfo Info { get; internal set; }
+        internal UdtPropertyNetPropertyMap[] ReplacedProperties { get; set; }
     }
 }

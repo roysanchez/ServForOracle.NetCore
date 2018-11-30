@@ -9,31 +9,31 @@ namespace ServForOracle.NetCore
     /// Attribute that specifies the Oracle UDT Name, must have the format "SCHEMA.UDTOBJECTNAME"
     /// </summary>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
-    public class OracleUDTAttribute : Attribute
+    public class OracleUdtAttributeAttributeAttribute : Attribute
     {
         /// <summary>
         /// The Oracle UDT object name
         /// </summary>
-        public OracleUDTInfo UDTInfo { get; private set; }
+        public OracleUdtInfo UDTInfo { get; private set; }
 
-        public OracleUDTAttribute(string objectName)
+        public OracleUdtAttributeAttributeAttribute(string objectName)
             :this(string.Empty, objectName)
         {
         }
 
-        public OracleUDTAttribute(string schema, string objectName)
+        public OracleUdtAttributeAttributeAttribute(string schema, string objectName)
             :this(schema, objectName, string.Empty)
         {
         }
 
-        public OracleUDTAttribute(string schema, string objectName, string collectionName)
+        public OracleUdtAttributeAttributeAttribute(string schema, string objectName, string collectionName)
             :this(schema, objectName, string.Empty, collectionName)
         {
         }
 
-        public OracleUDTAttribute(string schema, string objectName, string collectionSchema, string collectionName)
+        public OracleUdtAttributeAttributeAttribute(string schema, string objectName, string collectionSchema, string collectionName)
         {
-            UDTInfo = new OracleUDTInfo(schema, objectName, collectionName, collectionSchema);
+            UDTInfo = new OracleUdtInfo(schema, objectName, collectionSchema, collectionName);
         }
     }
 }

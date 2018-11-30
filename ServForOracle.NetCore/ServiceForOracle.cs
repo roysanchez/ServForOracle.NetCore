@@ -42,7 +42,7 @@ namespace ServForOracle.NetCore
             return ExecuteFunction<T>(function, null, parameters);
         }
 
-        public async Task<T> ExecuteFunctionAsync<T>(string function, OracleUDTInfo udtInfo, params Param[] parameters)
+        public async Task<T> ExecuteFunctionAsync<T>(string function, OracleUdtInfo udtInfo, params Param[] parameters)
         {
             var returnType = typeof(T);
             var returnMetadata = await _Builder.GetOrRegisterMetadataOracleObjectAsync<T>(udtInfo);
@@ -64,7 +64,7 @@ namespace ServForOracle.NetCore
             return (T)(await returnMetadata.GetValueFromRefCursorAsync(returnType, retOra.Value as OracleRefCursor));
         }
 
-        public T ExecuteFunction<T>(string function, OracleUDTInfo udtInfo, params Param[] parameters)
+        public T ExecuteFunction<T>(string function, OracleUdtInfo udtInfo, params Param[] parameters)
         {
             var returnType = typeof(T);
             var returnMetadata = _Builder.GetOrRegisterMetadataOracleObject<T>(udtInfo);
