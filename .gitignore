@@ -263,3 +263,5 @@ __pycache__/
 # Travis-CI
 .tools/
 .sonarqube/
+test_result.xml
+test_result.trx
