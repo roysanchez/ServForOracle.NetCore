@@ -205,7 +205,7 @@ namespace ServForOracle.NetCore
         private async Task LoadObjectParametersMetadataAsync(Param[] parameters)
         {
             var tasksList = new List<Task>(parameters.Length);
-            foreach (ParamObject param in parameters.Where(c => c is ParamObject))
+            foreach (var param in parameters.Where(c => c is ParamObject).Cast<ParamObject>())
             {
                 tasksList.Add(param.LoadObjectMetadataAsync(_Builder));
             }
@@ -230,8 +230,7 @@ namespace ServForOracle.NetCore
             declaration.AppendLine("declare");
             body.AppendLine("begin");
 
-            foreach (ParamObject param in parameters
-                .Where(c => c is ParamObject))
+            foreach (var param in parameters.Where(c => c is ParamObject).Cast<ParamObject>())
             {
                 var name = $"p{objCounter++}";
                 param.SetParameterName(name);
@@ -256,8 +255,7 @@ namespace ServForOracle.NetCore
         private StringBuilder ProcessOutputParameters(Param[] parameters, ExecutionInformation info)
         {
             var outparameters = new StringBuilder();
-            foreach (ParamObject param in parameters
-                .Where(c => c is ParamObject)
+            foreach (var param in parameters.Where(c => c is ParamObject).Cast<ParamObject>()
                 .Where(c => c.Direction == ParameterDirection.Output || c.Direction == ParameterDirection.InputOutput))
             {
                 var preparedOutput = param.PrepareOutputParameter(info.ParameterCounter++);

@@ -102,28 +102,38 @@ namespace ServForOracle.NetCore.Metadata
         {
             var parameters = new List<OracleParameter>();
 
-            if (Type.IsCollection())
+            if (Type.IsCollection() && value is IEnumerable list)
             {
-                if (value != null)
-                {
-                    foreach (var temp in value as IEnumerable)
-                    {
-                        foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
-                        {
-                            parameters.Add(new OracleParameter($":{startNumber++}", temp != null ? prop.NETProperty.GetValue(temp) : null));
-                        }
-                    }
-                }
+                parameters.AddRange(ProcessCollectionParameters(list, startNumber));
             }
             else
             {
-                foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
-                {
-                    parameters.Add(new OracleParameter($":{startNumber++}", value != null ? prop.NETProperty.GetValue(value) : null));
-                }
+                parameters.AddRange(ProcessOracleParameter(value, startNumber, out int _));
             }
 
             return parameters.ToArray();
+        }
+
+        private IEnumerable<OracleParameter> ProcessOracleParameter(object value, int startNumber, out int newNumber)
+        {
+            var propertiesParameters = new List<OracleParameter>();
+            foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
+            {
+                propertiesParameters.Add(new OracleParameter($":{startNumber++}", value != null ? prop.NETProperty.GetValue(value) : null));
+            }
+            newNumber = startNumber;
+            return propertiesParameters;
+        }
+
+        private IEnumerable<OracleParameter> ProcessCollectionParameters(IEnumerable value, int startNumber)
+        {
+            var rowsParameters = new List<OracleParameter>();
+            foreach (var temp in value)
+            {
+                rowsParameters.AddRange(ProcessOracleParameter(temp, startNumber, out startNumber));
+            }
+
+            return rowsParameters;
         }
 
         private string GetRefCursorCollectionQuery(int startNumber, string fieldName)
