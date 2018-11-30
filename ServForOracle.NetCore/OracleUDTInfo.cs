@@ -110,6 +110,10 @@ namespace ServForOracle.NetCore
             {
                 return true;
             }
+            else if(x is null || y is null)
+            {
+                return false;
+            }
             else
             {
                 return x.Equals(y);
