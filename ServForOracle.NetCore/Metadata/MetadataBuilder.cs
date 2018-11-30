@@ -137,18 +137,18 @@ namespace ServForOracle.NetCore.Metadata
             if (type.IsCollection())
             {
                 var underType = type.GetCollectionUnderType();
-                udtInfo = underType.GetCustomAttribute<OracleUdtAttributeAttributeAttribute>()?.UDTInfo
+                udtInfo = underType.GetCustomAttribute<OracleUdtAttribute>()?.UDTInfo
                     ?? PresetGetValueOrDefault(underType).Info;
             }
             else
             {
-                udtInfo = type.GetCustomAttribute<OracleUdtAttributeAttributeAttribute>()?.UDTInfo
+                udtInfo = type.GetCustomAttribute<OracleUdtAttribute>()?.UDTInfo
                     ?? PresetGetValueOrDefault(type).Info;
             }
 
             if (udtInfo == null)
             {
-                throw new ArgumentException($"The type {type.FullName} needs to have the {nameof(OracleUdtAttributeAttributeAttribute)}" +
+                throw new ArgumentException($"The type {type.FullName} needs to have the {nameof(OracleUdtAttributeAttribute)}" +
                     $" attribute set or pass the {nameof(OracleUdtInfo)} class to the execute method.");
 
             }
