@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore
 {
-    public interface IServForOracle
+    public interface IServiceForOracle
     {
         void ExecuteProcedure(string procedure, params Param[] parameters);
         Task ExecuteProcedureAsync(string procedure, params Param[] parameters);

@@ -7,7 +7,7 @@ namespace ServForOracle.NetCore
 {
     public static class FunctionExtensions
     {
-        public static T ExecuteFunction<T, A>(this ServForOracle s, string function, ref A p1)
+        public static T ExecuteFunction<T, A>(this IServiceForOracle s, string function, ref A p1)
         {
             var _p1 = Param.InputOutput(p1);
 
@@ -17,7 +17,7 @@ namespace ServForOracle.NetCore
             return temp;
         }
 
-        public static T ExecuteFunction<T, A, B>(this ServForOracle s, string procedure, ref A p1, ref B p2)
+        public static T ExecuteFunction<T, A, B>(this IServiceForOracle s, string procedure, ref A p1, ref B p2)
         {
             var _p1 = Param.InputOutput(p1);
             var _p2 = Param.InputOutput(p2);
@@ -30,7 +30,7 @@ namespace ServForOracle.NetCore
             return temp;
         }
 
-        public static T ExecuteFunction<T, A, B, C>(this ServForOracle s, string procedure, ref A p1, ref B p2, ref C p3)
+        public static T ExecuteFunction<T, A, B, C>(this IServiceForOracle s, string procedure, ref A p1, ref B p2, ref C p3)
         {
             var _p1 = Param.InputOutput(p1);
             var _p2 = Param.InputOutput(p2);
@@ -45,7 +45,7 @@ namespace ServForOracle.NetCore
             return temp;
         }
 
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, ref A p1, ref B p2, ref C p3, ref D p4)
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, ref A p1, ref B p2, ref C p3, ref D p4)
         {
             var _p1 = Param.InputOutput(p1);
             var _p2 = Param.InputOutput(p2);
@@ -62,64 +62,64 @@ namespace ServForOracle.NetCore
             return temp;
         }
 
-        public static T ExecuteFunction<T, A>(this ServForOracle s, string procedure, A p1)
+        public static T ExecuteFunction<T, A>(this IServiceForOracle s, string procedure, A p1)
         => ExecuteFunction<T, A>(s, procedure, ref p1);
         
-        public static T ExecuteFunction<T, A, B>(this ServForOracle s, string procedure, A p1, B p2)
+        public static T ExecuteFunction<T, A, B>(this IServiceForOracle s, string procedure, A p1, B p2)
          => s.ExecuteFunction<T, A, B>(procedure, ref p1, ref p2);
-        public static T ExecuteFunction<T, A, B, C>(this ServForOracle s, string procedure, A p1, B p2, C p3)
+        public static T ExecuteFunction<T, A, B, C>(this IServiceForOracle s, string procedure, A p1, B p2, C p3)
          => s.ExecuteFunction<T, A, B, C>(procedure, ref p1, ref p2, ref p3);
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, A p1, B p2, C p3, D p4)
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, A p1, B p2, C p3, D p4)
          => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
 
 
-        public static T ExecuteFunction<T, A, B>(this ServForOracle s, string procedure, A p1, ref B p2)
+        public static T ExecuteFunction<T, A, B>(this IServiceForOracle s, string procedure, A p1, ref B p2)
          => s.ExecuteFunction<T, A, B>(procedure, ref p1, ref p2);
 
-        public static T ExecuteFunction<T, A, B, C>(this ServForOracle s, string procedure, A p1, ref B p2, C p3)
+        public static T ExecuteFunction<T, A, B, C>(this IServiceForOracle s, string procedure, A p1, ref B p2, C p3)
          => s.ExecuteFunction<T, A, B, C>(procedure, ref p1, ref p2, ref p3);
-        public static T ExecuteFunction<T, A, B, C>(this ServForOracle s, string procedure, A p1, B p2, ref C p3)
+        public static T ExecuteFunction<T, A, B, C>(this IServiceForOracle s, string procedure, A p1, B p2, ref C p3)
          => s.ExecuteFunction<T, A, B, C>(procedure, ref p1, ref p2, ref p3);
-        public static T ExecuteFunction<T, A, B, C>(this ServForOracle s, string procedure, A p1, ref B p2, ref C p3)
+        public static T ExecuteFunction<T, A, B, C>(this IServiceForOracle s, string procedure, A p1, ref B p2, ref C p3)
          => s.ExecuteFunction<T, A, B, C>(procedure, ref p1, ref p2, ref p3);
 
         //4
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, ref A p1, B p2, C p3, D p4)
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, ref A p1, B p2, C p3, D p4)
          => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, ref A p1, ref B p2, C p3, D p4)
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, ref A p1, ref B p2, C p3, D p4)
          => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, ref A p1, ref B p2, ref C p3, D p4)
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, ref A p1, ref B p2, ref C p3, D p4)
          => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, ref A p1, ref B p2, C p3, ref D p4)
-         => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
-
-
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, ref A p1, B p2, ref C p3, D p4)
-         => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, ref A p1, B p2, ref C p3, ref D p4)
-         => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
-
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, ref A p1, B p2, C p3, ref D p4)
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, ref A p1, ref B p2, C p3, ref D p4)
          => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
 
 
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, A p1, ref B p2, C p3, D p4)
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, ref A p1, B p2, ref C p3, D p4)
          => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, A p1, ref B p2, ref C p3, D p4)
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, ref A p1, B p2, ref C p3, ref D p4)
          => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, A p1, ref B p2, C p3, ref D p4)
+
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, ref A p1, B p2, C p3, ref D p4)
+         => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
+
+
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, A p1, ref B p2, C p3, D p4)
+         => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, A p1, ref B p2, ref C p3, D p4)
+         => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, A p1, ref B p2, C p3, ref D p4)
         => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, A p1, ref B p2, ref C p3, ref D p4)
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, A p1, ref B p2, ref C p3, ref D p4)
          => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
 
 
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, A p1, B p2, ref C p3, D p4)
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, A p1, B p2, ref C p3, D p4)
          => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, A p1, B p2, ref C p3, ref D p4)
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, A p1, B p2, ref C p3, ref D p4)
          => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
 
 
-        public static T ExecuteFunction<T, A, B, C, D>(this ServForOracle s, string procedure, A p1, B p2, C p3, ref D p4)
+        public static T ExecuteFunction<T, A, B, C, D>(this IServiceForOracle s, string procedure, A p1, B p2, C p3, ref D p4)
          => s.ExecuteFunction<T, A, B, C, D>(procedure, ref p1, ref p2, ref p3, ref p4);
     }
 }

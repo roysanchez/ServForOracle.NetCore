@@ -11,12 +11,12 @@ using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore
 {
-    public class ServForOracle: IServForOracle
+    public class ServiceForOracle: IServiceForOracle
     {
         private readonly OracleConnection _Connection;
         private readonly MetadataBuilder _Builder;
 
-        public ServForOracle(OracleConnection connection)
+        public ServiceForOracle(OracleConnection connection)
         {
             _Connection = connection;
             _Builder = new MetadataBuilder(connection);
