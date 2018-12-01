@@ -150,7 +150,7 @@ namespace ServForOracle.NetCore.Metadata
                 {
                     query.Append(",");
                 }
-                query.Append($"c.{prop.Name}");
+                query.Append($"value(c).{prop.Name} {prop.Name}");
             }
             query.Append($" from table({fieldName}) c;");
 
