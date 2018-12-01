@@ -14,7 +14,7 @@ namespace ServForOracle.NetCore.Metadata
 
             return properties.Select(c =>
             {
-                var attribute = c.GetCustomAttribute<OracleUdtPropertyAttributeAttribute>();
+                var attribute = c.GetCustomAttribute<OracleUdtPropertyAttribute>();
                 if (attribute != null)
                     return new UdtPropertyNetPropertyMap(c.Name, attribute.PropertyName);
                 else

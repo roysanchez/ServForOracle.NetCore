@@ -148,7 +148,7 @@ namespace ServForOracle.NetCore.Metadata
 
             if (udtInfo == null)
             {
-                throw new ArgumentException($"The type {type.FullName} needs to have the {nameof(OracleUdtAttributeAttribute)}" +
+                throw new ArgumentException($"The type {type.FullName} needs to have the {nameof(OracleUdtAttribute)}" +
                     $" attribute set or pass the {nameof(OracleUdtInfo)} class to the execute method.");
 
             }
