@@ -13,7 +13,7 @@ namespace ServForOracle.NetCore
 
             var temp = s.ExecuteFunction<T>(function, _p1);
 
-            p1 = (A)_p1.Value;
+            p1 = _p1.Value;
             return temp;
         }
 
@@ -24,8 +24,8 @@ namespace ServForOracle.NetCore
 
             var temp = s.ExecuteFunction<T>(procedure, _p1, _p2);
 
-            p1 = (A)_p1.Value;
-            p2 = (B)_p2.Value;
+            p1 = _p1.Value;
+            p2 = _p2.Value;
 
             return temp;
         }
@@ -38,9 +38,9 @@ namespace ServForOracle.NetCore
 
             var temp = s.ExecuteFunction<T>(procedure, _p1, _p2, _p3);
 
-            p1 = (A)_p1.Value;
-            p2 = (B)_p2.Value;
-            p3 = (C)_p3.Value;
+            p1 = _p1.Value;
+            p2 = _p2.Value;
+            p3 = _p3.Value;
 
             return temp;
         }
@@ -54,10 +54,10 @@ namespace ServForOracle.NetCore
 
             var temp = s.ExecuteFunction<T>(procedure, _p1, _p2, _p3, _p4);
 
-            p1 = (A)_p1.Value;
-            p2 = (B)_p2.Value;
-            p3 = (C)_p3.Value;
-            p4 = (D)_p4.Value;
+            p1 = _p1.Value;
+            p2 = _p2.Value;
+            p3 = _p3.Value;
+            p4 = _p4.Value;
 
             return temp;
         }
