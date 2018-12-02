@@ -3,7 +3,7 @@ using System.Data;
 
 namespace ServForOracle.NetCore.Parameters
 {
-    public interface IParam<T> : IParam
+    public interface IParam<out T> : IParam
     {
         T Value { get; }
     }
