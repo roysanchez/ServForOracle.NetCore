@@ -12,18 +12,18 @@ namespace ServForOracle.NetCore.Parameters
     public class ParamBoolean : ParamManaged, IParam<bool?>, IParam<bool>
     {
         public new bool? Value { get; set; }
-        internal MetadataOracle Metadata { get; private set; }
+        internal MetadataOracleBoolean Metadata { get; private set; }
 
         bool IParam<bool>.Value => Value ?? false;
-        private string Name;
+        private string _ParameterName;
 
         public ParamBoolean(bool? value, ParameterDirection direction)
-            : this(value, direction, new MetadataOracle())
+            : this(value, direction, new MetadataOracleBoolean())
         {
             Value = value;
         }
 
-        internal ParamBoolean(bool? value, ParameterDirection direction, MetadataOracle metadata)
+        internal ParamBoolean(bool? value, ParameterDirection direction, MetadataOracleBoolean metadata)
             : base(typeof(bool?), value, direction)
         {
             Metadata = metadata;
@@ -37,21 +37,16 @@ namespace ServForOracle.NetCore.Parameters
             }
             else
             {
-                return "";
+                return Metadata.GetDeclareLine(_ParameterName);
             }
         }
+
         internal override void SetOutputValue(object value)
         {
             if (value is OracleDecimal tempValue)
             {
-                if (tempValue.Value == 0)
-                {
-                    Value = false;
-                }
-                else if (tempValue.Value == 1)
-                {
-                    Value = true;
-                }
+                Value = (bool?)Metadata.GetBooleanValue(tempValue);
+                base.Value = Value;
             }
         }
 
@@ -63,35 +58,25 @@ namespace ServForOracle.NetCore.Parameters
 
         public override void SetParameterName(string name)
         {
-            Name = name;
+            _ParameterName = name;
         }
 
         internal OracleParameter GetOracleParameters(int startNumber)
         {
             if (Direction == ParameterDirection.Output || Direction == ParameterDirection.InputOutput)
             {
-                byte? tempValue = null;
-                if (Value.HasValue)
-                {
-                    tempValue = Value.Value ? (byte)1 : (byte)0;
-                }
-
-                return new OracleParameter()
-                {
-                    ParameterName = Name,
-                    Direction = Direction,
-                    Value = tempValue
-                };
+                return Metadata.GetOracleParameter(Value, startNumber);
             }
             else
             {
-                return new OracleParameter(Name, Value);
+                return new OracleParameter(_ParameterName, Value);
             }
         }
 
         internal override PreparedOutputParameter PrepareOutputParameter(int startNumber)
         {
-            return new PreparedOutputParameter(this, GetOracleParameters(startNumber), "roy");
+            var output = Metadata.OutputString(startNumber, _ParameterName);
+            return new PreparedOutputParameter(this, GetOracleParameters(startNumber), output);
         }
     }
 }

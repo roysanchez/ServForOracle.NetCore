@@ -81,6 +81,10 @@ namespace ServForOracle.NetCore
                 {
                     return ReturnValueAdditionalInformation(info, udtInfo, metadata, out retOra);
                 }
+                else if (returnMetadata is MetadataOracleBoolean metadataBoolean)
+                {
+                    return ReturnValueAdditionalInformationBoolean<T>(info, metadataBoolean, out retOra);
+                }
                 else
                 {
                     return null;
@@ -88,6 +92,18 @@ namespace ServForOracle.NetCore
             });
 
             return GetReturnParameterOtuputValue<T>(retOra, returnMetadata);
+        }
+
+        private AdditionalInformation ReturnValueAdditionalInformationBoolean<T>(ExecutionInformation info,
+            MetadataOracleBoolean metadata, out OracleParameter parameter)
+        {
+            parameter = FunctionReturnOracleParameter<T>(info);
+            var name = "ret";
+            return new AdditionalInformation
+            {
+                Declare = metadata.GetDeclareLine(name),
+                Output = metadata.OutputString(info.ParameterCounter, name)
+            };
         }
 
         private AdditionalInformation ReturnValueAdditionalInformation<T>(ExecutionInformation info, OracleUdtInfo udt,
@@ -108,7 +124,13 @@ namespace ServForOracle.NetCore
 
         private string FunctionBeforeQuery<T>(ExecutionInformation info, OracleUdtInfo udt, out MetadataOracle metadata, out OracleParameter parameter)
         {
-            if (typeof(T).IsClrType())
+            if (typeof(T).IsBoolean())
+            {
+                metadata = new MetadataOracleBoolean();
+                parameter = null;
+                return "ret := ";
+            }
+            else if (typeof(T).IsClrType())
             {
                 parameter = FunctionReturnOracleParameter<T>(info);
                 metadata = new MetadataOracle();
@@ -129,6 +151,10 @@ namespace ServForOracle.NetCore
             {
                 return (T)metadata.GetValueFromRefCursor(returnType, retOra.Value as OracleRefCursor);
 
+            }
+            else if (returnMetadata is MetadataOracleBoolean metadataBoolean)
+            {
+                return (T)metadataBoolean.GetBooleanValue(retOra.Value);
             }
             else
             {
