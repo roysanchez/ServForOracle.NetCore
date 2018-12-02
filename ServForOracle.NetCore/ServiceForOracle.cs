@@ -166,7 +166,15 @@ namespace ServForOracle.NetCore
         {
             OracleParameter retOra;
 
-            if (typeof(T).IsClrType())
+            if(typeof(T).IsBoolean())
+            {
+                retOra = new OracleParameter
+                {
+                    ParameterName = $":{info.ParameterCounter}",
+                    Direction = ParameterDirection.Output
+                };
+            }
+            else if (typeof(T).IsClrType())
             {
                 retOra = new OracleParameter
                 {
