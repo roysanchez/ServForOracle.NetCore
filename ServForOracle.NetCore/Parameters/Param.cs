@@ -1,4 +1,5 @@
 ﻿using Oracle.ManagedDataAccess.Client;
+using ServForOracle.NetCore.Extensions;
 using ServForOracle.NetCore.Metadata;
 using System;
 using System.Collections.Generic;
@@ -24,7 +25,12 @@ namespace ServForOracle.NetCore.Parameters
         public static IParam<T> Create<T>(T value, ParameterDirection direction)
         {
             var type = typeof(T);
-            if (type.IsValueType || type == typeof(string))
+            if (type.IsBoolean())
+            {
+                return new ParamBoolean(value as bool?, direction) as IParam<T>;
+                
+            }
+            else if(type.IsClrType())
             {
                 return new ParamClrType<T>(value, direction);
             }

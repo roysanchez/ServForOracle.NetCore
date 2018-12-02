@@ -79,9 +79,9 @@ namespace ServForOracle.NetCore.Parameters
             return Metadata.GetOracleParameters(Value, startNumber);
         }
 
-        internal override (string Constructor, int LastNumber) BuildQueryConstructorString(string name, int startNumber)
+        internal override (string Constructor, int LastNumber) BuildQueryConstructorString(int startNumber)
         {
-            return Metadata.BuildQueryConstructorString(Value, name, startNumber);
+            return Metadata.BuildQueryConstructorString(Value, _ParameterName, startNumber);
         }
 
         internal override PreparedOutputParameter PrepareOutputParameter(int startNumber)
@@ -93,7 +93,7 @@ namespace ServForOracle.NetCore.Parameters
         }
     }
 
-    public abstract class ParamObject : Param
+    public abstract class ParamObject : ParamManaged
     {
         protected ParamObject(Type type, object value, ParameterDirection direction)
             : base(type, value, direction)
@@ -101,15 +101,10 @@ namespace ServForOracle.NetCore.Parameters
         }
 
         internal virtual OracleUdtInfo UDTInfo { get; }
-        public virtual string ParameterName { get; }
-        public abstract void SetParameterName(string name);
-        public abstract string GetDeclareLine();
-
         internal bool MetadataLoaded = false;
         internal abstract void LoadObjectMetadata(MetadataBuilder builder);
         internal abstract Task LoadObjectMetadataAsync(MetadataBuilder builder);
-        internal abstract (string Constructor, int LastNumber) BuildQueryConstructorString(string name, int startNumber);
+        internal abstract (string Constructor, int LastNumber) BuildQueryConstructorString(int startNumber);
         internal abstract OracleParameter[] GetOracleParameters(int startNumber);
-        internal abstract PreparedOutputParameter PrepareOutputParameter(int startNumber);
     }
 }

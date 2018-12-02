@@ -49,13 +49,13 @@ namespace ServForOracle.NetCore
             MetadataOracle returnMetadata = null;
             OracleParameter retOra = null;
 
-            await ExecuteAsync($"ret := {function}", parameters, (info) => 
+            await ExecuteAsync($"ret := {function}", parameters, (info) =>
             {
                 return Task.FromResult(FunctionBeforeQuery<T>(info, udtInfo, out returnMetadata, out retOra));
             },
             (info) =>
             {
-                if(returnMetadata is MetadataOracleObject<T> metadata)
+                if (returnMetadata is MetadataOracleObject<T> metadata)
                 {
                     return Task.FromResult(ReturnValueAdditionalInformation(info, udtInfo, metadata, out retOra));
                 }
@@ -167,7 +167,8 @@ namespace ServForOracle.NetCore
             await LoadObjectParametersMetadataAsync(parameters);
 
             var info = new ExecutionInformation();
-            var (declare, body) = ProcessDeclarationAndBody(parameters, info);
+            var declare = ProcessDeclaration(parameters);
+            var body = ProcessBody(parameters, info);
 
             var query = new StringBuilder(await beforeQuery?.Invoke(info));
             query.AppendLine(ProcessQuery(method, parameters, info));
@@ -196,7 +197,8 @@ namespace ServForOracle.NetCore
             LoadObjectParametersMetadata(parameters);
 
             var info = new ExecutionInformation();
-            var (declare, body) = ProcessDeclarationAndBody(parameters, info);
+            var declare = ProcessDeclaration(parameters);
+            var body = ProcessBody(parameters, info);
 
             var query = new StringBuilder(beforeQuery?.Invoke(info));
             query.AppendLine(ProcessQuery(method, parameters, info));
@@ -294,25 +296,34 @@ namespace ServForOracle.NetCore
             });
         }
 
-        private (StringBuilder declaration, string body) ProcessDeclarationAndBody(IParam[] parameters, ExecutionInformation info)
+        private StringBuilder ProcessDeclaration(IParam[] parameters)
         {
-            var body = new StringBuilder();
             var declaration = new StringBuilder();
             var objCounter = 0;
 
             declaration.AppendLine("declare");
-            body.AppendLine("begin");
 
-            foreach (var param in parameters.Where(c => c is ParamObject).Cast<ParamObject>())
+            foreach (var param in parameters.Where(c => c is ParamManaged).Cast<ParamManaged>())
             {
                 var name = $"p{objCounter++}";
                 param.SetParameterName(name);
 
                 declaration.AppendLine(param.GetDeclareLine());
+            }
 
+            return declaration;
+        }
+
+        private string ProcessBody(IParam[] parameters, ExecutionInformation info)
+        {
+            var body = new StringBuilder();
+            body.AppendLine("begin");
+
+            foreach (var param in parameters.Where(c => c is ParamObject).Cast<ParamObject>())
+            {
                 if (param.Direction == ParameterDirection.Input || param.Direction == ParameterDirection.InputOutput)
                 {
-                    var (Constructor, LastNumber) = param.BuildQueryConstructorString(name, info.ParameterCounter);
+                    var (Constructor, LastNumber) = param.BuildQueryConstructorString(info.ParameterCounter);
                     var oraParameters = param.GetOracleParameters(info.ParameterCounter);
 
                     info.OracleParameterList.AddRange(oraParameters);
@@ -322,17 +333,17 @@ namespace ServForOracle.NetCore
                 }
             }
 
-            return (declaration, body.ToString());
+            return body.ToString();
         }
 
         private StringBuilder ProcessOutputParameters(IParam[] parameters, ExecutionInformation info)
         {
             var outparameters = new StringBuilder();
-            foreach (var param in parameters.Where(c => c is ParamObject).Cast<ParamObject>()
+            foreach (var param in parameters.Where(c => c is ParamManaged).Cast<ParamManaged>()
                 .Where(c => c.Direction == ParameterDirection.Output || c.Direction == ParameterDirection.InputOutput))
             {
                 var preparedOutput = param.PrepareOutputParameter(info.ParameterCounter++);
-                outparameters.AppendLine(preparedOutput.RefCursorString);
+                outparameters.AppendLine(preparedOutput.OutputString);
 
                 info.OracleParameterList.Add(preparedOutput.OracleParameter);
                 info.Outputs.Add(preparedOutput);

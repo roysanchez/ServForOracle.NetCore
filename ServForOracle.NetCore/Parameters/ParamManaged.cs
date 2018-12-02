@@ -1,0 +1,22 @@
+﻿
+using Oracle.ManagedDataAccess.Client;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Text;
+
+namespace ServForOracle.NetCore.Parameters
+{
+    public abstract class ParamManaged : Param
+    {
+        protected ParamManaged(Type type, object value, ParameterDirection direction)
+    : base(type, value, direction)
+        {
+        }
+
+        public virtual string ParameterName { get; }
+        public abstract void SetParameterName(string name);
+        public abstract string GetDeclareLine();
+        internal abstract PreparedOutputParameter PrepareOutputParameter(int startNumber);
+    }
+}
