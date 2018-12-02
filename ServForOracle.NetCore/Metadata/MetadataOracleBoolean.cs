@@ -1,4 +1,5 @@
 ﻿using Oracle.ManagedDataAccess.Client;
+using Oracle.ManagedDataAccess.Types;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -41,13 +42,9 @@ namespace ServForOracle.NetCore.Metadata
 
         public object GetBooleanValue(object value)
         {
-            if (value.Equals(0))
+            if (value is OracleDecimal v)
             {
-                return false;
-            }
-            else if (value.Equals(1))
-            {
-                return true;
+                return v.ToByte() == 1;
             }
             else
             {

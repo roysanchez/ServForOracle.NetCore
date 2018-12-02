@@ -45,7 +45,6 @@ namespace ServForOracle.NetCore
 
         public async Task<T> ExecuteFunctionAsync<T>(string function, OracleUdtInfo udtInfo, params IParam[] parameters)
         {
-            var returnType = typeof(T);
             MetadataOracle returnMetadata = null;
             OracleParameter retOra = null;
 
@@ -70,7 +69,6 @@ namespace ServForOracle.NetCore
 
         public T ExecuteFunction<T>(string function, OracleUdtInfo udtInfo, params IParam[] parameters)
         {
-            var returnType = typeof(T);
             MetadataOracle returnMetadata = null;
             OracleParameter retOra = null;
 
@@ -171,6 +169,7 @@ namespace ServForOracle.NetCore
                 retOra = new OracleParameter
                 {
                     ParameterName = $":{info.ParameterCounter}",
+                    OracleDbType = OracleDbType.Byte,
                     Direction = ParameterDirection.Output
                 };
             }
