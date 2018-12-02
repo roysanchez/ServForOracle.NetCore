@@ -7,6 +7,11 @@ namespace ServForOracle.NetCore.Extensions
 {
     public static class TypeExtensions
     {
+        public static bool IsClrType(this Type type)
+        {
+            return type.IsValueType || type == typeof(string);
+        }
+
         public static bool IsCollection(this Type type)
         {
             return

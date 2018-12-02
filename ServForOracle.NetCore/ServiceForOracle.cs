@@ -8,10 +8,11 @@ using System.Text;
 using ServForOracle.NetCore.Parameters;
 using ServForOracle.NetCore.Metadata;
 using System.Threading.Tasks;
+using ServForOracle.NetCore.Extensions;
 
 namespace ServForOracle.NetCore
 {
-    public class ServiceForOracle: IServiceForOracle
+    public class ServiceForOracle : IServiceForOracle
     {
         private readonly OracleConnection _Connection;
         private readonly MetadataBuilder _Builder;
@@ -45,65 +46,132 @@ namespace ServForOracle.NetCore
         public async Task<T> ExecuteFunctionAsync<T>(string function, OracleUdtInfo udtInfo, params IParam[] parameters)
         {
             var returnType = typeof(T);
-            var returnMetadata = await _Builder.GetOrRegisterMetadataOracleObjectAsync<T>(udtInfo);
+            MetadataOracle returnMetadata = null;
             OracleParameter retOra = null;
 
-            await ExecuteAsync($"ret := {function}", parameters, (info) =>
+            await ExecuteAsync($"ret := {function}", parameters, (info) => 
             {
-                retOra = FunctionReturnOracleParameter(info);
-
-                AdditionalInformation returnInfo = new AdditionalInformation
+                return Task.FromResult(FunctionBeforeQuery<T>(info, udtInfo, out returnMetadata, out retOra));
+            },
+            (info) =>
+            {
+                if(returnMetadata is MetadataOracleObject<T> metadata)
                 {
-                    Declare = returnMetadata.GetDeclareLine(returnType, "ret", udtInfo ?? returnMetadata.OracleTypeNetMetadata.UDTInfo),
-                    Output = returnMetadata.GetRefCursorQuery(info.ParameterCounter, "ret")
-                };
-
-                return Task.FromResult(returnInfo);
+                    return Task.FromResult(ReturnValueAdditionalInformation(info, udtInfo, metadata, out retOra));
+                }
+                else
+                {
+                    return Task.FromResult(null as AdditionalInformation);
+                }
             });
 
-            return (T)(await returnMetadata.GetValueFromRefCursorAsync(returnType, retOra.Value as OracleRefCursor));
+            return GetReturnParameterOtuputValue<T>(retOra, returnMetadata);
         }
 
         public T ExecuteFunction<T>(string function, OracleUdtInfo udtInfo, params IParam[] parameters)
         {
             var returnType = typeof(T);
-            var returnMetadata = _Builder.GetOrRegisterMetadataOracleObject<T>(udtInfo);
+            MetadataOracle returnMetadata = null;
             OracleParameter retOra = null;
 
-            Execute($"ret := {function}", parameters, (info) =>
+            Execute(function, parameters, (info) => FunctionBeforeQuery<T>(info, udtInfo, out returnMetadata, out retOra),
+            (info) =>
             {
-                retOra = FunctionReturnOracleParameter(info);
-
-                var returnInfo = new AdditionalInformation
+                if (returnMetadata is MetadataOracleObject<T> metadata)
                 {
-                    Declare = returnMetadata.GetDeclareLine(returnType, "ret", udtInfo ?? returnMetadata.OracleTypeNetMetadata.UDTInfo),
-                    Output = returnMetadata.GetRefCursorQuery(info.ParameterCounter, "ret")
-                };
-
-                return returnInfo;
+                    return ReturnValueAdditionalInformation(info, udtInfo, metadata, out retOra);
+                }
+                else
+                {
+                    return null;
+                }
             });
 
-            return (T)returnMetadata.GetValueFromRefCursor(returnType, retOra.Value as OracleRefCursor);
+            return GetReturnParameterOtuputValue<T>(retOra, returnMetadata);
         }
 
-        private OracleParameter FunctionReturnOracleParameter(ExecutionInformation info)
+        private AdditionalInformation ReturnValueAdditionalInformation<T>(ExecutionInformation info, OracleUdtInfo udt,
+            MetadataOracleObject<T> metadata, out OracleParameter parameter)
         {
-            OracleParameter retOra = new OracleParameter($":{info.ParameterCounter}", DBNull.Value)
+            var returnType = typeof(T);
+            parameter = FunctionReturnOracleParameter<T>(info);
+            var name = "ret";
+
+            var returnInfo = new AdditionalInformation
             {
-                OracleDbType = OracleDbType.RefCursor
+                Declare = metadata.GetDeclareLine(returnType, name, udt ?? metadata.OracleTypeNetMetadata.UDTInfo),
+                Output = metadata.GetRefCursorQuery(info.ParameterCounter, name)
             };
+
+            return returnInfo;
+        }
+
+        private string FunctionBeforeQuery<T>(ExecutionInformation info, OracleUdtInfo udt, out MetadataOracle metadata, out OracleParameter parameter)
+        {
+            if (typeof(T).IsClrType())
+            {
+                parameter = FunctionReturnOracleParameter<T>(info);
+                metadata = new MetadataOracle();
+                return $"{parameter.ParameterName} := ";
+            }
+            else
+            {
+                metadata = _Builder.GetOrRegisterMetadataOracleObject<T>(udt);
+                parameter = null;
+                return "ret := ";
+            }
+        }
+
+        private T GetReturnParameterOtuputValue<T>(OracleParameter retOra, MetadataOracle returnMetadata = null)
+        {
+            var returnType = typeof(T);
+            if (!returnType.IsClrType() && returnMetadata is MetadataOracleObject<T> metadata)
+            {
+                return (T)metadata.GetValueFromRefCursor(returnType, retOra.Value as OracleRefCursor);
+
+            }
+            else
+            {
+                return (T)returnMetadata.ConvertOracleParameterToBaseType(returnType, retOra);
+            }
+        }
+
+        private OracleParameter FunctionReturnOracleParameter<T>(ExecutionInformation info)
+        {
+            OracleParameter retOra;
+
+            if (typeof(T).IsClrType())
+            {
+                retOra = new OracleParameter
+                {
+                    ParameterName = $":{info.ParameterCounter++}",
+                    Direction = ParameterDirection.Output
+                };
+            }
+            else
+            {
+                retOra = new OracleParameter($":{info.ParameterCounter}", DBNull.Value)
+                {
+                    OracleDbType = OracleDbType.RefCursor
+                };
+            }
+
             info.OracleParameterList.Add(retOra);
             return retOra;
         }
 
         private async Task ExecuteAsync(string method, IParam[] parameters,
+            Func<ExecutionInformation, Task<string>> beforeQuery = null,
             Func<ExecutionInformation, Task<AdditionalInformation>> beforeEnd = null)
         {
             await LoadObjectParametersMetadataAsync(parameters);
 
             var info = new ExecutionInformation();
             var (declare, body) = ProcessDeclarationAndBody(parameters, info);
-            var query = ProcessQuery(method, parameters, info);
+
+            var query = new StringBuilder(await beforeQuery?.Invoke(info));
+            query.AppendLine(ProcessQuery(method, parameters, info));
+
             var outparameters = ProcessOutputParameters(parameters, info);
 
             var additionalInfo = await beforeEnd?.Invoke(info);
@@ -113,7 +181,7 @@ namespace ServForOracle.NetCore
                 outparameters.AppendLine(additionalInfo.Output);
             }
 
-            var execute = PrepareStatement(declare.ToString(), body, query, outparameters.ToString());
+            var execute = PrepareStatement(declare.ToString(), body, query.ToString(), outparameters.ToString());
 
             await ExecuteNonQueryAsync(info.OracleParameterList, execute);
 
@@ -121,13 +189,18 @@ namespace ServForOracle.NetCore
 
         }
 
-        private void Execute(string method, IParam[] parameters, Func<ExecutionInformation, AdditionalInformation> beforeEnd = null)
+        private void Execute(string method, IParam[] parameters,
+            Func<ExecutionInformation, string> beforeQuery = null,
+            Func<ExecutionInformation, AdditionalInformation> beforeEnd = null)
         {
             LoadObjectParametersMetadata(parameters);
 
             var info = new ExecutionInformation();
             var (declare, body) = ProcessDeclarationAndBody(parameters, info);
-            var query = ProcessQuery(method, parameters, info);
+
+            var query = new StringBuilder(beforeQuery?.Invoke(info));
+            query.AppendLine(ProcessQuery(method, parameters, info));
+
             var outparameters = ProcessOutputParameters(parameters, info);
 
             var additionalInfo = beforeEnd?.Invoke(info);
@@ -137,7 +210,7 @@ namespace ServForOracle.NetCore
                 outparameters.AppendLine(additionalInfo.Output);
             }
 
-            var execute = PrepareStatement(declare.ToString(), body, query, outparameters.ToString());
+            var execute = PrepareStatement(declare.ToString(), body, query.ToString(), outparameters.ToString());
 
             ExecuteNonQuery(info.OracleParameterList, execute.ToString());
 
