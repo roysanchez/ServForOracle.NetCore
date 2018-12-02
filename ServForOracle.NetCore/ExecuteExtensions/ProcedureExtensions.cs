@@ -14,7 +14,7 @@ namespace ServForOracle.NetCore
 
             s.ExecuteProcedure(procedure, _p1);
 
-            p1 = (A)_p1.Value;
+            p1 = _p1.Value;
         }
 
         public static void ExecuteProcedure<A, B>(this IServiceForOracle s, string procedure, ref A p1, ref B p2)
@@ -24,8 +24,8 @@ namespace ServForOracle.NetCore
 
             s.ExecuteProcedure(procedure, _p1, _p2);
 
-            p1 = (A)_p1.Value;
-            p2 = (B)_p2.Value;
+            p1 = _p1.Value;
+            p2 = _p2.Value;
         }
 
         public static void ExecuteProcedure<A, B, C>(this IServiceForOracle s, string procedure, ref A p1, ref B p2, ref C p3)
@@ -36,9 +36,9 @@ namespace ServForOracle.NetCore
 
             s.ExecuteProcedure(procedure, _p1, _p2, _p3);
 
-            p1 = (A)_p1.Value;
-            p2 = (B)_p2.Value;
-            p3 = (C)_p3.Value;
+            p1 = _p1.Value;
+            p2 = _p2.Value;
+            p3 = _p3.Value;
         }
 
         public static void ExecuteProcedure<A, B, C, D>(this IServiceForOracle s, string procedure, ref A p1, ref B p2, ref C p3, ref D p4)
@@ -50,10 +50,10 @@ namespace ServForOracle.NetCore
 
             s.ExecuteProcedure(procedure, _p1, _p2, _p3, _p4);
 
-            p1 = (A)_p1.Value;
-            p2 = (B)_p2.Value;
-            p3 = (C)_p3.Value;
-            p4 = (D)_p4.Value;
+            p1 = _p1.Value;
+            p2 = _p2.Value;
+            p3 = _p3.Value;
+            p4 = _p4.Value;
         }
         
         public static void ExecuteProcedure<A>(this IServiceForOracle s, string procedure, A p1)
