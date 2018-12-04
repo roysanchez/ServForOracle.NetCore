@@ -36,33 +36,56 @@ namespace ServForOracle.NetCore.Metadata
 
             regex = new Regex(Regex.Escape("$"));
 
-            var constructor = new StringBuilder($"{metadataOracleType.UDTInfo.FullObjectName}(");
-            var properties = metadataOracleType.Properties.ToArray();
+            var constructor = new StringBuilder();
+            GenerateConstructor(constructor, metadataOracleType.UDTInfo.FullObjectName,
+                metadataOracleType.Properties.ToArray());
+
+            constructor.Append(';');
+            ConstructorString = constructor.ToString();
+        }
+
+        private void GenerateConstructor(StringBuilder constructor, string objectName, MetadataOracleTypePropertyDefinition[] properties)
+        {
+            constructor.Append($"{objectName}(");
 
             for (var counter = 0; counter < properties.Count(); counter++)
             {
                 constructor.Append(properties[counter].Name);
                 constructor.Append("=>");
+                if (properties[counter] is MetadataOracleTypeSubTypeDefinition subType)
+                {
+                    GenerateConstructor(constructor, subType.MetadataOracleType.UDTInfo.FullObjectName, subType.MetadataOracleType.Properties.ToArray());
+                }
+                else
+                {
+                    constructor.Append('$');
+                }
 
-                constructor.Append('$');
                 if (counter + 1 < properties.Count())
                 {
                     constructor.Append(',');
                 }
             }
-            constructor.Append(");");
 
-            ConstructorString = constructor.ToString();
+            constructor.Append(')');
         }
 
-        private string BuildConstructor(ref int startNumber)
+        private string BuildConstructor(MetadataOracleNetTypeDefinition metadata, ref int startNumber,
+            string constructor)
         {
-            var constructor = ConstructorString;
-            foreach (var prop in OracleTypeNetMetadata.Properties.OrderBy(c => c.Order))
+
+            foreach (var prop in metadata.Properties.OrderBy(c => c.Order))
             {
                 if (prop.NETProperty != null)
                 {
-                    constructor = regex.Replace(constructor, $":{startNumber++}", 1);
+                    if (prop.NETProperty.PropertyType.IsClrType())
+                    {
+                        constructor = regex.Replace(constructor, $":{startNumber++}", 1);
+                    }
+                    else
+                    {
+                        constructor = BuildConstructor(prop.PropertyMetadata, ref startNumber, constructor);
+                    }
                 }
                 else
                 {
@@ -84,7 +107,7 @@ namespace ServForOracle.NetCore.Metadata
                 {
                     foreach (var v in value as IEnumerable)
                     {
-                        var baseConstructor = BuildConstructor(ref startNumber);
+                        var baseConstructor = BuildConstructor(OracleTypeNetMetadata, ref startNumber, ConstructorString);
                         baseString.AppendLine($"{name}.extend;");
                         baseString.AppendLine($"{name}({name}.last) := {baseConstructor}");
                     }
@@ -92,7 +115,7 @@ namespace ServForOracle.NetCore.Metadata
             }
             else
             {
-                var baseConstructor = BuildConstructor(ref startNumber);
+                var baseConstructor = BuildConstructor(OracleTypeNetMetadata, ref startNumber, ConstructorString);
                 baseString.AppendLine($"{name} := {baseConstructor}");
             }
 
@@ -105,41 +128,59 @@ namespace ServForOracle.NetCore.Metadata
 
             if (Type.IsCollection() && value is IEnumerable list)
             {
-                parameters.AddRange(ProcessCollectionParameters(list, startNumber));
+                parameters.AddRange(ProcessCollectionParameters(list, OracleTypeNetMetadata, startNumber, out int _));
             }
             else
             {
-                parameters.AddRange(ProcessOracleParameter(value, startNumber, out int _));
+                parameters.AddRange(ProcessOracleParameter(value, OracleTypeNetMetadata, startNumber, out int _));
             }
 
             return parameters.ToArray();
         }
 
-        private IEnumerable<OracleParameter> ProcessOracleParameter(object value, int startNumber, out int newNumber)
+        private IEnumerable<OracleParameter> ProcessOracleParameter(object value,
+            MetadataOracleNetTypeDefinition metadata,
+            int startNumber, out int newNumber)
         {
             var propertiesParameters = new List<OracleParameter>();
-            foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
+            foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
             {
-                propertiesParameters.Add(
-                    GetOracleParameter(
-                        type: prop.NETProperty.PropertyType,
-                        direction: ParameterDirection.Input,
-                        name: $":{startNumber++}",
-                        value: value != null ? prop.NETProperty.GetValue(value) : null
-                    ));
+                if (prop.PropertyMetadata != null)
+                {
+                    if(prop.NETProperty.PropertyType.IsCollection())
+                    {
+                        propertiesParameters.AddRange(ProcessCollectionParameters(prop.NETProperty.GetValue(value) as IEnumerable, prop.PropertyMetadata, startNumber, out startNumber));
+                    }
+                    else
+                    {
+                        propertiesParameters.AddRange(ProcessOracleParameter(prop.NETProperty.GetValue(value), prop.PropertyMetadata,
+                            startNumber, out startNumber));
+                    }
+                }
+                else
+                {
+                    propertiesParameters.Add(
+                        GetOracleParameter(
+                            type: prop.NETProperty.PropertyType,
+                            direction: ParameterDirection.Input,
+                            name: $":{startNumber++}",
+                            value: value != null ? prop.NETProperty.GetValue(value) : null
+                        ));
+                }
             }
             newNumber = startNumber;
             return propertiesParameters;
         }
 
-        private IEnumerable<OracleParameter> ProcessCollectionParameters(IEnumerable value, int startNumber)
+        private IEnumerable<OracleParameter> ProcessCollectionParameters(IEnumerable value,
+            MetadataOracleNetTypeDefinition metadata, int startNumber, out int lastNumber)
         {
             var rowsParameters = new List<OracleParameter>();
             foreach (var temp in value)
             {
-                rowsParameters.AddRange(ProcessOracleParameter(temp, startNumber, out startNumber));
+                rowsParameters.AddRange(ProcessOracleParameter(temp, metadata, startNumber, out startNumber));
             }
-
+            lastNumber = startNumber;
             return rowsParameters;
         }
 

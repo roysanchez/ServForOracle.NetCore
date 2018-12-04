@@ -15,5 +15,6 @@ namespace ServForOracle.NetCore.Metadata
         }
 
         public PropertyInfo NETProperty { get; set; }
+        public MetadataOracleNetTypeDefinition PropertyMetadata { get; set; }
     }
 }

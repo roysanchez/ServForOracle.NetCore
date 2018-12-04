@@ -17,18 +17,18 @@ namespace ServForOracle.NetCore
         public OracleUdtInfo UDTInfo { get; private set; }
 
         public OracleUdtAttribute(string objectName)
-            :this(string.Empty, objectName)
         {
+            UDTInfo = new OracleUdtInfo(objectName);
         }
 
         public OracleUdtAttribute(string schema, string objectName)
-            :this(schema, objectName, string.Empty)
         {
+            UDTInfo = new OracleUdtInfo(schema, objectName);
         }
 
         public OracleUdtAttribute(string schema, string objectName, string collectionName)
-            :this(schema, objectName, string.Empty, collectionName)
         {
+            UDTInfo = new OracleUdtInfo(schema, objectName, collectionName);
         }
 
         public OracleUdtAttribute(string schema, string objectName, string collectionSchema, string collectionName)

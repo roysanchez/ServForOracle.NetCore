@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ServForOracle.NetCore.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -28,7 +29,7 @@ namespace ServForOracle.NetCore.Metadata
            UdtPropertyNetPropertyMap[] presetProperties)
         {
             UDTInfo = baseMetadataDefinition.UDTInfo;
-
+            presetProperties = presetProperties ?? new UdtPropertyNetPropertyMap[] { };
             var list = new List<MetadataOraclePropertyNetTypeDefinition>();
             var netProperties = type.GetProperties();
             var netAttibutes = GetUDTPropertyNames(netProperties);
@@ -51,11 +52,23 @@ namespace ServForOracle.NetCore.Metadata
                 {
                     //TODO throw warning
                 }
-                
-                list.Add(new MetadataOraclePropertyNetTypeDefinition(prop)
+
+                if (prop is MetadataOracleTypeSubTypeDefinition propertyObject)
                 {
-                    NETProperty = netProperty
-                });
+                    list.Add(new MetadataOraclePropertyNetTypeDefinition(prop)
+                    {
+                        NETProperty = netProperty,
+                        PropertyMetadata = new MetadataOracleNetTypeDefinition(
+                            netProperty.PropertyType, propertyObject.MetadataOracleType, MetadataBuilder.PresetGetValueOrDefault(netProperty.PropertyType).Props)
+                    });
+                }
+                else
+                {
+                    list.Add(new MetadataOraclePropertyNetTypeDefinition(prop)
+                    {
+                        NETProperty = netProperty
+                    });
+                }
             }
 
             Properties = list;

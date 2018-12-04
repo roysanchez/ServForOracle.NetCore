@@ -82,7 +82,9 @@ namespace ServForOracle.NetCore.Metadata
         private async Task<object> RegisterAsync(Type type, OracleConnection con, OracleUdtInfo udtInfo)
         {
             var metadataGenericType = typeof(MetadataOracleObject<>).MakeGenericType(type);
-            var metadata = metadataGenericType.CreateInstance(await GetOrCreateOracleTypeMetadataAsync(con, udtInfo), GetPresetProperties(type));
+            var typeMetadata = await GetOrCreateOracleTypeMetadataAsync(con, udtInfo);
+
+            var metadata = metadataGenericType.CreateInstance(typeMetadata, GetPresetProperties(type));
 
             TypeDefinitionsOracleUDT.TryAdd(type, metadata as MetadataOracle);
 
@@ -93,7 +95,9 @@ namespace ServForOracle.NetCore.Metadata
         private object Register(Type type, OracleConnection con, OracleUdtInfo udtInfo)
         {
             var metadataGenericType = typeof(MetadataOracleObject<>).MakeGenericType(type);
-            var metadata = metadataGenericType.CreateInstance(GetOrCreateOracleTypeMetadata(con, udtInfo), GetPresetProperties(type));
+            var typeMetadata = GetOrCreateOracleTypeMetadata(con, udtInfo);
+
+            var metadata = metadataGenericType.CreateInstance(typeMetadata, GetPresetProperties(type));
 
             TypeDefinitionsOracleUDT.TryAdd(type, metadata as MetadataOracle);
 
@@ -101,7 +105,7 @@ namespace ServForOracle.NetCore.Metadata
         }
 
         //GetValueOrDefault doesn't exists in net standard
-        private (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props) PresetGetValueOrDefault(Type type)
+        public static (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props) PresetGetValueOrDefault(Type type)
         {
             PresetUDTs.TryGetValue(type, out var preset);
             return preset;
@@ -193,7 +197,9 @@ namespace ServForOracle.NetCore.Metadata
         private OracleCommand CreateCommand(OracleConnection connection, OracleUdtInfo udtInfo)
         {
             var cmd = connection.CreateCommand();
-            cmd.CommandText = "select attr_no, attr_name, attr_type_name from all_type_attrs where owner = "
+            cmd.CommandText =
+                "select attr_no, attr_name, attr_type_owner, attr_type_name "
+                + "from all_type_attrs where owner = "
                 + "upper(:1) and type_name = upper(:2)";
             cmd.Parameters.Add(new OracleParameter(":1", udtInfo.ObjectSchema));
             cmd.Parameters.Add(new OracleParameter(":2", udtInfo.ObjectName));
@@ -220,13 +226,27 @@ namespace ServForOracle.NetCore.Metadata
 
             while (reader.Read())
             {
-                var property = new MetadataOracleTypePropertyDefinition
+                if (reader.IsDBNull(2))
                 {
-                    Order = reader.GetInt32(0),
-                    Name = reader.GetString(1)
-                };
+                    var property = new MetadataOracleTypePropertyDefinition
+                    {
+                        Order = reader.GetInt32(0),
+                        Name = reader.GetString(1)
+                    };
 
-                properties.Add(property);
+                    properties.Add(property);
+                }
+                else
+                {
+                    var property = new MetadataOracleTypeSubTypeDefinition
+                    {
+                        Order = reader.GetInt32(0),
+                        Name = reader.GetString(1),
+                        MetadataOracleType = GetOrCreateOracleTypeMetadata(cmd.Connection, new OracleUdtInfo(reader.GetString(2), reader.GetString(3)))
+                    };
+
+                    properties.Add(property);
+                }
             }
 
             return properties;
