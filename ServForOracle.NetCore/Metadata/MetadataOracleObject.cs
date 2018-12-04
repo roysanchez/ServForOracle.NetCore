@@ -147,7 +147,7 @@ namespace ServForOracle.NetCore.Metadata
             {
                 if (prop.PropertyMetadata != null)
                 {
-                    if(prop.NETProperty.PropertyType.IsCollection())
+                    if (prop.NETProperty.PropertyType.IsCollection())
                     {
                         propertiesParameters.AddRange(ProcessCollectionParameters(prop.NETProperty.GetValue(value) as IEnumerable, prop.PropertyMetadata, startNumber, out startNumber));
                     }
@@ -184,11 +184,12 @@ namespace ServForOracle.NetCore.Metadata
             return rowsParameters;
         }
 
-        private string GetRefCursorCollectionQuery(int startNumber, string fieldName)
+
+        private string QueryBuilder(MetadataOracleNetTypeDefinition metadata, string tableName, string basePropertyName = null)
         {
-            var query = new StringBuilder($"open :{startNumber} for select ");
+            var select = new StringBuilder();
             var first = true;
-            foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null))
+            foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null))
             {
                 if (first)
                 {
@@ -196,10 +197,34 @@ namespace ServForOracle.NetCore.Metadata
                 }
                 else
                 {
-                    query.Append(",");
+                    select.Append(",");
                 }
-                query.Append($"value(c).{prop.Name} {prop.Name}");
+
+                if (prop.PropertyMetadata != null)
+                {
+                    select.Append(QueryBuilder(prop.PropertyMetadata, tableName, prop.Name));
+                }
+                else
+                {
+                    if (!string.IsNullOrWhiteSpace(basePropertyName))
+                    {
+                        select.Append($"value({tableName}).{basePropertyName}.{prop.Name} {basePropertyName}{prop.Name}");
+                    }
+                    else
+                    {
+                        select.Append($"value({tableName}).{prop.Name} {prop.Name}");
+                    }
+                }
             }
+
+            return select.ToString();
+        }
+
+        private string GetRefCursorCollectionQuery(int startNumber, string fieldName)
+        {
+            var query = new StringBuilder($"open :{startNumber} for select ");
+
+            query.Append(QueryBuilder(OracleTypeNetMetadata, "c"));
             query.Append($" from table({fieldName}) c;");
 
             return query.ToString();
@@ -208,19 +233,7 @@ namespace ServForOracle.NetCore.Metadata
         private string GetRefCursorObjectQuery(int startNumber, string fieldName)
         {
             var query = new StringBuilder($"open :{startNumber} for select ");
-            var first = true;
-            foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null))
-            {
-                if (first)
-                {
-                    first = false;
-                }
-                else
-                {
-                    query.Append(",");
-                }
-                query.Append($"{fieldName}.{prop.Name}");
-            }
+            query.Append(QueryBuilder(OracleTypeNetMetadata, fieldName));
             query.Append(" from dual;");
 
             return query.ToString();
@@ -241,7 +254,7 @@ namespace ServForOracle.NetCore.Metadata
         public override async Task<object> GetValueFromRefCursorAsync(Type type, OracleRefCursor refCursor)
         {
             dynamic instance = type.CreateInstance();
-
+            int counter = 0;
             var reader = refCursor.GetDataReader();
 
             if (type.IsCollection())
@@ -249,7 +262,7 @@ namespace ServForOracle.NetCore.Metadata
                 var subType = type.GetCollectionUnderType();
                 while (await reader.ReadAsync())
                 {
-                    instance.Add(ReadObjectInstance(subType, reader));
+                    instance.Add(ReadObjectInstance(subType, reader, OracleTypeNetMetadata, ref counter));
                 }
 
                 return type.IsArray ? Enumerable.ToArray(instance) : Enumerable.AsEnumerable(instance);
@@ -258,7 +271,7 @@ namespace ServForOracle.NetCore.Metadata
             {
                 while (await reader.ReadAsync())
                 {
-                    ReadObjectInstance(type, reader);
+                    ReadObjectInstance(type, reader, OracleTypeNetMetadata, ref counter);
                 }
 
                 return (T)instance;
@@ -268,7 +281,7 @@ namespace ServForOracle.NetCore.Metadata
         public override object GetValueFromRefCursor(Type type, OracleRefCursor refCursor)
         {
             dynamic instance = type.CreateInstance();
-
+            int counter = 0;
             var reader = refCursor.GetDataReader();
 
             if (type.IsCollection())
@@ -276,7 +289,7 @@ namespace ServForOracle.NetCore.Metadata
                 var subType = type.GetCollectionUnderType();
                 while (reader.Read())
                 {
-                    instance.Add(ReadObjectInstance(subType, reader));
+                    instance.Add(ReadObjectInstance(subType, reader, OracleTypeNetMetadata, ref counter));
                 }
 
                 return type.IsArray ? Enumerable.ToArray(instance) : Enumerable.AsEnumerable(instance);
@@ -285,21 +298,28 @@ namespace ServForOracle.NetCore.Metadata
             {
                 while (reader.Read())
                 {
-                    ReadObjectInstance(type, reader);
+                    instance = ReadObjectInstance(type, reader, OracleTypeNetMetadata, ref counter);
                 }
 
                 return (T)instance;
             }
         }
 
-        private dynamic ReadObjectInstance(Type type, OracleDataReader reader)
+        private dynamic ReadObjectInstance(Type type, OracleDataReader reader, MetadataOracleNetTypeDefinition metadata, ref int count)
         {
-            int count = 0;
             var instance = type.CreateInstance();
-            foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
+            foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
             {
-                prop.NETProperty.SetValue(instance,
-                    ConvertOracleParameterToBaseType(prop.NETProperty.PropertyType, reader.GetOracleValue(count++)));
+                if (prop.PropertyMetadata != null)
+                {
+                    prop.NETProperty.SetValue(instance, ReadObjectInstance(prop.NETProperty.PropertyType,
+                        reader, prop.PropertyMetadata, ref count));
+                }
+                else
+                {
+                    prop.NETProperty.SetValue(instance,
+                        ConvertOracleParameterToBaseType(prop.NETProperty.PropertyType, reader.GetOracleValue(count++)));
+                }
             }
 
             return instance;
