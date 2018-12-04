@@ -95,7 +95,7 @@ namespace ServForOracle.NetCore
         private AdditionalInformation ReturnValueAdditionalInformationBoolean<T>(ExecutionInformation info,
             MetadataOracleBoolean metadata, out OracleParameter parameter)
         {
-            parameter = FunctionReturnOracleParameter<T>(info);
+            parameter = FunctionReturnOracleParameter<T>(info, metadata);
             var name = "ret";
             return new AdditionalInformation
             {
@@ -108,7 +108,7 @@ namespace ServForOracle.NetCore
             MetadataOracleObject<T> metadata, out OracleParameter parameter)
         {
             var returnType = typeof(T);
-            parameter = FunctionReturnOracleParameter<T>(info);
+            parameter = FunctionReturnOracleParameter<T>(info, metadata);
             var name = "ret";
 
             var returnInfo = new AdditionalInformation
@@ -130,8 +130,8 @@ namespace ServForOracle.NetCore
             }
             else if (typeof(T).IsClrType())
             {
-                parameter = FunctionReturnOracleParameter<T>(info);
                 metadata = new MetadataOracle();
+                parameter = FunctionReturnOracleParameter<T>(info, metadata);
                 return $"{parameter.ParameterName} := ";
             }
             else
@@ -160,11 +160,11 @@ namespace ServForOracle.NetCore
             }
         }
 
-        private OracleParameter FunctionReturnOracleParameter<T>(ExecutionInformation info)
+        private OracleParameter FunctionReturnOracleParameter<T>(ExecutionInformation info, MetadataOracle metadata)
         {
             OracleParameter retOra;
-
-            if(typeof(T).IsBoolean())
+            var type = typeof(T);
+            if (type.IsBoolean())
             {
                 retOra = new OracleParameter
                 {
@@ -173,13 +173,10 @@ namespace ServForOracle.NetCore
                     Direction = ParameterDirection.Output
                 };
             }
-            else if (typeof(T).IsClrType())
+            else if (type.IsClrType())
             {
-                retOra = new OracleParameter
-                {
-                    ParameterName = $":{info.ParameterCounter++}",
-                    Direction = ParameterDirection.Output
-                };
+                retOra = metadata.GetOracleParameter(
+                    type: type, direction: ParameterDirection.Output, name: $":{info.ParameterCounter++}", value: DBNull.Value);
             }
             else
             {

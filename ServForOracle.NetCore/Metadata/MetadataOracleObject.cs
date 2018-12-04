@@ -9,6 +9,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using ServForOracle.NetCore.Extensions;
 using System.Threading.Tasks;
+using System.Data;
 
 namespace ServForOracle.NetCore.Metadata
 {
@@ -119,7 +120,13 @@ namespace ServForOracle.NetCore.Metadata
             var propertiesParameters = new List<OracleParameter>();
             foreach (var prop in OracleTypeNetMetadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
             {
-                propertiesParameters.Add(new OracleParameter($":{startNumber++}", value != null ? prop.NETProperty.GetValue(value) : null));
+                propertiesParameters.Add(
+                    GetOracleParameter(
+                        type: prop.NETProperty.PropertyType,
+                        direction: ParameterDirection.Input,
+                        name: $":{startNumber++}",
+                        value: value != null ? prop.NETProperty.GetValue(value) : null
+                    ));
             }
             newNumber = startNumber;
             return propertiesParameters;
