@@ -229,9 +229,9 @@ namespace ServForOracle.NetCore.Metadata
                 {
                     if (prop.NETProperty.PropertyType.IsCollection())
                     {
-                        select.Append("cursor(select ");
+                        select.Append($"(select xmlagg( xmlforest( ");
                         select.Append(QueryBuilder(prop.PropertyMetadata, "d"));
-                        select.Append($" from table(value({tableName}).{prop.Name}) d) {prop.Name}");
+                        select.Append($") ) from table(value({tableName}).{prop.Name}) d) {prop.Name}");
                     }
                     else
                     {
@@ -347,8 +347,10 @@ namespace ServForOracle.NetCore.Metadata
             {
                 if (prop.PropertyMetadata != null)
                 {
-                    prop.NETProperty.SetValue(instance, ReadObjectInstance(prop.NETProperty.PropertyType,
-                        reader, prop.PropertyMetadata, ref count));
+                    var x = GetObjectArrayFromOracleXML(prop.NETProperty.PropertyType, reader.GetOracleValue(count++) as OracleXmlType);
+                    prop.NETProperty.SetValue(instance, x);
+                    //prop.NETProperty.SetValue(instance, ReadObjectInstance(prop.NETProperty.PropertyType,
+                    //    reader, prop.PropertyMetadata, ref count));
                 }
                 else
                 {
@@ -361,13 +363,14 @@ namespace ServForOracle.NetCore.Metadata
 
         }
 
-        public string GetDeclareLine(Type type, string parameterName, OracleUdtInfo udtInfo)
+        public string GetDeclareLine(Type type, string parameterName, OracleUdtInfo udtInfo, MetadataOracleNetTypeDefinition metadata = null)
         {
+            metadata = metadata ?? OracleTypeNetMetadata;
             var dependenciesCounter = 0;
             var declareLine = new StringBuilder();
-            foreach(var prop in OracleTypeNetMetadata.Properties.Where(c => c.PropertyMetadata != null).OrderBy(c => c.Order))
+            foreach(var prop in metadata.Properties.Where(c => c.PropertyMetadata != null).OrderBy(c => c.Order))
             {
-                declareLine.AppendLine(GetDeclareLine(prop.NETProperty.PropertyType, parameterName + dependenciesCounter++, prop.PropertyMetadata.UDTInfo));
+                declareLine.AppendLine(GetDeclareLine(prop.NETProperty.PropertyType, parameterName + dependenciesCounter++, prop.PropertyMetadata.UDTInfo, prop.PropertyMetadata));
             }
 
             if (type.IsCollection())
@@ -375,7 +378,7 @@ namespace ServForOracle.NetCore.Metadata
             else
                 declareLine.AppendLine($"{parameterName} {udtInfo.FullObjectName};");
 
-            return declareLine;
+            return declareLine.ToString();
         }
     }
 

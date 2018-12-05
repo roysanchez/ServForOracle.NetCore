@@ -1,11 +1,16 @@
-﻿using Oracle.ManagedDataAccess.Client;
+﻿using Newtonsoft.Json;
+using Oracle.ManagedDataAccess.Client;
 using Oracle.ManagedDataAccess.Types;
 using ServForOracle.NetCore.Extensions;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Xml;
+using System.Xml.Linq;
+using System.Xml.Serialization;
 
 namespace ServForOracle.NetCore.Metadata
 {
@@ -128,12 +133,75 @@ namespace ServForOracle.NetCore.Metadata
                     else
                         throw castError;
                     break;
+                case OracleXmlType xml:
+                    var stringReader = new System.IO.StringReader(xml.Value);
+                    var serializer = new XmlSerializer(retType);
+                    break;
                 default:
                     //Log errors
                     break;
             }
 
             return value;
+        }
+
+        public dynamic GetObjectArrayFromOracleXML(Type retType, OracleXmlType xml)
+        {
+            var underType = retType.GetCollectionUnderType();
+            
+            if (xml == null || xml.IsNull)
+            {
+                return null;
+            }
+            else
+            {
+                //var overrides = new XmlAttributeOverrides();
+                //overrides.Add(underType, new XmlAttributes { XmlRoot = new XmlRootAttribute(underType.Name) });
+                //foreach (var prop in underType.GetProperties())
+                //{
+                    
+                //}
+
+                //XmlSerializer serializer = new XmlSerializer(underType, overrides);
+
+                //var doc = new XmlDocument();
+                //doc.LoadXml("<roy>" + xml.Value+ "</roy>");
+                //var json2 = JsonConvert.SerializeXmlNode(doc);
+                ////foreach (var node in doc.ChildNodes)
+                ////{
+                ////    var n = node as XmlNode;
+                    
+                ////}
+                    
+                XDocument xdc = XDocument.Parse("<roy>" + xml.Value + "</roy>");
+                var list = xdc.Root
+                    .Descendants()
+                    .Select(c =>
+                    {
+                        dynamic z = underType.CreateInstance();
+                        var x = $"<{underType.Name}>{c.ToString()}</{underType.Name}>";
+                        string json = JsonConvert.SerializeXNode(c);
+                        z = JsonConvert.DeserializeObject(json, underType);
+                        return z;
+                    })
+                    .ToList();
+
+                dynamic realList = retType.CreateInstance();
+
+                foreach(var t in list)
+                {
+                    realList.Add(t);
+                }
+                
+                if(retType.IsArray)
+                {
+                    return Enumerable.ToArray(realList);
+                }
+                else
+                {
+                    return realList;
+                }
+            }
         }
 
         private bool CheckIfNotNull(INullable value, bool destinationTypeIsNullable, string typeName)
