@@ -86,53 +86,47 @@ namespace ServForOracle.NetCore.Metadata
                     value = blob.Value;
                     break;
                 case OracleDate date when retType == typeof(DateTime) || retType == typeof(DateTime?):
-                    if (isNullable || !date.IsNull)
+                    if (CheckIfNotNull(date, isNullable, retType.FullName))
+                    {
                         value = date.Value;
-                    else
-                        throw castError;
+                    }
                     break;
                 case OracleIntervalDS interval when retType == typeof(TimeSpan) || retType == typeof(TimeSpan?):
-                    if (isNullable || !interval.IsNull)
+                    if (CheckIfNotNull(interval, isNullable, retType.FullName))
+                    {
                         value = interval.Value;
-                    else
-                        throw new InvalidCastException($"Can't cast a null value to {retType.FullName}");
+                    }
                     break;
                 case OracleIntervalYM intervalYM when (
                     retType == typeof(long) || retType == typeof(long?) ||
                     retType == typeof(float) || retType == typeof(float?) ||
                     retType == typeof(double) || retType == typeof(double?)
                 ):
-                    if (isNullable || !intervalYM.IsNull)
+                    if (CheckIfNotNull(intervalYM, isNullable, retType.FullName))
+                    {
                         value = intervalYM.Value;
-                    else
-                        throw castError;
+                    }
                     break;
                 case OracleBinary binary when retType == typeof(byte[]):
                     value = binary.Value;
                     break;
                 case OracleTimeStamp timestamp when retType == typeof(DateTime) || retType == typeof(DateTime?):
-                    if (isNullable || !timestamp.IsNull)
+                    if (CheckIfNotNull(timestamp, isNullable, retType.FullName))
                         value = timestamp;
                     else
                         throw castError;
                     break;
                 case OracleTimeStampLTZ timestampLTZ when retType == typeof(DateTime) || retType == typeof(DateTime?):
-                    if (isNullable || !timestampLTZ.IsNull)
+                    if (CheckIfNotNull(timestampLTZ, isNullable, retType.FullName))
                         value = timestampLTZ;
                     else
                         throw castError;
                     break;
                 case OracleTimeStampTZ timestampTZ when retType == typeof(DateTime) || retType == typeof(DateTime?):
-                    if (isNullable || !timestampTZ.IsNull)
-                        value = timestampTZ;
+                    if (CheckIfNotNull(timestampTZ, isNullable, retType.FullName))
+                        value = timestampTZ.Value;
                     else
                         throw castError;
-                    break;
-                case OracleString str:
-                    if (str.IsNull)
-                        value = null;
-                    else
-                        value = str.Value;
                     break;
                 default:
                     //Log errors
@@ -140,6 +134,25 @@ namespace ServForOracle.NetCore.Metadata
             }
 
             return value;
+        }
+
+        private bool CheckIfNotNull(INullable value, bool destinationTypeIsNullable, string typeName)
+        {
+            var castError = new InvalidCastException($"Can't cast a null value to {typeName}"); ;
+
+            if (value.IsNull)
+            {
+                if (!destinationTypeIsNullable)
+                {
+                    throw castError;
+                }
+
+                return false;
+            }
+            else
+            {
+                return true;
+            }
         }
 
         public OracleParameter GetOracleParameter(Type type, ParameterDirection direction, string name, object value)
