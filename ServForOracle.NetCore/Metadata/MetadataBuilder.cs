@@ -198,9 +198,13 @@ namespace ServForOracle.NetCore.Metadata
         {
             var cmd = connection.CreateCommand();
             cmd.CommandText =
-                "select attr_no, attr_name, attr_type_owner, attr_type_name "
-                + "from all_type_attrs where owner = "
-                + "upper(:1) and type_name = upper(:2)";
+            "select ata.attr_no, ata.attr_name, ata.attr_type_owner, ata.attr_type_name, aty.typecode "
+            + "from all_type_attrs ata "
+            + "left join all_types aty "
+            + "on aty.owner = ata.attr_type_owner "
+            + "and aty.type_name = ata.attr_type_name "
+            + "where ata.owner = "
+                + "upper(:1) and ata.type_name = upper(:2)";
             cmd.Parameters.Add(new OracleParameter(":1", udtInfo.ObjectSchema));
             cmd.Parameters.Add(new OracleParameter(":2", udtInfo.ObjectName));
             return cmd;
@@ -217,6 +221,31 @@ namespace ServForOracle.NetCore.Metadata
             OracleUDTs.Add(metadata);
 
             return metadata;
+        }
+
+        private OracleUdtInfo GetOracleCollectionUnderlyingType(OracleConnection con, string schema, string collectionName)
+        {
+            //TODO make recursive
+            var cmd = con.CreateCommand();
+            cmd.CommandText =
+                "select act.elem_type_owner, act.elem_type_name, aty.typecode "
+                + "from ALL_COLL_TYPES act "
+                + "join all_types aty "
+                + "on aty.owner = act.owner "
+                + "and aty.type_name = act.type_name "
+                + "where act.owner = upper(:0) and act.type_name = upper(:1)";
+
+            cmd.Parameters.Add(new OracleParameter(":1", schema));
+            cmd.Parameters.Add(new OracleParameter(":2", collectionName));
+
+            var reader = cmd.ExecuteReader();
+
+            while(reader.Read())
+            {
+                return new OracleUdtInfo(reader.GetString(0), reader.GetString(1), schema, collectionName);
+            }
+
+            return null;
         }
 
         private List<MetadataOracleTypePropertyDefinition> ExecuteReaderAndLoadTypeDefinition(OracleCommand cmd)
@@ -238,14 +267,26 @@ namespace ServForOracle.NetCore.Metadata
                 }
                 else
                 {
-                    var property = new MetadataOracleTypeSubTypeDefinition
+                    if (reader.GetString(4) == "COLLECTION")
                     {
-                        Order = reader.GetInt32(0),
-                        Name = reader.GetString(1),
-                        MetadataOracleType = GetOrCreateOracleTypeMetadata(cmd.Connection, new OracleUdtInfo(reader.GetString(2), reader.GetString(3)))
-                    };
-
-                    properties.Add(property);
+                        var property = new MetadataOracleTypeSubTypeDefinition
+                        {
+                            Order = reader.GetInt32(0),
+                            Name = reader.GetString(1),
+                            MetadataOracleType = GetOrCreateOracleTypeMetadata(cmd.Connection, GetOracleCollectionUnderlyingType(cmd.Connection, reader.GetString(2), reader.GetString(3)))
+                        };
+                        properties.Add(property);
+                    }
+                    else
+                    {
+                        var property = new MetadataOracleTypeSubTypeDefinition
+                        {
+                            Order = reader.GetInt32(0),
+                            Name = reader.GetString(1),
+                            MetadataOracleType = GetOrCreateOracleTypeMetadata(cmd.Connection, new OracleUdtInfo(reader.GetString(2), reader.GetString(3)))
+                        };
+                        properties.Add(property);
+                    }
                 }
             }
 

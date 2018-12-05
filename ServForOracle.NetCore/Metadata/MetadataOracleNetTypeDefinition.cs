@@ -58,8 +58,7 @@ namespace ServForOracle.NetCore.Metadata
                     list.Add(new MetadataOraclePropertyNetTypeDefinition(prop)
                     {
                         NETProperty = netProperty,
-                        PropertyMetadata = new MetadataOracleNetTypeDefinition(
-                            netProperty.PropertyType, propertyObject.MetadataOracleType, MetadataBuilder.PresetGetValueOrDefault(netProperty.PropertyType).Props)
+                        PropertyMetadata = GetPropertyMetadata(netProperty.PropertyType, propertyObject)
                     });
                 }
                 else
@@ -72,6 +71,20 @@ namespace ServForOracle.NetCore.Metadata
             }
 
             Properties = list;
+        }
+
+        private static MetadataOracleNetTypeDefinition GetPropertyMetadata(Type propertyType, MetadataOracleTypeSubTypeDefinition propertyObject)
+        {
+            if (propertyType.IsCollection())
+            {
+                return new MetadataOracleNetTypeDefinition(
+                                            propertyType.GetCollectionUnderType(), propertyObject.MetadataOracleType, MetadataBuilder.PresetGetValueOrDefault(propertyType.GetCollectionUnderType()).Props);
+            }
+            else
+            {
+                return new MetadataOracleNetTypeDefinition(
+                                            propertyType, propertyObject.MetadataOracleType, MetadataBuilder.PresetGetValueOrDefault(propertyType).Props);
+            }
         }
 
         public new IEnumerable<MetadataOraclePropertyNetTypeDefinition> Properties { get; set; }

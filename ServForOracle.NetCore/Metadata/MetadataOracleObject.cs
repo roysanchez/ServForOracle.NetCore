@@ -176,9 +176,12 @@ namespace ServForOracle.NetCore.Metadata
             MetadataOracleNetTypeDefinition metadata, int startNumber, out int lastNumber)
         {
             var rowsParameters = new List<OracleParameter>();
-            foreach (var temp in value)
+            if (value != null)
             {
-                rowsParameters.AddRange(ProcessOracleParameter(temp, metadata, startNumber, out startNumber));
+                foreach (var temp in value)
+                {
+                    rowsParameters.AddRange(ProcessOracleParameter(temp, metadata, startNumber, out startNumber));
+                }
             }
             lastNumber = startNumber;
             return rowsParameters;
@@ -202,7 +205,16 @@ namespace ServForOracle.NetCore.Metadata
 
                 if (prop.PropertyMetadata != null)
                 {
-                    select.Append(QueryBuilder(prop.PropertyMetadata, tableName, prop.Name));
+                    if (prop.NETProperty.PropertyType.IsCollection())
+                    {
+                        select.Append("cursor(select ");
+                        select.Append(QueryBuilder(prop.PropertyMetadata, "d"));
+                        select.Append($" from table(value({tableName}).{prop.Name}) d) {prop.Name}");
+                    }
+                    else
+                    {
+                        select.Append(QueryBuilder(prop.PropertyMetadata, tableName, prop.Name));
+                    }
                 }
                 else
                 {
