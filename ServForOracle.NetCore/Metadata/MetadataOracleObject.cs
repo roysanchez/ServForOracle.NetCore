@@ -289,6 +289,7 @@ namespace ServForOracle.NetCore.Metadata
                 var subType = type.GetCollectionUnderType();
                 while (reader.Read())
                 {
+                    counter = 0;
                     instance.Add(ReadObjectInstance(subType, reader, OracleTypeNetMetadata, ref counter));
                 }
 
