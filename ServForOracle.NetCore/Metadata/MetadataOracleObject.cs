@@ -75,16 +75,18 @@ namespace ServForOracle.NetCore.Metadata
             return constructor.ToString();
         }
 
-        private string BuildConstructor(object value, string parameterName, MetadataOracleNetTypeDefinition metadata, ref int startNumber,
+        private string BuildConstructor(StringBuilder baseString, object value, string parameterName, MetadataOracleNetTypeDefinition metadata, ref int startNumber,
             string constructor)
         {
             var workedTypes = new Dictionary<string, string>();
-            var dependencies = new StringBuilder();
+            //var dependencies = new StringBuilder();
             int dependenciesCounter = 0;
             foreach(var prop in metadata.Properties.Where(c => c.PropertyMetadata != null).OrderBy(c => c.Order))
             {
                 var workedName = parameterName + dependenciesCounter++;
-                dependencies.AppendLine(BuildQueryConstructor(value, workedName, ref startNumber, prop.PropertyMetadata));
+                var subConstructor = GenerateConstructor(prop.PropertyMetadata.UDTInfo.FullObjectName,
+                    prop.PropertyMetadata.Properties.ToArray());
+                BuildQueryConstructor(baseString, prop.NETProperty.PropertyType, prop.NETProperty.GetValue(value), workedName, ref startNumber, prop.PropertyMetadata, subConstructor);
                 workedTypes.Add(prop.Name, workedName);
             }
 
@@ -94,12 +96,12 @@ namespace ServForOracle.NetCore.Metadata
                 {
                     if (prop.PropertyMetadata != null)
                     {
-                        constructor = regex.Replace(constructor, $":{startNumber++}", 1);
+                        workedTypes.TryGetValue(prop.Name, out var subtype);
+                        constructor = regex.Replace(constructor, subtype);
                     }
                     else
                     {
-                        workedTypes.TryGetValue(prop.Name, out var subtype);
-                        constructor = regex.Replace(constructor, subtype);
+                        constructor = regex.Replace(constructor, $":{startNumber++}", 1);
                     }
                 }
                 else
@@ -109,27 +111,28 @@ namespace ServForOracle.NetCore.Metadata
 
             }
 
-            dependencies.AppendLine(constructor);
-            return dependencies.ToString(); ;
+            //dependencies.AppendLine(constructor);
+            return constructor;//dependencies.ToString(); ;
         }
 
         public (string Constructor, int LastNumber) BuildQueryConstructorString(T value, string name, int startNumber)
         {
-            var baseString = BuildQueryConstructor(value, name, ref startNumber, OracleTypeNetMetadata);
+            var baseString = new StringBuilder();
+            BuildQueryConstructor(baseString, Type, value, name, ref startNumber, OracleTypeNetMetadata, ConstructorString);
 
             return (baseString.ToString(), startNumber);
         }
 
-        private string BuildQueryConstructor(object value, string name, ref int startNumber, MetadataOracleNetTypeDefinition metadata)
+        private void BuildQueryConstructor(StringBuilder baseString, Type type, object value, string name, ref int startNumber, MetadataOracleNetTypeDefinition metadata, string constructor)
         {
-            var baseString = new StringBuilder();
-            if (Type.IsCollection())
+            //var baseString = new StringBuilder();
+            if (type.IsCollection())
             {
                 if (value != null)
                 {
                     foreach (var v in value as IEnumerable)
                     {
-                        var baseConstructor = BuildConstructor(v, name, metadata, ref startNumber, ConstructorString);
+                        var baseConstructor = BuildConstructor(baseString, v, name, metadata, ref startNumber, constructor);
                         baseString.AppendLine($"{name}.extend;");
                         baseString.AppendLine($"{name}({name}.last) := {baseConstructor}");
                     }
@@ -137,11 +140,11 @@ namespace ServForOracle.NetCore.Metadata
             }
             else
             {
-                var baseConstructor = BuildConstructor(value, name, OracleTypeNetMetadata, ref startNumber, ConstructorString);
+                var baseConstructor = BuildConstructor(baseString, value, name, OracleTypeNetMetadata, ref startNumber, constructor);
                 baseString.AppendLine($"{name} := {baseConstructor}");
             }
 
-            return baseString.ToString();
+            //return baseString.ToString();
         }
 
         public OracleParameter[] GetOracleParameters(T value, int startNumber)
