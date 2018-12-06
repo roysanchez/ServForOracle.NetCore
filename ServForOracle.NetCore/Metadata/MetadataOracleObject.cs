@@ -242,7 +242,7 @@ namespace ServForOracle.NetCore.Metadata
             var select = new StringBuilder();
             var first = true;
 
-            var futureLevel = $"d{level + 1}";
+            var futureLevel = level + 1;
 
             foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
             {
@@ -259,10 +259,10 @@ namespace ServForOracle.NetCore.Metadata
                 {
                     if (prop.NETProperty.PropertyType.IsCollection())
                     {
-                        var levelStr = $"d{++level}";
+                        var levelStr = $"d{futureLevel}";
                         select.Append($"(select xmlagg( xmlelement(\"{prop.Name}\", xmlforest( ");
-                        select.Append(QueryBuilder(prop.PropertyMetadata, levelStr, level));
-                        select.Append($") ) ) from table({tableName}.{prop.Name}) {futureLevel}) {prop.Name}");
+                        select.Append(QueryBuilder(prop.PropertyMetadata, levelStr, futureLevel));
+                        select.Append($") ) ) from table({tableName}.{prop.Name}) {levelStr}) {prop.Name}");
                     }
                     else
                     {
@@ -389,8 +389,10 @@ namespace ServForOracle.NetCore.Metadata
                     }
                     else
                     {
-                        prop.NETProperty.SetValue(instance, ReadObjectInstance(prop.NETProperty.PropertyType,
-                            reader, prop.PropertyMetadata, ref count));
+                        var x = GetObjectFromOracleXML(prop.NETProperty.PropertyType, reader.GetOracleValue(count++) as OracleXmlType, prop.Name);
+                        prop.NETProperty.SetValue(instance, x);
+                        //prop.NETProperty.SetValue(instance, ReadObjectInstance(prop.NETProperty.PropertyType,
+                        //    reader, prop.PropertyMetadata, ref count));
                     }
                 }
                 else
