@@ -26,7 +26,7 @@ namespace ServForOracle.NetCore.Metadata
         }
 
         public MetadataOracleNetTypeDefinition(Type type, MetadataOracleTypeDefinition baseMetadataDefinition,
-           UdtPropertyNetPropertyMap[] presetProperties)
+           UdtPropertyNetPropertyMap[] presetProperties, bool fuzzyNameMatch)
         {
             UDTInfo = baseMetadataDefinition.UDTInfo;
             presetProperties = presetProperties ?? new UdtPropertyNetPropertyMap[] { };
@@ -37,6 +37,12 @@ namespace ServForOracle.NetCore.Metadata
             foreach(var prop in baseMetadataDefinition.Properties)
             {
                 var netProperty = netProperties.FirstOrDefault(c => c.Name.ToUpper() == prop.Name);
+                if(netProperty == null && fuzzyNameMatch)
+                {
+                    //TODO Do more advance fuzzy match
+                    netProperty = netProperties.FirstOrDefault(c => c.Name.ToUpper() == prop.Name.Replace("_", string.Empty));
+                }
+
                 var presetNetPropertyName = presetProperties.FirstOrDefault(c => c.UDTPropertyName == prop.Name)?.NetPropertyName;
                 var attributePropertyName = netAttibutes.FirstOrDefault(c => c.UDTPropertyName == prop.Name)?.NetPropertyName;
 
@@ -58,7 +64,7 @@ namespace ServForOracle.NetCore.Metadata
                     list.Add(new MetadataOraclePropertyNetTypeDefinition(prop)
                     {
                         NETProperty = netProperty,
-                        PropertyMetadata = GetPropertyMetadata(netProperty.PropertyType, propertyObject)
+                        PropertyMetadata = GetPropertyMetadata(netProperty.PropertyType, propertyObject, fuzzyNameMatch)
                     });
                 }
                 else
@@ -73,17 +79,17 @@ namespace ServForOracle.NetCore.Metadata
             Properties = list;
         }
 
-        private static MetadataOracleNetTypeDefinition GetPropertyMetadata(Type propertyType, MetadataOracleTypeSubTypeDefinition propertyObject)
+        private static MetadataOracleNetTypeDefinition GetPropertyMetadata(Type propertyType, MetadataOracleTypeSubTypeDefinition propertyObject, bool fuzzyNameMatch)
         {
             if (propertyType.IsCollection())
             {
                 return new MetadataOracleNetTypeDefinition(
-                                            propertyType.GetCollectionUnderType(), propertyObject.MetadataOracleType, MetadataBuilder.PresetGetValueOrDefault(propertyType.GetCollectionUnderType()).Props);
+                                            propertyType.GetCollectionUnderType(), propertyObject.MetadataOracleType, MetadataBuilder.PresetGetValueOrDefault(propertyType.GetCollectionUnderType()).Props, fuzzyNameMatch);
             }
             else
             {
                 return new MetadataOracleNetTypeDefinition(
-                                            propertyType, propertyObject.MetadataOracleType, MetadataBuilder.PresetGetValueOrDefault(propertyType).Props);
+                                            propertyType, propertyObject.MetadataOracleType, MetadataBuilder.PresetGetValueOrDefault(propertyType).Props, fuzzyNameMatch);
             }
         }
 

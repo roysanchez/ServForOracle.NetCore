@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Oracle.ManagedDataAccess.Client;
 using Oracle.ManagedDataAccess.Types;
 using ServForOracle.NetCore.Extensions;
@@ -145,7 +146,7 @@ namespace ServForOracle.NetCore.Metadata
             return value;
         }
 
-        public dynamic GetObjectArrayFromOracleXML(Type retType, OracleXmlType xml)
+        public dynamic GetObjectArrayFromOracleXML(Type retType, OracleXmlType xml, string propertyName)
         {
             var underType = retType.GetCollectionUnderType();
             
@@ -159,39 +160,50 @@ namespace ServForOracle.NetCore.Metadata
                 //overrides.Add(underType, new XmlAttributes { XmlRoot = new XmlRootAttribute(underType.Name) });
                 //foreach (var prop in underType.GetProperties())
                 //{
-                    
+
                 //}
 
                 //XmlSerializer serializer = new XmlSerializer(underType, overrides);
+                dynamic realList = retType.CreateInstance();
 
-                //var doc = new XmlDocument();
-                //doc.LoadXml("<roy>" + xml.Value+ "</roy>");
-                //var json2 = JsonConvert.SerializeXmlNode(doc);
+                var doc = new XmlDocument();
+                doc.LoadXml("<roy>" + xml.Value + "</roy>");
+                var json2 = JsonConvert.SerializeXmlNode(doc);
+
+                JObject json = JObject.Parse(json2);
+                foreach(var tokenResult in json["roy"][propertyName].Children().ToList())
+                {
+                    dynamic obj = tokenResult.ToObject(underType);
+                    realList.Add(obj);
+                }
+
+
+
                 ////foreach (var node in doc.ChildNodes)
                 ////{
                 ////    var n = node as XmlNode;
-                    
+
                 ////}
-                    
-                XDocument xdc = XDocument.Parse("<roy>" + xml.Value + "</roy>");
-                var list = xdc.Root
-                    .Descendants()
-                    .Select(c =>
-                    {
-                        dynamic z = underType.CreateInstance();
-                        var x = $"<{underType.Name}>{c.ToString()}</{underType.Name}>";
-                        string json = JsonConvert.SerializeXNode(c);
-                        z = JsonConvert.DeserializeObject(json, underType);
-                        return z;
-                    })
-                    .ToList();
 
-                dynamic realList = retType.CreateInstance();
+                //XDocument xdc = XDocument.Parse("<roy>" + xml.Value + "</roy>");
+                //var list = xdc.Root
+                //    .Descendants()
+                //    .Select(c =>
+                //    {
+                //        dynamic z = underType.CreateInstance();
+                //        var x = $"<{underType.Name}>{c.ToString()}</{underType.Name}>";
+                //        string json = JsonConvert.SerializeXNode(c);
+                //        z = JsonConvert.DeserializeObject(json, underType);
+                //        return z;
+                //    })
+                //    .ToList();
 
-                foreach(var t in list)
-                {
-                    realList.Add(t);
-                }
+                
+
+                //foreach(var t in list)
+                //{
+                //    realList.Add(t);
+                //}
                 
                 if(retType.IsArray)
                 {

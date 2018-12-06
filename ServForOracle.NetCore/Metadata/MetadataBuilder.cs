@@ -16,17 +16,17 @@ namespace ServForOracle.NetCore.Metadata
         public OracleConnection OracleConnection { get; set; }
         public static ConcurrentBag<MetadataOracleTypeDefinition> OracleUDTs { get; private set; }
         public static ConcurrentDictionary<Type, MetadataOracle> TypeDefinitionsOracleUDT { get; private set; }
-        public static ConcurrentDictionary<Type, (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props)> PresetUDTs { get; private set; }
+        public static ConcurrentDictionary<Type, (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool FuzzyMatch)> PresetUDTs { get; private set; }
 
         static MetadataBuilder()
         {
             OracleUDTs = new ConcurrentBag<MetadataOracleTypeDefinition>();
             TypeDefinitionsOracleUDT = new ConcurrentDictionary<Type, MetadataOracle>();
-            PresetUDTs = new ConcurrentDictionary<Type, (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props)>();
+            PresetUDTs = new ConcurrentDictionary<Type, (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool fuzzyMatch)>();
         }
-        internal static void AddOracleUDTPresets(Type Type, OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props)
+        internal static void AddOracleUDTPresets(Type Type, OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool fuzzyNameMatch = true)
         {
-                PresetUDTs.TryAdd(Type, (Info, Props));
+                PresetUDTs.TryAdd(Type, (Info, Props, fuzzyNameMatch));
         }
 
         public MetadataBuilder(OracleConnection connection)
@@ -78,26 +78,28 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleTypeDefinition, UdtPropertyNetPropertyMap[])>"
+        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleTypeDefinition, UdtPropertyNetPropertyMap[], bool)"
         private async Task<object> RegisterAsync(Type type, OracleConnection con, OracleUdtInfo udtInfo)
         {
             var metadataGenericType = typeof(MetadataOracleObject<>).MakeGenericType(type);
             var typeMetadata = await GetOrCreateOracleTypeMetadataAsync(con, udtInfo);
 
-            var metadata = metadataGenericType.CreateInstance(typeMetadata, GetPresetProperties(type));
+            var (_, props, fuzzyMatch) = PresetGetValueOrDefault(type);
+            var metadata = metadataGenericType.CreateInstance(typeMetadata,props, fuzzyMatch);
 
             TypeDefinitionsOracleUDT.TryAdd(type, metadata as MetadataOracle);
 
             return metadata;
         }
 
-        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleTypeDefinition, UdtPropertyNetPropertyMap[])>"
+        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleTypeDefinition, UdtPropertyNetPropertyMap[], bool)"
         private object Register(Type type, OracleConnection con, OracleUdtInfo udtInfo)
         {
             var metadataGenericType = typeof(MetadataOracleObject<>).MakeGenericType(type);
             var typeMetadata = GetOrCreateOracleTypeMetadata(con, udtInfo);
 
-            var metadata = metadataGenericType.CreateInstance(typeMetadata, GetPresetProperties(type));
+            var (Info, Props, FuzzyMatch) = PresetGetValueOrDefault(type);
+            var metadata = metadataGenericType.CreateInstance(typeMetadata, Props, FuzzyMatch);
 
             TypeDefinitionsOracleUDT.TryAdd(type, metadata as MetadataOracle);
 
@@ -105,10 +107,18 @@ namespace ServForOracle.NetCore.Metadata
         }
 
         //GetValueOrDefault doesn't exists in net standard
-        public static (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props) PresetGetValueOrDefault(Type type)
+        public static (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool FuzzyMatch) PresetGetValueOrDefault(Type type)
         {
-            PresetUDTs.TryGetValue(type, out var preset);
-            return preset;
+            if (type.IsCollection())
+            {
+                PresetUDTs.TryGetValue(type.GetCollectionUnderType(), out var preset);
+                return preset;
+            }
+            else
+            {
+                PresetUDTs.TryGetValue(type, out var preset);
+                return preset;
+            }
         }
 
         private UdtPropertyNetPropertyMap[] GetPresetProperties(Type type)

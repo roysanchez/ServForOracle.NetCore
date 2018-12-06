@@ -79,8 +79,35 @@ namespace ServForOracle.NetCore
         }
 
         public bool IsCollectionValid => !string.IsNullOrWhiteSpace(CollectionName);
-        public string FullObjectName => $"{ObjectSchema}.{ObjectName}";
-        public string FullCollectionName => $"{CollectionSchema}.{CollectionName}";
+        public string FullObjectName
+        {
+            get
+            {
+                if(string.IsNullOrWhiteSpace(ObjectSchema) || string.IsNullOrWhiteSpace(ObjectName))
+                {
+                    throw new Exception("The UDT object is not set up correctly, doesn't have the object configured, udt=" + ToString());
+                }
+
+                return $"{ObjectSchema}.{ObjectName}"; ;
+            }
+        }
+        public string FullCollectionName
+        {
+            get
+            {
+                if(string.IsNullOrWhiteSpace(CollectionSchema) || string.IsNullOrWhiteSpace(CollectionName))
+                {
+                    throw new Exception("The UDT object is not set up correctly, doesn't have the collectionObject configured, udt=" + ToString());
+                }
+                return $"{CollectionSchema}.{CollectionName}";
+            }
+        }
+
+        public override string ToString()
+        {
+            return $"objectSchema={ObjectSchema};objectName={ObjectName};collectionSchema={CollectionSchema};"
+                + $"collectionName={CollectionName}";
+        }
 
         public override bool Equals(object obj)
         {
