@@ -208,13 +208,23 @@ namespace ServForOracle.NetCore.Metadata
                 }
                 else
                 {
-                    propertiesParameters.Add(
+                    if (value != null && prop.NETProperty.GetValue(value) != null)
+                    {
+                        propertiesParameters.Add(
                         GetOracleParameter(
                             type: prop.NETProperty.PropertyType,
                             direction: ParameterDirection.Input,
                             name: $":{startNumber++}",
-                            value: value != null ? prop.NETProperty.GetValue(value) : null
+                            value: prop.NETProperty.GetValue(value)
                         ));
+                    }
+                    //propertiesParameters.Add(
+                    //    GetOracleParameter(
+                    //        type: prop.NETProperty.PropertyType,
+                    //        direction: ParameterDirection.Input,
+                    //        name: $":{startNumber++}",
+                    //        value: value != null ? prop.NETProperty.GetValue(value) : null
+                    //    ));
                 }
             }
             newNumber = startNumber;
@@ -237,7 +247,7 @@ namespace ServForOracle.NetCore.Metadata
         }
 
 
-        private string QueryBuilder(MetadataOracleNetTypeDefinition metadata, string tableName, int level = 0)
+        private string QueryBuilder(MetadataOracleNetTypeDefinition metadata, string tableName, int level = 0, bool isRoot = false)
         {
             var select = new StringBuilder();
             var first = true;
@@ -252,31 +262,60 @@ namespace ServForOracle.NetCore.Metadata
                 }
                 else
                 {
-                    select.AppendLine(",");
+                    select.Append(",");
                 }
                 var newTable = $"{tableName}.{prop.Name}";
+
                 if (prop.PropertyMetadata != null)
                 {
                     if (prop.NETProperty.PropertyType.IsCollection())
                     {
-                        var levelStr = $"d{futureLevel}";
-                        select.Append($"(select xmlagg( xmlelement(\"{prop.Name}\", xmlforest( ");
-                        select.Append(QueryBuilder(prop.PropertyMetadata, levelStr, futureLevel));
-                        select.Append($") ) ) from table({tableName}.{prop.Name}) {levelStr}) {prop.Name}");
+                        if (isRoot)
+                        {
+                            var levelStr = $"d{futureLevel}";
+                            select.Append($"(select xmlelement( \"{prop.NETProperty.Name}\",");
+                            //select.Append(" XMLATTRIBUTES('true' as \"json:Array\"), ");
+                            select.Append($" xmlagg( xmlconcat( xmlelement( \"{prop.NETProperty.Name}\", ");
+                            select.Append(QueryBuilder(prop.PropertyMetadata, levelStr, futureLevel));
+                            select.Append($") ) ) ) from table({tableName}.{prop.Name}) {levelStr}) {prop.Name}");
+                        }
+                        else
+                        {
+                            var levelStr = $"d{futureLevel}";
+                            select.Append($"(select xmlelement( \"{prop.NETProperty.Name}\",");
+                            //select.Append(" XMLATTRIBUTES('true' as \"json:Array\"), ");
+                            select.Append($" xmlagg( xmlconcat( xmlelement( \"{prop.NETProperty.Name}\", ");
+                            select.Append(QueryBuilder(prop.PropertyMetadata, levelStr, futureLevel));
+                            select.Append($") ) ) ) from table({tableName}.{prop.Name}) {levelStr})");
+                        }
+
                     }
                     else
                     {
-                        select.Append($"(select xmlelement(\"{prop.Name}\", xmlforest( ");
-                        select.Append(QueryBuilder(prop.PropertyMetadata, newTable, 0));
-                        select.Append($") ) from dual) {prop.Name}");
-                        //select.Append(QueryBuilder(prop.PropertyMetadata, tableName, prop.Name));
+                        if(isRoot)
+                        {
+                            select.Append($"(select xmlelement( \"{prop.NETProperty.Name}\", xmlconcat( ");
+                            select.Append(QueryBuilder(prop.PropertyMetadata, newTable, 0));
+                            select.Append($") ) from dual) {prop.NETProperty.Name}");
+                        }
+                        else
+                        {
+                            select.Append($"(select xmlelement( \"{prop.NETProperty.Name}\", xmlconcat( ");
+                            select.Append(QueryBuilder(prop.PropertyMetadata, newTable, 0));
+                            select.Append($") ) from dual)");
+                        }
                     }
-                    //}
-
                 }
                 else
                 {
-                    select.Append($"{tableName}.{prop.Name} {prop.Name}");
+                    if(isRoot)
+                    {
+                        select.Append($"{tableName}.{prop.Name} {prop.NETProperty.Name}");
+                    }
+                    else
+                    {
+                        select.AppendLine($"XmlElement(\"{prop.NETProperty.Name}\", {tableName}.{prop.Name})");
+                    }
                 }
             }
 
@@ -293,7 +332,7 @@ namespace ServForOracle.NetCore.Metadata
         {
             var query = new StringBuilder($"open :{startNumber} for select ");
 
-            query.AppendLine(QueryBuilder(OracleTypeNetMetadata, "value(c)"));
+            query.AppendLine(QueryBuilder(OracleTypeNetMetadata, "value(c)", isRoot: true));
             query.Append($" from table({fieldName}) c;");
 
             return query.ToString();
@@ -302,7 +341,7 @@ namespace ServForOracle.NetCore.Metadata
         private string GetRefCursorObjectQuery(int startNumber, string fieldName)
         {
             var query = new StringBuilder($"open :{startNumber} for select ");
-            query.AppendLine(QueryBuilder(OracleTypeNetMetadata, $"value({fieldName})"));
+            query.AppendLine(QueryBuilder(OracleTypeNetMetadata, $"value({fieldName})", isRoot: true));
             query.Append(" from dual;");
 
             return query.ToString();
@@ -378,21 +417,21 @@ namespace ServForOracle.NetCore.Metadata
         private dynamic ReadObjectInstance(Type type, OracleDataReader reader, MetadataOracleNetTypeDefinition metadata, ref int count)
         {
             var instance = type.CreateInstance();
+            int nullCounter = 0;
+
             foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
             {
                 if (prop.PropertyMetadata != null)
                 {
                     if (prop.NETProperty.PropertyType.IsCollection())
                     {
-                        var x = GetObjectArrayFromOracleXML(prop.NETProperty.PropertyType, reader.GetOracleValue(count++) as OracleXmlType, prop.Name);
+                        var x = GetObjectArrayFromOracleXML(prop.NETProperty.PropertyType, reader.GetOracleValue(count++) as OracleXmlType, prop.NETProperty.Name);
                         prop.NETProperty.SetValue(instance, x);
                     }
                     else
                     {
-                        var x = GetObjectFromOracleXML(prop.NETProperty.PropertyType, reader.GetOracleValue(count++) as OracleXmlType, prop.Name);
+                        var x = GetObjectFromOracleXML(prop.NETProperty.PropertyType, reader.GetOracleValue(count++) as OracleXmlType, prop.NETProperty.Name);
                         prop.NETProperty.SetValue(instance, x);
-                        //prop.NETProperty.SetValue(instance, ReadObjectInstance(prop.NETProperty.PropertyType,
-                        //    reader, prop.PropertyMetadata, ref count));
                     }
                 }
                 else
@@ -400,7 +439,17 @@ namespace ServForOracle.NetCore.Metadata
                     prop.NETProperty.SetValue(instance,
                         ConvertOracleParameterToBaseType(prop.NETProperty.PropertyType, reader.GetOracleValue(count++)));
                 }
+
+                if(prop.NETProperty.GetValue(instance) is null)
+                {
+                    nullCounter++;
+                }
             }
+
+            //if(nullCounter == type.GetProperties().Length)
+            //{
+            //    return null;
+            //}
 
             return instance;
 

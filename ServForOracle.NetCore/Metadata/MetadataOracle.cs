@@ -146,44 +146,150 @@ namespace ServForOracle.NetCore.Metadata
             return value;
         }
 
+        //XmlAttributes GetXmlAttributes(Type type)
+        //{
+        //    var ret = new XmlAttributes();
+        //    foreach(var p in type.GetProperties())
+        //    {
+
+        //    }
+        //}
+
+        public dynamic GetObjectArrayFromXML(Type listType, XElement xml, string propertyName)
+        {
+            if (xml is null)
+            {
+                return null;
+            }
+
+            dynamic realList = listType.CreateInstance();
+
+            foreach (var el in xml.Elements())
+            {
+                dynamic obj = GetObjectFromXML(listType.GetCollectionUnderType(), el, propertyName);
+                if (obj != null)
+                {
+                    realList.Add(obj);
+                }
+            }
+
+            if(Enumerable.Count(realList) == 0)
+            {
+                return null;
+            }
+            else if (listType.IsArray)
+            {
+                return Enumerable.ToArray(realList);
+            }
+            else
+            {
+                return realList;
+            }
+        }
+
+        public dynamic GetObjectFromXML(Type objectType, XElement xml, string propertyName)
+        {
+            if (xml is null)
+            {
+                return null;
+            }
+
+            if (objectType.IsClrType())
+            {
+                return xml.Value;
+            }
+
+            dynamic result = objectType.CreateInstance();
+
+            var elements = xml.Elements();
+            var nullCounter = 0;
+
+            foreach (var prop in objectType.GetProperties())
+            {
+                if (prop.PropertyType.IsCollection())
+                {
+                    prop.SetValue(result, GetObjectArrayFromXML(prop.PropertyType, xml.Element(prop.Name),
+                        prop.Name));
+                }
+                else if (!prop.PropertyType.IsClrType())
+                {
+                    prop.SetValue(result, GetObjectFromXML(prop.PropertyType, xml.Element(prop.Name), prop.Name));
+                }
+                else
+                {
+                    var element = elements.FirstOrDefault(c => c.Name == prop.Name);
+
+                    if (element is null || string.IsNullOrWhiteSpace(element.Value))
+                    {
+                        prop.SetValue(result, null);
+                    }
+                    else
+                    {
+                        prop.SetValue(result, ConvertXMLToType(prop.PropertyType, element));
+                    }
+                }
+
+                if (prop.GetValue(result) is null)
+                    nullCounter++;
+            }
+
+            if(nullCounter == objectType.GetProperties().Length)
+            {
+                return null;
+            }
+
+            return result;
+        }
+
+        private dynamic ConvertXMLToType(Type type, XElement element)
+        {
+            if (type == typeof(string))
+                return (string)element;
+            else if (type == typeof(DateTime) || type == typeof(DateTime?))
+                return (DateTime?)element;
+            else if (type == typeof(int) || type == typeof(int?))
+                return (int?)element;
+            else if (type == typeof(float) || type == typeof(float?))
+                return (float?)element;
+            else if (type == typeof(double) || type == typeof(double?))
+                return (double?)element;
+            else if (type == typeof(decimal) || type == typeof(decimal?))
+                return (decimal?)element;
+            else if (type == typeof(long) || type == typeof(long?))
+                return (long?)element;
+            else if (type == typeof(DateTimeOffset) || type == typeof(DateTimeOffset?))
+                return (DateTimeOffset?)element;
+            else if (type == typeof(bool) || type == typeof(bool?))
+                return (bool?)element;
+            else if (type == typeof(TimeSpan) || type == typeof(TimeSpan?))
+                return (TimeSpan?)element;
+            else if (type == typeof(uint) || type == typeof(uint?))
+                return (uint?)element;
+            else if (type == typeof(ulong) || type == typeof(ulong?))
+                return (ulong?)element;
+            else if (type == typeof(Guid) || type == typeof(Guid?))
+                return (Guid?)element;
+            else
+                return null;
+        }
+
         public dynamic GetObjectArrayFromOracleXML(Type retType, OracleXmlType xml, string propertyName)
         {
-            var underType = retType.GetCollectionUnderType();
-
             if (xml == null || xml.IsNull)
             {
                 return null;
             }
             else
             {
-                dynamic realList = retType.CreateInstance();
+                XElement doc = XElement.Parse("<?xml version=\"1.0\" encoding=\"utf-16\"?><roy>" + xml.Value + "</roy>");
 
-                var doc = new XmlDocument();
-                doc.LoadXml("<roy>" + xml.Value + "</roy>");
-                var json2 = JsonConvert.SerializeXmlNode(doc);
-
-                JObject json = JObject.Parse(json2);
-                foreach (var tokenResult in json["roy"][propertyName].Children().ToList())
-                {
-                    dynamic obj = tokenResult.ToObject(underType);
-                    realList.Add(obj);
-                }
-
-                if (retType.IsArray)
-                {
-                    return Enumerable.ToArray(realList);
-                }
-                else
-                {
-                    return realList;
-                }
+                var list = GetObjectArrayFromXML(retType, doc.Elements().First(), propertyName);
+                return list;
             }
         }
 
         public dynamic GetObjectFromOracleXML(Type retType, OracleXmlType xml, string propertyName)
         {
-            //var underType = retType.GetCollectionUnderType();
-
             if (xml == null || xml.IsNull)
             {
                 return null;
@@ -191,14 +297,10 @@ namespace ServForOracle.NetCore.Metadata
             else
             {
                 dynamic realList = retType.CreateInstance();
-
-                var doc = new XmlDocument();
-                doc.LoadXml("<roy>" + xml.Value + "</roy>");
-                var json2 = JsonConvert.SerializeXmlNode(doc);
-
-                JObject json = JObject.Parse(json2);
-                var token = json["roy"][propertyName];
-                dynamic obj = token.ToObject(retType);
+                
+                var doc = XElement.Parse("<roy>" + xml.Value + "</roy>");
+                
+                dynamic obj = GetObjectFromXML(retType, doc.Elements().First(), propertyName);
 
                 return obj;
             }
@@ -306,3 +408,4 @@ namespace ServForOracle.NetCore.Metadata
         }
     }
 }
+
