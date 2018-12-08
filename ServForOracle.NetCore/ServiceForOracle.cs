@@ -9,18 +9,24 @@ using ServForOracle.NetCore.Parameters;
 using ServForOracle.NetCore.Metadata;
 using System.Threading.Tasks;
 using ServForOracle.NetCore.Extensions;
+using System.Data.Common;
 
 namespace ServForOracle.NetCore
 {
     public class ServiceForOracle : IServiceForOracle
     {
-        private readonly OracleConnection _Connection;
+        private readonly DbConnection _Connection;
         private readonly MetadataBuilder _Builder;
 
-        public ServiceForOracle(OracleConnection connection)
+        internal ServiceForOracle(DbConnection connection, MetadataBuilder metadata)
         {
             _Connection = connection;
-            _Builder = new MetadataBuilder(connection);
+            _Builder = metadata;
+        }
+
+        public ServiceForOracle(OracleConnection connection)
+            :this(connection, new MetadataBuilder(connection))
+        {
         }
 
         public async Task ExecuteProcedureAsync(string procedure, params IParam[] parameters)
@@ -48,19 +54,20 @@ namespace ServForOracle.NetCore
             MetadataOracle returnMetadata = null;
             OracleParameter retOra = null;
 
-            await ExecuteAsync($"ret := {function}", parameters, (info) =>
-            {
-                return Task.FromResult(FunctionBeforeQuery<T>(info, udtInfo, out returnMetadata, out retOra));
-            },
+            await ExecuteAsync(function, parameters, (info) => Task.FromResult(FunctionBeforeQuery<T>(info, udtInfo, out returnMetadata, out retOra)),
             (info) =>
             {
                 if (returnMetadata is MetadataOracleObject<T> metadata)
                 {
                     return Task.FromResult(ReturnValueAdditionalInformation(info, udtInfo, metadata, out retOra));
                 }
+                else if (returnMetadata is MetadataOracleBoolean metadataBoolean)
+                {
+                    return Task.FromResult(ReturnValueAdditionalInformationBoolean<T>(info, metadataBoolean, out retOra));
+                }
                 else
                 {
-                    return Task.FromResult(null as AdditionalInformation);
+                    return Task.FromResult<AdditionalInformation>(null);
                 }
             });
 
