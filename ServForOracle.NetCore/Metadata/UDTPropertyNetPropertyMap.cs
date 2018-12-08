@@ -8,6 +8,15 @@ namespace ServForOracle.NetCore.Metadata
     {
         public UdtPropertyNetPropertyMap(string netPropertyName, string udtPropertyName)
         {
+            if (string.IsNullOrWhiteSpace(netPropertyName))
+            {
+                throw new ArgumentNullException(nameof(netPropertyName));
+            }
+            if(string.IsNullOrWhiteSpace(udtPropertyName))
+            {
+                throw new ArgumentNullException(nameof(udtPropertyName));
+            }
+
             UDTPropertyName = udtPropertyName.ToUpper();
             NetPropertyName = netPropertyName.ToUpper();
         }

@@ -18,10 +18,15 @@ namespace ServForOracle.NetCore.Metadata
 
         public MetadataBuilder(DbConnection connection)
         {
+            if(connection is null || string.IsNullOrWhiteSpace(connection.ConnectionString))
+            {
+                throw new ArgumentNullException(nameof(connection));
+            }
+
             OracleConnection = connection;
         }
 
-        public async Task<MetadataOracleObject<T>> GetOrRegisterMetadataOracleObjectAsync<T>(OracleUdtInfo udtInfo)
+        public virtual async Task<MetadataOracleObject<T>> GetOrRegisterMetadataOracleObjectAsync<T>(OracleUdtInfo udtInfo)
         {
             GetTypeAndCachedMetadata<T>(out var type, out var metadata);
 
@@ -42,7 +47,7 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        public MetadataOracleObject<T> GetOrRegisterMetadataOracleObject<T>(OracleUdtInfo udtInfo)
+        public virtual MetadataOracleObject<T> GetOrRegisterMetadataOracleObject<T>(OracleUdtInfo udtInfo)
         {
             GetTypeAndCachedMetadata<T>(out var type, out var metadata);
 
@@ -107,21 +112,6 @@ namespace ServForOracle.NetCore.Metadata
             TypeDefinitionsOracleUDT.TryAdd(type, metadata as MetadataOracle);
 
             return metadata;
-        }
-
-        //GetValueOrDefault doesn't exists in net standard
-        public static (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool FuzzyMatch) PresetGetValueOrDefault(Type type)
-        {
-            if (type.IsCollection())
-            {
-                PresetUDTs.TryGetValue(type.GetCollectionUnderType(), out var preset);
-                return preset;
-            }
-            else
-            {
-                PresetUDTs.TryGetValue(type, out var preset);
-                return preset;
-            }
         }
 
         private OracleUdtInfo GetUDTInfo(Type type)

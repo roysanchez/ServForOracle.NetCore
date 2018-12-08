@@ -7,6 +7,6 @@ namespace ServForOracle.NetCore.Metadata
     internal class MetadataOracleTypeDefinition
     {
         public virtual IEnumerable<MetadataOracleTypePropertyDefinition> Properties { get; set; }
-        public OracleUdtInfo UDTInfo { get; set; }
+        public virtual OracleUdtInfo UDTInfo { get; set; }
     }
 }

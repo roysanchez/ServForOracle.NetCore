@@ -4,17 +4,13 @@ namespace ServForOracle.NetCore.Metadata
 {
     internal class MetadataOraclePropertyNetTypeDefinition : MetadataOracleTypePropertyDefinition
     {
-        public MetadataOraclePropertyNetTypeDefinition()
-        {
-
-        }
         public MetadataOraclePropertyNetTypeDefinition(MetadataOracleTypePropertyDefinition baseMetadata)
         {
             Name = baseMetadata.Name;
             Order = baseMetadata.Order;
         }
 
-        public PropertyInfo NETProperty { get; set; }
-        public MetadataOracleNetTypeDefinition PropertyMetadata { get; set; }
+        public virtual PropertyInfo NETProperty { get; set; }
+        public virtual MetadataOracleNetTypeDefinition PropertyMetadata { get; set; }
     }
 }

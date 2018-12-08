@@ -9,6 +9,6 @@ namespace ServForOracle.NetCore.Metadata
         /// <summary>
         /// Reference to the type metadata
         /// </summary>
-        public MetadataOracleTypeDefinition MetadataOracleType { get; set; }
+        public virtual MetadataOracleTypeDefinition MetadataOracleType { get; set; }
     }
 }

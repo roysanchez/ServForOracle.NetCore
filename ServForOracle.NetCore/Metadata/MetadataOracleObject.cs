@@ -15,30 +15,24 @@ namespace ServForOracle.NetCore.Metadata
 {
     internal class MetadataOracleObject<T> : MetadataOracleObject
     {
-        private readonly Regex regex;
+        private readonly Regex regex = new Regex(Regex.Escape("$"));
         private readonly string ConstructorString;
         private readonly Type Type;
         internal readonly MetadataOracleNetTypeDefinition OracleTypeNetMetadata;
-        internal Dictionary<string, string> ObjectSubTypes { get; set; } = new Dictionary<string, string>();
 
         public MetadataOracleObject(MetadataOracleTypeDefinition metadataOracleType, UdtPropertyNetPropertyMap[] customProperties, bool fuzzyNameMatch)
         {
             Type = typeof(T);
             if (Type.IsCollection())
             {
-                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(Type.GetCollectionUnderType(), metadataOracleType,
-                    customProperties ?? new UdtPropertyNetPropertyMap[] { }, fuzzyNameMatch);
+                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(Type.GetCollectionUnderType(), metadataOracleType, customProperties, fuzzyNameMatch);
             }
             else
             {
-                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(Type, metadataOracleType,
-                    customProperties ?? new UdtPropertyNetPropertyMap[] { }, fuzzyNameMatch);
+                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(Type, metadataOracleType, customProperties, fuzzyNameMatch);
             }
 
-            regex = new Regex(Regex.Escape("$"));
-
-            ConstructorString = GenerateConstructor(metadataOracleType.UDTInfo.FullObjectName,
-                metadataOracleType.Properties.ToArray());
+            ConstructorString = GenerateConstructor(metadataOracleType.UDTInfo.FullObjectName, metadataOracleType.Properties.ToArray());
         }
 
         private string GenerateConstructor(string objectName, MetadataOracleTypePropertyDefinition[] properties)
@@ -61,16 +55,14 @@ namespace ServForOracle.NetCore.Metadata
             return constructor.ToString();
         }
 
-        private string BuildConstructor(StringBuilder baseString, object value, string parameterName, MetadataOracleNetTypeDefinition metadata, ref int startNumber,
-            string constructor)
+        private string BuildConstructor(StringBuilder baseString, object value, string parameterName, MetadataOracleNetTypeDefinition metadata, ref int startNumber, string constructor)
         {
             var workedTypes = new Dictionary<string, string>();
             int dependenciesCounter = 0;
             foreach (var prop in metadata.Properties.Where(c => c.PropertyMetadata != null).OrderBy(c => c.Order))
             {
                 var workedName = parameterName + "_" + dependenciesCounter++;
-                var subConstructor = GenerateConstructor(prop.PropertyMetadata.UDTInfo.FullObjectName,
-                    prop.PropertyMetadata.Properties.ToArray());
+                var subConstructor = GenerateConstructor(prop.PropertyMetadata.UDTInfo.FullObjectName, prop.PropertyMetadata.Properties.ToArray());
                 BuildQueryConstructor(baseString, prop.NETProperty.PropertyType, prop.NETProperty.GetValue(value), workedName, ref startNumber, prop.PropertyMetadata, subConstructor);
                 workedTypes.Add(prop.Name, workedName);
             }
@@ -102,15 +94,7 @@ namespace ServForOracle.NetCore.Metadata
 
             return constructor;
         }
-
-        public (string Constructor, int LastNumber) BuildQueryConstructorString(T value, string name, int startNumber)
-        {
-            var baseString = new StringBuilder();
-            BuildQueryConstructor(baseString, Type, value, name, ref startNumber, OracleTypeNetMetadata, ConstructorString);
-
-            return (baseString.ToString(), startNumber);
-        }
-
+        
         private void BuildQueryConstructor(StringBuilder baseString, Type type, object value, string name, ref int startNumber, MetadataOracleNetTypeDefinition metadata, string constructor)
         {
             if (type.IsCollection())
@@ -127,32 +111,12 @@ namespace ServForOracle.NetCore.Metadata
             }
             else
             {
-                var baseConstructor = BuildConstructor(baseString, value, name, OracleTypeNetMetadata, ref startNumber, constructor);
+                var baseConstructor = BuildConstructor(baseString, value, name, metadata, ref startNumber, constructor);
                 baseString.AppendLine($"{name} := {baseConstructor}");
             }
         }
 
-        public OracleParameter[] GetOracleParameters(T value, int startNumber)
-        {
-            var parameters = new List<OracleParameter>();
-            if (value != null)
-            {
-                if (Type.IsCollection() && value is IEnumerable list)
-                {
-                    parameters.AddRange(ProcessCollectionParameters(list, OracleTypeNetMetadata, startNumber, out int _));
-                }
-                else
-                {
-                    parameters.AddRange(ProcessOracleParameter(value, OracleTypeNetMetadata, startNumber, out int _));
-                }
-            }
-
-            return parameters.ToArray();
-        }
-
-        private IEnumerable<OracleParameter> ProcessOracleParameter(object value,
-            MetadataOracleNetTypeDefinition metadata,
-            int startNumber, out int newNumber)
+        private IEnumerable<OracleParameter> ProcessOracleParameter(object value, MetadataOracleNetTypeDefinition metadata, int startNumber, out int newNumber)
         {
             var propertiesParameters = new List<OracleParameter>();
             foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
@@ -183,12 +147,12 @@ namespace ServForOracle.NetCore.Metadata
                     }
                 }
             }
+
             newNumber = startNumber;
             return propertiesParameters;
         }
 
-        private IEnumerable<OracleParameter> ProcessCollectionParameters(IEnumerable value,
-            MetadataOracleNetTypeDefinition metadata, int startNumber, out int lastNumber)
+        private IEnumerable<OracleParameter> ProcessCollectionParameters(IEnumerable value, MetadataOracleNetTypeDefinition metadata, int startNumber, out int lastNumber)
         {
             var rowsParameters = new List<OracleParameter>();
             if (value != null)
@@ -202,13 +166,10 @@ namespace ServForOracle.NetCore.Metadata
             return rowsParameters;
         }
 
-
         private string QueryBuilder(MetadataOracleNetTypeDefinition metadata, string tableName, int level = 0, bool isRoot = false)
         {
             var select = new StringBuilder();
             var first = true;
-
-            var futureLevel = level + 1;
 
             foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
             {
@@ -218,7 +179,7 @@ namespace ServForOracle.NetCore.Metadata
                 }
                 else
                 {
-                    select.Append(",");
+                    select.AppendLine(",");
                 }
                 var newTable = $"{tableName}.{prop.Name}";
 
@@ -226,37 +187,27 @@ namespace ServForOracle.NetCore.Metadata
                 {
                     if (prop.NETProperty.PropertyType.IsCollection())
                     {
+                        var futureLevel = level + 1;
+                        var levelStr = $"d{futureLevel}";
+                        select.Append($"(select xmlelement( \"{prop.NETProperty.Name}\",");
+                        select.Append($" xmlagg( xmlconcat( xmlelement( \"{prop.NETProperty.Name}\", ");
+                        select.Append(QueryBuilder(prop.PropertyMetadata, levelStr, futureLevel));
+                        select.Append($") ) ) ) from table({tableName}.{prop.Name}) {levelStr})");
+
                         if (isRoot)
                         {
-                            var levelStr = $"d{futureLevel}";
-                            select.Append($"(select xmlelement( \"{prop.NETProperty.Name}\",");
-                            select.Append($" xmlagg( xmlconcat( xmlelement( \"{prop.NETProperty.Name}\", ");
-                            select.Append(QueryBuilder(prop.PropertyMetadata, levelStr, futureLevel));
-                            select.Append($") ) ) ) from table({tableName}.{prop.Name}) {levelStr}) {prop.Name}");
+                            select.Append($" {prop.Name}");
                         }
-                        else
-                        {
-                            var levelStr = $"d{futureLevel}";
-                            select.Append($"(select xmlelement( \"{prop.NETProperty.Name}\",");
-                            select.Append($" xmlagg( xmlconcat( xmlelement( \"{prop.NETProperty.Name}\", ");
-                            select.Append(QueryBuilder(prop.PropertyMetadata, levelStr, futureLevel));
-                            select.Append($") ) ) ) from table({tableName}.{prop.Name}) {levelStr})");
-                        }
-
                     }
                     else
                     {
-                        if(isRoot)
+                        select.Append($"(select xmlelement( \"{prop.NETProperty.Name}\", xmlconcat( ");
+                        select.Append(QueryBuilder(prop.PropertyMetadata, newTable));
+                        select.Append(") ) from dual)");
+
+                        if (isRoot)
                         {
-                            select.Append($"(select xmlelement( \"{prop.NETProperty.Name}\", xmlconcat( ");
-                            select.Append(QueryBuilder(prop.PropertyMetadata, newTable, 0));
-                            select.Append($") ) from dual) {prop.NETProperty.Name}");
-                        }
-                        else
-                        {
-                            select.Append($"(select xmlelement( \"{prop.NETProperty.Name}\", xmlconcat( ");
-                            select.Append(QueryBuilder(prop.PropertyMetadata, newTable, 0));
-                            select.Append($") ) from dual)");
+                            select.Append($" {prop.NETProperty.Name}");
                         }
                     }
                 }
@@ -268,48 +219,124 @@ namespace ServForOracle.NetCore.Metadata
                     }
                     else
                     {
-                        select.AppendLine($"XmlElement(\"{prop.NETProperty.Name}\", {tableName}.{prop.Name})");
+                        select.Append($"XmlElement(\"{prop.NETProperty.Name}\", {tableName}.{prop.Name})");
                     }
                 }
             }
 
             if (first)
             {
-                //TODO Log error message
+                //TODO Log error message because it couldn't process any properties
                 select.Append("1 dummy");
             }
 
             return select.ToString();
         }
 
-        private string GetRefCursorCollectionQuery(int startNumber, string fieldName)
+        private string GetRefCursorCollectionQuery(int startNumber, string fieldName, MetadataOracleNetTypeDefinition oracleTypeNetMetadata)
         {
             var query = new StringBuilder($"open :{startNumber} for select ");
 
-            query.AppendLine(QueryBuilder(OracleTypeNetMetadata, "value(c)", isRoot: true));
+            query.AppendLine(QueryBuilder(oracleTypeNetMetadata, "value(c)", isRoot: true));
             query.Append($" from table({fieldName}) c;");
 
             return query.ToString();
         }
 
-        private string GetRefCursorObjectQuery(int startNumber, string fieldName)
+        private string GetRefCursorObjectQuery(int startNumber, string fieldName, MetadataOracleNetTypeDefinition oracleTypeNetMetadata)
         {
             var query = new StringBuilder($"open :{startNumber} for select ");
-            query.AppendLine(QueryBuilder(OracleTypeNetMetadata, $"value({fieldName})", isRoot: true));
+            query.AppendLine(QueryBuilder(oracleTypeNetMetadata, $"value({fieldName})", isRoot: true));
             query.Append(" from dual;");
 
             return query.ToString();
+        }
+
+        private dynamic ReadObjectInstance(Type type, OracleDataReader reader, MetadataOracleNetTypeDefinition metadata, ref int count)
+        {
+            var instance = type.CreateInstance();
+            int nullCounter = 0;
+
+            foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
+            {
+                var subType = prop.NETProperty.PropertyType;
+                var subInstance = subType.CreateInstance();
+                var oracleValue = reader.GetOracleValue(count++);
+
+                if (prop.PropertyMetadata != null)
+                {
+                    var name = prop.NETProperty.Name;
+                    subInstance = GetValueFromOracleXML(subType, oracleValue as OracleXmlType, name);
+                }
+                else
+                {
+                    subInstance = ConvertOracleParameterToBaseType(subType, oracleValue);
+                }
+
+                prop.NETProperty.SetValue(instance, subInstance);
+
+                if (subInstance is null)
+                {
+                    nullCounter++;
+                }
+            }
+
+            return instance;
+        }
+
+        private string GetDeclareLine(Type type, string parameterName, OracleUdtInfo udtInfo, MetadataOracleNetTypeDefinition metadata)
+        {
+            var dependenciesCounter = 0;
+            var declareLine = new StringBuilder();
+            foreach (var prop in metadata.Properties.Where(c => c.PropertyMetadata != null).OrderBy(c => c.Order))
+            {
+                var subName = parameterName + "_" + dependenciesCounter++;
+                declareLine.Append(GetDeclareLine(prop.NETProperty.PropertyType, subName, prop.PropertyMetadata.UDTInfo, prop.PropertyMetadata));
+            }
+
+            if (type.IsCollection())
+                declareLine.AppendLine($"{parameterName} {udtInfo.FullCollectionName} := {udtInfo.FullCollectionName}();");
+            else
+                declareLine.AppendLine($"{parameterName} {udtInfo.FullObjectName};");
+
+            return declareLine.ToString();
+        }
+
+        public (string Constructor, int LastNumber) BuildQueryConstructorString(T value, string name, int startNumber)
+        {
+            var baseString = new StringBuilder();
+            BuildQueryConstructor(baseString, Type, value, name, ref startNumber, OracleTypeNetMetadata, ConstructorString);
+
+            return (baseString.ToString(), startNumber);
+        }
+
+        public OracleParameter[] GetOracleParameters(T value, int startNumber)
+        {
+            var parameters = new List<OracleParameter>();
+            if (value != null)
+            {
+                if (Type.IsCollection() && value is IEnumerable list)
+                {
+                    parameters.AddRange(ProcessCollectionParameters(list, OracleTypeNetMetadata, startNumber, out int _));
+                }
+                else
+                {
+                    parameters.AddRange(ProcessOracleParameter(value, OracleTypeNetMetadata, startNumber, out int _));
+                }
+            }
+
+            return parameters.ToArray();
         }
 
         public override string GetRefCursorQuery(int startNumber, string fieldName)
         {
             if (Type.IsCollection())
             {
-                return GetRefCursorCollectionQuery(startNumber, fieldName);
+                return GetRefCursorCollectionQuery(startNumber, fieldName, OracleTypeNetMetadata);
             }
             else
             {
-                return GetRefCursorObjectQuery(startNumber, fieldName);
+                return GetRefCursorObjectQuery(startNumber, fieldName, OracleTypeNetMetadata);
             }
         }
 
@@ -324,6 +351,7 @@ namespace ServForOracle.NetCore.Metadata
                 var subType = type.GetCollectionUnderType();
                 while (await reader.ReadAsync())
                 {
+                    counter = 0;
                     instance.Add(ReadObjectInstance(subType, reader, OracleTypeNetMetadata, ref counter));
                 }
 
@@ -368,58 +396,9 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        private dynamic ReadObjectInstance(Type type, OracleDataReader reader, MetadataOracleNetTypeDefinition metadata, ref int count)
+        public string GetDeclareLine(Type type, string parameterName, OracleUdtInfo udtInfo)
         {
-            var instance = type.CreateInstance();
-            int nullCounter = 0;
-
-            foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
-            {
-                if (prop.PropertyMetadata != null)
-                {
-                    if (prop.NETProperty.PropertyType.IsCollection())
-                    {
-                        var x = GetObjectArrayFromOracleXML(prop.NETProperty.PropertyType, reader.GetOracleValue(count++) as OracleXmlType, prop.NETProperty.Name);
-                        prop.NETProperty.SetValue(instance, x);
-                    }
-                    else
-                    {
-                        var x = GetObjectFromOracleXML(prop.NETProperty.PropertyType, reader.GetOracleValue(count++) as OracleXmlType, prop.NETProperty.Name);
-                        prop.NETProperty.SetValue(instance, x);
-                    }
-                }
-                else
-                {
-                    prop.NETProperty.SetValue(instance,
-                        ConvertOracleParameterToBaseType(prop.NETProperty.PropertyType, reader.GetOracleValue(count++)));
-                }
-
-                if(prop.NETProperty.GetValue(instance) is null)
-                {
-                    nullCounter++;
-                }
-            }
-
-            return instance;
-        }
-
-        public string GetDeclareLine(Type type, string parameterName, OracleUdtInfo udtInfo, MetadataOracleNetTypeDefinition metadata = null)
-        {
-            metadata = metadata ?? OracleTypeNetMetadata;
-            var dependenciesCounter = 0;
-            var declareLine = new StringBuilder();
-            foreach (var prop in metadata.Properties.Where(c => c.PropertyMetadata != null).OrderBy(c => c.Order))
-            {
-                var subName = parameterName + "_" + dependenciesCounter++;
-                declareLine.AppendLine(GetDeclareLine(prop.NETProperty.PropertyType, subName, prop.PropertyMetadata.UDTInfo, prop.PropertyMetadata));
-            }
-
-            if (type.IsCollection())
-                declareLine.AppendLine($"{parameterName} {udtInfo.FullCollectionName} := {udtInfo.FullCollectionName}();");
-            else
-                declareLine.AppendLine($"{parameterName} {udtInfo.FullObjectName};");
-
-            return declareLine.ToString();
+            return GetDeclareLine(type, parameterName, udtInfo, OracleTypeNetMetadata);
         }
     }
 

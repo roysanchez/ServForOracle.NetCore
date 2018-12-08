@@ -141,39 +141,50 @@ namespace ServForOracle.NetCore.Metadata
             return value;
         }
 
-        public dynamic GetObjectArrayFromXML(Type listType, XElement xml, string propertyName)
+        private dynamic GetObjectArrayFromXML(Type listType, XElement xml, string propertyName)
         {
             if (xml is null)
             {
                 return null;
             }
 
-            dynamic realList = listType.CreateInstance();
+            var underType = listType.GetCollectionUnderType();
+            dynamic list = listType.CreateInstance();
 
             foreach (var el in xml.Elements())
             {
-                dynamic obj = GetObjectFromXML(listType.GetCollectionUnderType(), el, propertyName);
+                dynamic obj = underType.CreateInstance();
+
+                if (underType.IsCollection())
+                {
+                    obj = GetObjectArrayFromXML(underType, el, propertyName);
+                }
+                else
+                {
+                    obj = GetObjectFromXML(underType, el, propertyName);
+                }
+
                 if (obj != null)
                 {
-                    realList.Add(obj);
+                    list.Add(obj);
                 }
             }
 
-            if(Enumerable.Count(realList) == 0)
+            if(Enumerable.Count(list) == 0)
             {
                 return null;
             }
             else if (listType.IsArray)
             {
-                return Enumerable.ToArray(realList);
+                return Enumerable.ToArray(list);
             }
             else
             {
-                return realList;
+                return list;
             }
         }
 
-        public dynamic GetObjectFromXML(Type objectType, XElement xml, string propertyName)
+        private dynamic GetObjectFromXML(Type objectType, XElement xml, string propertyName)
         {
             if (xml is null)
             {
@@ -211,7 +222,7 @@ namespace ServForOracle.NetCore.Metadata
                     }
                     else
                     {
-                        prop.SetValue(result, ConvertXMLToType(prop.PropertyType, element));
+                        prop.SetValue(result, ConvertXElementToType(prop.PropertyType, element));
                     }
                 }
 
@@ -227,7 +238,7 @@ namespace ServForOracle.NetCore.Metadata
             return result;
         }
 
-        private dynamic ConvertXMLToType(Type type, XElement element)
+        private dynamic ConvertXElementToType(Type type, XElement element)
         {
             if (type == typeof(string))
                 return (string)element;
@@ -259,35 +270,23 @@ namespace ServForOracle.NetCore.Metadata
                 return null;
         }
 
-        public dynamic GetObjectArrayFromOracleXML(Type retType, OracleXmlType xml, string propertyName)
+        public dynamic GetValueFromOracleXML(Type retType, OracleXmlType xml, string propertyName)
         {
-            if (xml == null || xml.IsNull)
+            if(xml is null || xml.IsNull || retType is null)
             {
                 return null;
             }
-            else
-            {
-                XElement doc = XElement.Parse("<?xml version=\"1.0\" encoding=\"utf-16\"?><roy>" + xml.Value + "</roy>");
 
+            XElement doc = XElement.Parse("<roy>" + xml.Value + "</roy>");
+
+            if (retType.IsCollection())
+            {
                 var list = GetObjectArrayFromXML(retType, doc.Elements().First(), propertyName);
                 return list;
             }
-        }
-
-        public dynamic GetObjectFromOracleXML(Type retType, OracleXmlType xml, string propertyName)
-        {
-            if (xml == null || xml.IsNull)
-            {
-                return null;
-            }
             else
             {
-                dynamic realList = retType.CreateInstance();
-                
-                var doc = XElement.Parse("<roy>" + xml.Value + "</roy>");
-                
                 dynamic obj = GetObjectFromXML(retType, doc.Elements().First(), propertyName);
-
                 return obj;
             }
         }
