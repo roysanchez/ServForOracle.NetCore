@@ -37,57 +37,25 @@ namespace ServForOracle.NetCore.Metadata
 
             regex = new Regex(Regex.Escape("$"));
 
-            //var constructor = new StringBuilder();
             ConstructorString = GenerateConstructor(metadataOracleType.UDTInfo.FullObjectName,
                 metadataOracleType.Properties.ToArray());
-
-            //constructor.Append(';');
-            //ConstructorString = constructor.ToString();
         }
 
         private string GenerateConstructor(string objectName, MetadataOracleTypePropertyDefinition[] properties)
         {
             var constructor = new StringBuilder($"{objectName}(");
-            //constructor.Append($"{objectName}(");
 
             var last = properties.Select(c => c.Order).DefaultIfEmpty().Max();
             foreach (var prop in properties.OrderBy(c => c.Order))
             {
                 constructor.Append(prop.Name);
                 constructor.Append("=>$");
-                //if (prop is MetadataOracleTypeSubTypeDefinition subType)
-                //{
-                //    GenerateConstructor(subType.MetadataOracleType.UDTInfo.FullObjectName, subType.MetadataOracleType.Properties.ToArray());
-
-                //    //ObjectSubTypes.Add(objectName + prop.Name, GenerateConstructor(subType.MetadataOracleType.UDTInfo.FullObjectName, subType.MetadataOracleType.Properties.ToArray()));
-                //}
 
                 if (prop.Order < last)
                 {
                     constructor.Append(',');
                 }
             }
-
-            //for (var counter = 0; counter < properties.Count(); counter++)
-            //{
-            //    constructor.Append(properties[counter].Name);
-            //    constructor.Append("=>$");
-            //    if (properties[counter] is MetadataOracleTypeSubTypeDefinition subType)
-            //    {
-            //        //constructor.Append("$");
-            //        ObjectSubTypes.Add(properties[counter].Name, GenerateConstructor(subType.MetadataOracleType.UDTInfo.FullObjectName, subType.MetadataOracleType.Properties.ToArray()));
-            //        //GenerateConstructor(constructor, subType.MetadataOracleType.UDTInfo.FullObjectName, subType.MetadataOracleType.Properties.ToArray());
-            //    }
-            //    else
-            //    {
-            //        //constructor.Append('$');
-            //    }
-
-            //    if (counter + 1 < properties.Count())
-            //    {
-            //        constructor.Append(',');
-            //    }
-            //}
 
             constructor.Append(");");
             return constructor.ToString();
@@ -97,7 +65,6 @@ namespace ServForOracle.NetCore.Metadata
             string constructor)
         {
             var workedTypes = new Dictionary<string, string>();
-            //var dependencies = new StringBuilder();
             int dependenciesCounter = 0;
             foreach (var prop in metadata.Properties.Where(c => c.PropertyMetadata != null).OrderBy(c => c.Order))
             {
@@ -133,8 +100,7 @@ namespace ServForOracle.NetCore.Metadata
 
             }
 
-            //dependencies.AppendLine(constructor);
-            return constructor;//dependencies.ToString(); ;
+            return constructor;
         }
 
         public (string Constructor, int LastNumber) BuildQueryConstructorString(T value, string name, int startNumber)
@@ -147,7 +113,6 @@ namespace ServForOracle.NetCore.Metadata
 
         private void BuildQueryConstructor(StringBuilder baseString, Type type, object value, string name, ref int startNumber, MetadataOracleNetTypeDefinition metadata, string constructor)
         {
-            //var baseString = new StringBuilder();
             if (type.IsCollection())
             {
                 if (value != null)
@@ -165,8 +130,6 @@ namespace ServForOracle.NetCore.Metadata
                 var baseConstructor = BuildConstructor(baseString, value, name, OracleTypeNetMetadata, ref startNumber, constructor);
                 baseString.AppendLine($"{name} := {baseConstructor}");
             }
-
-            //return baseString.ToString();
         }
 
         public OracleParameter[] GetOracleParameters(T value, int startNumber)
@@ -218,13 +181,6 @@ namespace ServForOracle.NetCore.Metadata
                             value: prop.NETProperty.GetValue(value)
                         ));
                     }
-                    //propertiesParameters.Add(
-                    //    GetOracleParameter(
-                    //        type: prop.NETProperty.PropertyType,
-                    //        direction: ParameterDirection.Input,
-                    //        name: $":{startNumber++}",
-                    //        value: value != null ? prop.NETProperty.GetValue(value) : null
-                    //    ));
                 }
             }
             newNumber = startNumber;
@@ -274,7 +230,6 @@ namespace ServForOracle.NetCore.Metadata
                         {
                             var levelStr = $"d{futureLevel}";
                             select.Append($"(select xmlelement( \"{prop.NETProperty.Name}\",");
-                            //select.Append(" XMLATTRIBUTES('true' as \"json:Array\"), ");
                             select.Append($" xmlagg( xmlconcat( xmlelement( \"{prop.NETProperty.Name}\", ");
                             select.Append(QueryBuilder(prop.PropertyMetadata, levelStr, futureLevel));
                             select.Append($") ) ) ) from table({tableName}.{prop.Name}) {levelStr}) {prop.Name}");
@@ -283,7 +238,6 @@ namespace ServForOracle.NetCore.Metadata
                         {
                             var levelStr = $"d{futureLevel}";
                             select.Append($"(select xmlelement( \"{prop.NETProperty.Name}\",");
-                            //select.Append(" XMLATTRIBUTES('true' as \"json:Array\"), ");
                             select.Append($" xmlagg( xmlconcat( xmlelement( \"{prop.NETProperty.Name}\", ");
                             select.Append(QueryBuilder(prop.PropertyMetadata, levelStr, futureLevel));
                             select.Append($") ) ) ) from table({tableName}.{prop.Name}) {levelStr})");
@@ -446,13 +400,7 @@ namespace ServForOracle.NetCore.Metadata
                 }
             }
 
-            //if(nullCounter == type.GetProperties().Length)
-            //{
-            //    return null;
-            //}
-
             return instance;
-
         }
 
         public string GetDeclareLine(Type type, string parameterName, OracleUdtInfo udtInfo, MetadataOracleNetTypeDefinition metadata = null)

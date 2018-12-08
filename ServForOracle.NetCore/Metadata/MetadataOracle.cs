@@ -11,7 +11,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
-using System.Xml.Serialization;
 
 namespace ServForOracle.NetCore.Metadata
 {
@@ -134,26 +133,13 @@ namespace ServForOracle.NetCore.Metadata
                     else
                         throw castError;
                     break;
-                case OracleXmlType xml:
-                    var stringReader = new System.IO.StringReader(xml.Value);
-                    var serializer = new XmlSerializer(retType);
-                    break;
                 default:
-                    //Log errors
+                    //TODO Log errors
                     break;
             }
 
             return value;
         }
-
-        //XmlAttributes GetXmlAttributes(Type type)
-        //{
-        //    var ret = new XmlAttributes();
-        //    foreach(var p in type.GetProperties())
-        //    {
-
-        //    }
-        //}
 
         public dynamic GetObjectArrayFromXML(Type listType, XElement xml, string propertyName)
         {
@@ -398,7 +384,6 @@ namespace ServForOracle.NetCore.Metadata
             return param;
         }
 
-
         public OracleParameter GetOracleParameterForRefCursor(int starNumber)
         {
             return new OracleParameter($":{starNumber}", DBNull.Value)
@@ -408,4 +393,3 @@ namespace ServForOracle.NetCore.Metadata
         }
     }
 }
-
