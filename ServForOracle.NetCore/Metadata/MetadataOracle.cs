@@ -170,7 +170,7 @@ namespace ServForOracle.NetCore.Metadata
                 }
             }
 
-            if(Enumerable.Count(list) == 0)
+            if (Enumerable.Count(list) == 0)
             {
                 return null;
             }
@@ -201,36 +201,35 @@ namespace ServForOracle.NetCore.Metadata
             var elements = xml.Elements();
             var nullCounter = 0;
 
-            foreach (var prop in objectType.GetProperties())
+            var properties = objectType.GetProperties();
+            foreach (var prop in properties)
             {
-                if (prop.PropertyType.IsCollection())
+                var element = elements.FirstOrDefault(c => c.Name == prop.Name);
+
+                if (element is null || string.IsNullOrWhiteSpace(element.Value))
                 {
-                    prop.SetValue(result, GetObjectArrayFromXML(prop.PropertyType, xml.Element(prop.Name),
+                    //TODO check if the result can be null
+                    prop.SetValue(result, null);
+                }
+                else if (prop.PropertyType.IsCollection())
+                {
+                    prop.SetValue(result, GetObjectArrayFromXML(prop.PropertyType, element,
                         prop.Name));
                 }
                 else if (!prop.PropertyType.IsClrType())
                 {
-                    prop.SetValue(result, GetObjectFromXML(prop.PropertyType, xml.Element(prop.Name), prop.Name));
+                    prop.SetValue(result, GetObjectFromXML(prop.PropertyType, element, prop.Name));
                 }
                 else
                 {
-                    var element = elements.FirstOrDefault(c => c.Name == prop.Name);
-
-                    if (element is null || string.IsNullOrWhiteSpace(element.Value))
-                    {
-                        prop.SetValue(result, null);
-                    }
-                    else
-                    {
-                        prop.SetValue(result, ConvertXElementToType(prop.PropertyType, element));
-                    }
+                    prop.SetValue(result, ConvertXElementToType(prop.PropertyType, element));
                 }
 
                 if (prop.GetValue(result) is null)
                     nullCounter++;
             }
 
-            if(nullCounter == objectType.GetProperties().Length)
+            if (nullCounter == properties.Length)
             {
                 return null;
             }
@@ -272,7 +271,7 @@ namespace ServForOracle.NetCore.Metadata
 
         public dynamic GetValueFromOracleXML(Type retType, OracleXmlType xml, string propertyName)
         {
-            if(xml is null || xml.IsNull || retType is null)
+            if (xml is null || xml.IsNull || retType is null)
             {
                 return null;
             }
