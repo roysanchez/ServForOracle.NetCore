@@ -12,6 +12,8 @@ namespace ServForOracle.NetCore.Metadata
         public static ConcurrentDictionary<Type, MetadataOracle> TypeDefinitionsOracleUDT { get; private set; }
         public static ConcurrentDictionary<Type, (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool FuzzyMatch)> PresetUDTs { get; private set; }
 
+        protected MetadataBase() { }
+
         static MetadataBase()
         {
             OracleUDTs = new ConcurrentBag<MetadataOracleTypeDefinition>();

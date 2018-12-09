@@ -57,17 +57,15 @@ namespace ServForOracle.NetCore.Metadata
                     //TODO throw or log warning
                 }
 
-                var propertyTypeDefintion = new MetadataOraclePropertyNetTypeDefinition(prop)
-                {
-                    NETProperty = netProperty
-                };
+                var propertyTypeDefinition = new MetadataOraclePropertyNetTypeDefinition(prop);
 
-                if (prop is MetadataOracleTypeSubTypeDefinition propertyObject)
+                if (netProperty != null && prop is MetadataOracleTypeSubTypeDefinition propertyObject)
                 {
-                    propertyTypeDefintion.PropertyMetadata = GetPropertyMetadata(netProperty.PropertyType, propertyObject, fuzzyNameMatch);
+                    propertyTypeDefinition.NETProperty = netProperty;
+                    propertyTypeDefinition.PropertyMetadata = GetPropertyMetadata(netProperty.PropertyType, propertyObject, fuzzyNameMatch);
                 }
 
-                list.Add(propertyTypeDefintion);
+                list.Add(propertyTypeDefinition);
             }
 
             return list;

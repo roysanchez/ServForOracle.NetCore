@@ -141,7 +141,7 @@ namespace ServForOracle.NetCore.Metadata
             return value;
         }
 
-        private dynamic GetObjectArrayFromXML(Type listType, XElement xml, string propertyName)
+        private dynamic GetObjectArrayFromXML(Type listType, XElement xml)
         {
             if (xml is null)
             {
@@ -157,11 +157,11 @@ namespace ServForOracle.NetCore.Metadata
 
                 if (underType.IsCollection())
                 {
-                    obj = GetObjectArrayFromXML(underType, el, propertyName);
+                    obj = GetObjectArrayFromXML(underType, el);
                 }
                 else
                 {
-                    obj = GetObjectFromXML(underType, el, propertyName);
+                    obj = GetObjectFromXML(underType, el);
                 }
 
                 if (obj != null)
@@ -170,7 +170,7 @@ namespace ServForOracle.NetCore.Metadata
                 }
             }
 
-            if (Enumerable.Count(list) == 0)
+            if (Enumerable.Any(list))
             {
                 return null;
             }
@@ -184,7 +184,7 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        private dynamic GetObjectFromXML(Type objectType, XElement xml, string propertyName)
+        private dynamic GetObjectFromXML(Type objectType, XElement xml)
         {
             if (xml is null)
             {
@@ -213,12 +213,11 @@ namespace ServForOracle.NetCore.Metadata
                 }
                 else if (prop.PropertyType.IsCollection())
                 {
-                    prop.SetValue(result, GetObjectArrayFromXML(prop.PropertyType, element,
-                        prop.Name));
+                    prop.SetValue(result, GetObjectArrayFromXML(prop.PropertyType, element));
                 }
                 else if (!prop.PropertyType.IsClrType())
                 {
-                    prop.SetValue(result, GetObjectFromXML(prop.PropertyType, element, prop.Name));
+                    prop.SetValue(result, GetObjectFromXML(prop.PropertyType, element));
                 }
                 else
                 {
@@ -269,7 +268,7 @@ namespace ServForOracle.NetCore.Metadata
                 return null;
         }
 
-        public dynamic GetValueFromOracleXML(Type retType, OracleXmlType xml, string propertyName)
+        public dynamic GetValueFromOracleXML(Type retType, OracleXmlType xml)
         {
             if (xml is null || xml.IsNull || retType is null)
             {
@@ -280,12 +279,12 @@ namespace ServForOracle.NetCore.Metadata
 
             if (retType.IsCollection())
             {
-                var list = GetObjectArrayFromXML(retType, doc.Elements().First(), propertyName);
+                var list = GetObjectArrayFromXML(retType, doc.Elements().First());
                 return list;
             }
             else
             {
-                dynamic obj = GetObjectFromXML(retType, doc.Elements().First(), propertyName);
+                dynamic obj = GetObjectFromXML(retType, doc.Elements().First());
                 return obj;
             }
         }

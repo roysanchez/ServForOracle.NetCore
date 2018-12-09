@@ -250,11 +250,6 @@ namespace ServForOracle.NetCore.Metadata
 
         private async Task<List<MetadataOracleTypePropertyDefinition>> ExecuteReaderAndLoadTypeDefinitionAsync(DbCommand cmd)
         {
-            if (cmd == null)
-            {
-                throw new ArgumentNullException(nameof(cmd));
-            }
-
             var reader = await cmd.ExecuteReaderAsync();
             var properties = new List<MetadataOracleTypePropertyDefinition>();
 

@@ -89,7 +89,6 @@ namespace ServForOracle.NetCore.Metadata
                 {
                     constructor = regex.Replace(constructor, "null", 1);
                 }
-
             }
 
             return constructor;
@@ -265,8 +264,7 @@ namespace ServForOracle.NetCore.Metadata
 
                 if (prop.PropertyMetadata != null)
                 {
-                    var name = prop.NETProperty.Name;
-                    subInstance = GetValueFromOracleXML(subType, oracleValue as OracleXmlType, name);
+                    subInstance = GetValueFromOracleXML(subType, oracleValue as OracleXmlType);
                 }
                 else
                 {
