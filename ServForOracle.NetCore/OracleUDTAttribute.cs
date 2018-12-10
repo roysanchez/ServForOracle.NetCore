@@ -16,24 +16,24 @@ namespace ServForOracle.NetCore
         /// </summary>
         public OracleUdtInfo UDTInfo { get; private set; }
 
-        public OracleUdtAttribute(string objectName)
+        public OracleUdtAttribute(string objectName, bool isCollection)
         {
-            UDTInfo = new OracleUdtInfo(objectName);
+            UDTInfo = new OracleUdtInfo(objectName, isCollection);
         }
 
-        public OracleUdtAttribute(string schema, string objectName)
+        public OracleUdtAttribute(string schema, string objectName, bool isCollection)
         {
-            UDTInfo = new OracleUdtInfo(schema, objectName);
+            UDTInfo = new OracleUdtInfo(schema, objectName, isCollection);
         }
 
         public OracleUdtAttribute(string schema, string objectName, string collectionName)
         {
-            UDTInfo = new OracleUdtInfo(schema, objectName, collectionName);
+            UDTInfo = new OracleUdtInfo(schema, collectionName, new OracleUdtInfo(schema, objectName, isCollection: false));
         }
 
         public OracleUdtAttribute(string schema, string objectName, string collectionSchema, string collectionName)
         {
-            UDTInfo = new OracleUdtInfo(schema, objectName, collectionSchema, collectionName);
+            UDTInfo = new OracleUdtInfo(collectionSchema, collectionName, new OracleUdtInfo(schema, objectName, isCollection: false));
         }
     }
 }

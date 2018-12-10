@@ -9,23 +9,23 @@ namespace ServForOracle.NetCore.Config
     {
         public PresetMap(string objectSchema, string objectName, string collectionSchema, string collectionName,
             params (Expression<Func<T, object>> property, string UDTPropertyName)[] replacedProperties)
-            : this(new OracleUdtInfo(objectSchema, objectName, collectionSchema, collectionName), replacedProperties)
+            : this(new OracleUdtInfo(collectionSchema, collectionName, new OracleUdtInfo(objectSchema, objectName,  isCollection: false)), replacedProperties)
         {
         }
 
         public PresetMap(string schema, string objectName, string collectionName,
             params (Expression<Func<T, object>> property, string UDTPropertyName)[] replacedProperties)
-            : this(new OracleUdtInfo(schema, objectName, collectionName), replacedProperties)
+            : this(new OracleUdtInfo(schema, collectionName,new OracleUdtInfo(schema, objectName, isCollection: false)), replacedProperties)
         {
         }
 
-        public PresetMap(string schema, string objectName, params (Expression<Func<T, object>> property, string UDTPropertyName)[] replacedProperties)
-            : this(new OracleUdtInfo(schema, objectName), replacedProperties)
+        public PresetMap(string schema, string objectName, bool isCollection, params (Expression<Func<T, object>> property, string UDTPropertyName)[] replacedProperties)
+            : this(new OracleUdtInfo(schema, objectName, isCollection), replacedProperties)
         {
         }
 
-        public PresetMap(string objectName, params (Expression<Func<T, object>> property, string UDTPropertyName)[] replacedProperties)
-            : this(new OracleUdtInfo(objectName), replacedProperties)
+        public PresetMap(string objectName, bool isCollection, params (Expression<Func<T, object>> property, string UDTPropertyName)[] replacedProperties)
+            : this(new OracleUdtInfo(objectName, isCollection), replacedProperties)
         {
         }
 

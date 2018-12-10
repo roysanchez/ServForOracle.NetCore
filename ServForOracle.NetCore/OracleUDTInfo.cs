@@ -6,12 +6,15 @@ namespace ServForOracle.NetCore
 {
     public class OracleUdtInfo : IEquatable<OracleUdtInfo>, IEqualityComparer<OracleUdtInfo>
     {
+        public OracleUdtInfo UnderType { get; private set; }
+        public OracleUdtInfo OverType { get; private set; }
         public string ObjectSchema { get; private set; }
         public string ObjectName { get; private set; }
-        public string CollectionSchema { get; private set; }
-        public string CollectionName { get; private set; }
 
-        public OracleUdtInfo(string objectName)
+        public bool IsCollection { get; private set; }
+        public bool IsCollectionValid => UnderType != null;
+
+        public OracleUdtInfo(string objectName, bool isCollection)
         {
             if (string.IsNullOrWhiteSpace(objectName))
             {
@@ -37,10 +40,10 @@ namespace ServForOracle.NetCore
 
             ObjectSchema = objectParts[0];
             ObjectName = objectParts[1];
-
+            IsCollection = isCollection;
         }
 
-        public OracleUdtInfo(string schema, string objectName)
+        public OracleUdtInfo(string schema, string objectName, bool isCollection)
         {
             if (string.IsNullOrWhiteSpace(objectName))
             {
@@ -53,60 +56,33 @@ namespace ServForOracle.NetCore
 
             ObjectName = objectName.ToUpper();
             ObjectSchema = schema.ToUpper();
+            IsCollection = isCollection;
         }
 
-        public OracleUdtInfo(string schema, string objectName, string collectionName)
-            :this(schema, objectName)
+        public OracleUdtInfo(string schema, string collectionName, OracleUdtInfo underUdt)
+            : this(schema, collectionName, isCollection: true)
         {
-            if(string.IsNullOrWhiteSpace(collectionName))
+            UnderType = underUdt ?? throw new ArgumentNullException(nameof(underUdt));
+            UnderType.OverType = this;
+        }
+
+        public string GetDeclaredLine(string parameterName)
+        {
+            if(IsCollection)
             {
-                throw new ArgumentNullException(nameof(collectionName));
+                return $"{parameterName} {ObjectSchema} := {FullObjectName}();";
             }
-
-            CollectionName = collectionName.ToUpper();
-            CollectionSchema = ObjectSchema;
-        }
-
-        public OracleUdtInfo(string objectSchema, string objectName, string collectionSchema, string collectionName)
-            :this(objectSchema, objectName, collectionName)
-        {
-            if(string.IsNullOrWhiteSpace(collectionSchema))
+            else
             {
-                throw new ArgumentNullException(nameof(collectionSchema));
-            }
-
-            CollectionSchema = collectionSchema;
-        }
-
-        public bool IsCollectionValid => !string.IsNullOrWhiteSpace(CollectionName);
-        public string FullObjectName
-        {
-            get
-            {
-                if(string.IsNullOrWhiteSpace(ObjectSchema) || string.IsNullOrWhiteSpace(ObjectName))
-                {
-                    throw new Exception("The UDT object is not set up correctly, doesn't have the object configured, udt=" + ToString());
-                }
-
-                return $"{ObjectSchema}.{ObjectName}"; ;
+                return $"{parameterName} {FullObjectName};";
             }
         }
-        public string FullCollectionName
-        {
-            get
-            {
-                if(string.IsNullOrWhiteSpace(CollectionSchema) || string.IsNullOrWhiteSpace(CollectionName))
-                {
-                    throw new Exception("The UDT object is not set up correctly, doesn't have the collectionObject configured, udt=" + ToString());
-                }
-                return $"{CollectionSchema}.{CollectionName}";
-            }
-        }
+
+        public string FullObjectName => $"{ObjectSchema}.{ObjectName}";
 
         public override string ToString()
         {
-            return $"objectSchema={ObjectSchema};objectName={ObjectName};collectionSchema={CollectionSchema};"
-                + $"collectionName={CollectionName}";
+            return $"objectSchema={ObjectSchema};objectName={ObjectName};underType={UnderType?.ToString()};overType={OverType?.ToString()};";
         }
 
         public override bool Equals(object obj)
@@ -116,18 +92,29 @@ namespace ServForOracle.NetCore
 
         public virtual bool Equals(OracleUdtInfo other)
         {
-            return ObjectSchema == other.ObjectSchema &&
-                   ObjectName == other.ObjectName &&
-                   CollectionSchema == other.CollectionSchema &&
-                   CollectionName == other.CollectionName;
+            return other != null &&
+                ObjectSchema == other.ObjectSchema &&
+                ObjectName == other.ObjectName &&
+                UnderType == other.UnderType &&
+                OverType == other.OverType;
         }
+
         public override int GetHashCode()
         {
             var hashCode = -1158407366;
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(ObjectSchema);
             hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(ObjectName);
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(CollectionSchema);
-            hashCode = hashCode * -1521134295 + EqualityComparer<string>.Default.GetHashCode(CollectionName);
+
+            if (UnderType != null)
+            {
+                hashCode = hashCode * -1521134295 + UnderType.GetHashCode();
+            }
+            if (OverType != null)
+            {
+                hashCode = hashCode * -1521134295 + OverType.GetHashCode();
+            }
+
+
             return hashCode;
         }
 
@@ -137,7 +124,7 @@ namespace ServForOracle.NetCore
             {
                 return true;
             }
-            else if(x is null || y is null)
+            else if (x is null || y is null)
             {
                 return false;
             }

@@ -173,22 +173,6 @@ namespace ServForOracle.NetCore.Metadata
             return CreateAndSaveMetadata(udtInfo, properties);
         }
 
-        private DbCommand CreateCommand(DbConnection connection, OracleUdtInfo udtInfo)
-        {
-            var cmd = connection.CreateCommand();
-            cmd.CommandText =
-            "select ata.attr_no, ata.attr_name, ata.attr_type_owner, ata.attr_type_name, aty.typecode "
-            + "from all_type_attrs ata "
-            + "left join all_types aty "
-            + "on aty.owner = ata.attr_type_owner "
-            + "and aty.type_name = ata.attr_type_name "
-            + "where ata.owner = "
-                + "upper(:1) and ata.type_name = upper(:2)";
-            cmd.Parameters.Add(new OracleParameter(":1", udtInfo.ObjectSchema));
-            cmd.Parameters.Add(new OracleParameter(":2", udtInfo.ObjectName));
-            return cmd;
-        }
-
         private MetadataOracleTypeDefinition CreateAndSaveMetadata(OracleUdtInfo udtInfo, List<MetadataOracleTypePropertyDefinition> properties)
         {
             var metadata = new MetadataOracleTypeDefinition
@@ -238,12 +222,13 @@ namespace ServForOracle.NetCore.Metadata
                     }
                     else
                     {
-                        property.MetadataOracleType = GetOrCreateOracleTypeMetadata(cmd.Connection, new OracleUdtInfo(reader.GetString(2), reader.GetString(3)));
+                        property.MetadataOracleType = GetOrCreateOracleTypeMetadata(cmd.Connection, new OracleUdtInfo(reader.GetString(2), reader.GetString(3), isCollection: false));
                     }
 
                     properties.Add(property);
                 }
             }
+
 
             return properties;
         }
@@ -279,7 +264,7 @@ namespace ServForOracle.NetCore.Metadata
                     }
                     else
                     {
-                        property.MetadataOracleType = await GetOrCreateOracleTypeMetadataAsync(cmd.Connection, new OracleUdtInfo(reader.GetString(2), reader.GetString(3)));
+                        property.MetadataOracleType = await GetOrCreateOracleTypeMetadataAsync(cmd.Connection, new OracleUdtInfo(reader.GetString(2), reader.GetString(3), isCollection: false));
                     }
 
                     properties.Add(property);
@@ -291,36 +276,66 @@ namespace ServForOracle.NetCore.Metadata
 
         private OracleUdtInfo GetOracleCollectionUnderlyingType(DbConnection con, string schema, string collectionName)
         {
-            //TODO make recursive
             var cmd = CreateDbCommandCollectionUnderType(con, schema, collectionName);
 
             var reader = cmd.ExecuteReader();
 
             if (reader.Read())
             {
-                return new OracleUdtInfo(reader.GetString(0), reader.GetString(1), schema, collectionName);
+                if(reader.IsDBNull(2) || reader.GetString(2) != COLLECTION)
+                {
+                    return new OracleUdtInfo(schema, collectionName, new OracleUdtInfo(reader.GetString(0), reader.GetString(1), isCollection: false));
+                }
+                else
+                {
+                    return new OracleUdtInfo(schema, collectionName, GetOracleCollectionUnderlyingType(con, reader.GetString(0), reader.GetString(1)));
+                }
             }
             else
             {
+                //TODO Log error
                 return null;
             }
         }
 
         private async Task<OracleUdtInfo> GetOracleCollectionUnderlyingTypeAsync(DbConnection con, string schema, string collectionName)
         {
-            //TODO make recursive
             var cmd = CreateDbCommandCollectionUnderType(con, schema, collectionName);
 
             var reader = await cmd.ExecuteReaderAsync();
 
             if (await reader.ReadAsync())
             {
-                return new OracleUdtInfo(reader.GetString(0), reader.GetString(1), schema, collectionName);
+                if (await reader.IsDBNullAsync(2) || reader.GetString(2) != COLLECTION)
+                {
+                    return new OracleUdtInfo(schema, collectionName, new OracleUdtInfo(reader.GetString(0), reader.GetString(1), isCollection: false));
+                }
+                else
+                {
+                    return new OracleUdtInfo(schema, collectionName, await GetOracleCollectionUnderlyingTypeAsync(con, reader.GetString(0), reader.GetString(1)));
+                }
             }
             else
             {
+                //TODO Log error
                 return null;
             }
+        }
+
+        private DbCommand CreateCommand(DbConnection connection, OracleUdtInfo udtInfo)
+        {
+            var cmd = connection.CreateCommand();
+            cmd.CommandText =
+            "select ata.attr_no, ata.attr_name, ata.attr_type_owner, ata.attr_type_name, aty.typecode "
+            + "from all_type_attrs ata "
+            + "left join all_types aty "
+            + "on aty.owner = ata.attr_type_owner "
+            + "and aty.type_name = ata.attr_type_name "
+            + "where ata.owner = "
+                + "upper(:1) and ata.type_name = upper(:2)";
+            cmd.Parameters.Add(new OracleParameter(":1", udtInfo.ObjectSchema));
+            cmd.Parameters.Add(new OracleParameter(":2", udtInfo.ObjectName));
+            return cmd;
         }
 
         private DbCommand CreateDbCommandCollectionUnderType(DbConnection con, string schema, string collectionName)

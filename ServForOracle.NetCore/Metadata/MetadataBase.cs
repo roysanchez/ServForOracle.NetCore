@@ -26,7 +26,6 @@ namespace ServForOracle.NetCore.Metadata
             PresetUDTs.TryAdd(Type, (Info, Props, fuzzyNameMatch));
         }
 
-
         //GetValueOrDefault doesn't exists in net standard
         internal static (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool FuzzyMatch) PresetGetValueOrDefault(Type type)
         {
