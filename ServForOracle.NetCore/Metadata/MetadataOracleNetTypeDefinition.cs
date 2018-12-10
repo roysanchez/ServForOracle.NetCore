@@ -59,10 +59,13 @@ namespace ServForOracle.NetCore.Metadata
 
                 var propertyTypeDefinition = new MetadataOraclePropertyNetTypeDefinition(prop);
 
-                if (netProperty != null && prop is MetadataOracleTypeSubTypeDefinition propertyObject)
+                if (netProperty != null)
                 {
                     propertyTypeDefinition.NETProperty = netProperty;
-                    propertyTypeDefinition.PropertyMetadata = GetPropertyMetadata(netProperty.PropertyType, propertyObject, fuzzyNameMatch);
+                    if (prop is MetadataOracleTypeSubTypeDefinition propertyObject)
+                    {
+                        propertyTypeDefinition.PropertyMetadata = GetPropertyMetadata(netProperty.PropertyType, propertyObject, fuzzyNameMatch);
+                    }
                 }
 
                 list.Add(propertyTypeDefinition);
