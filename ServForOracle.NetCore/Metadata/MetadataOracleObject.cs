@@ -259,11 +259,12 @@ namespace ServForOracle.NetCore.Metadata
             foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
             {
                 var subType = prop.NETProperty.PropertyType;
-                var subInstance = subType.CreateInstance();
                 var oracleValue = reader.GetOracleValue(count++);
+                dynamic subInstance;
 
                 if (prop.PropertyMetadata != null)
                 {
+                    subInstance = subType.CreateInstance();
                     subInstance = GetValueFromOracleXML(subType, oracleValue as OracleXmlType);
                 }
                 else
