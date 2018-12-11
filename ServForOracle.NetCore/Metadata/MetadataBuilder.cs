@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore.Metadata
 {
-    internal class MetadataBuilder: MetadataBase
+    internal class MetadataBuilder : MetadataBase
     {
         private const string COLLECTION = "COLLECTION";
 
@@ -18,7 +18,7 @@ namespace ServForOracle.NetCore.Metadata
 
         public MetadataBuilder(DbConnection connection)
         {
-            if(connection is null || string.IsNullOrWhiteSpace(connection.ConnectionString))
+            if (connection is null || string.IsNullOrWhiteSpace(connection.ConnectionString))
             {
                 throw new ArgumentNullException(nameof(connection));
             }
@@ -76,7 +76,7 @@ namespace ServForOracle.NetCore.Metadata
 
         private async Task<object> RegisterAsync(Type type, DbConnection con)
         {
-            var udtInfo = GetUDTInfo(type);
+            var udtInfo = GetClosestUDTInfo(type);
             return await RegisterAsync(type, con, udtInfo);
         }
 
@@ -96,7 +96,8 @@ namespace ServForOracle.NetCore.Metadata
 
         private object Register(Type type, DbConnection con)
         {
-            var udtInfo = GetUDTInfo(type);
+            var udtInfo = GetClosestUDTInfo(type);
+
             return Register(type, con, udtInfo);
         }
 
@@ -114,29 +115,76 @@ namespace ServForOracle.NetCore.Metadata
             return metadata;
         }
 
-        private OracleUdtInfo GetUDTInfo(Type type)
+        private OracleUdtInfo MatchUdtInfoWithType(Type type, OracleUdtInfo info)
         {
-            OracleUdtInfo udtInfo;
-            if (type.IsCollection())
+            var subType = type;
+            var returnInfo = info;
+
+            while (subType.IsCollection())
             {
-                var underType = type.GetCollectionUnderType();
-                udtInfo = underType.GetCustomAttribute<OracleUdtAttribute>()?.UDTInfo
-                    ?? PresetGetValueOrDefault(underType).Info;
-            }
-            else
-            {
-                udtInfo = type.GetCustomAttribute<OracleUdtAttribute>()?.UDTInfo
-                    ?? PresetGetValueOrDefault(type).Info;
+                subType = subType.GetCollectionUnderType();
+                if (info.OverType != null)
+                {
+                    returnInfo = returnInfo.OverType;
+                }
+                else
+                {
+                    break;
+                    //TODO throw exception
+                }
             }
 
-            if (udtInfo == null)
+            return returnInfo;
+        }
+
+        private (OracleUdtInfo Info, int Levels) GetUDTInfoOrLowest(Type type)
+        {
+            var subType = type;
+            var info = type.GetCustomAttribute<OracleUdtAttribute>()?.UDTInfo ?? PresetGetValueOrDefault(type).Info;
+            var level = 0;
+
+            if (info == null)
+            {
+                while (subType.IsCollection())
+                {
+                    subType = subType.GetCollectionUnderType();
+                    info = subType.GetCustomAttribute<OracleUdtAttribute>()?.UDTInfo ?? PresetGetValueOrDefault(subType).Info;
+                    level++;
+                    if (info != null)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return (info, level);
+        }
+
+        private OracleUdtInfo GetClosestUDTInfo(Type type)
+        {
+            var (info, levels) = GetUDTInfoOrLowest(type);
+            
+            if (info == null)
             {
                 throw new ArgumentException($"The type {type.FullName} needs to have the {nameof(OracleUdtAttribute)}" +
                     $" attribute set or pass the {nameof(OracleUdtInfo)} class to the execute method.");
-
             }
 
-            return udtInfo;
+            while (levels > 0)
+            {
+                if (info.OverType != null)
+                {
+                    info = info.OverType;
+                }
+                else
+                {
+                    break;
+                    //TODO throw exception
+                }
+                levels--;
+            }
+
+            return info;
         }
 
         private async Task<MetadataOracleTypeDefinition> GetOrCreateOracleTypeMetadataAsync(DbConnection connection, OracleUdtInfo udtInfo)
@@ -282,7 +330,7 @@ namespace ServForOracle.NetCore.Metadata
 
             if (reader.Read())
             {
-                if(reader.IsDBNull(2) || reader.GetString(2) != COLLECTION)
+                if (reader.IsDBNull(2) || reader.GetString(2) != COLLECTION)
                 {
                     return new OracleUdtInfo(schema, collectionName, new OracleUdtInfo(reader.GetString(0), reader.GetString(1), isCollection: false));
                 }

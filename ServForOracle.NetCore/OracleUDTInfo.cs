@@ -14,7 +14,7 @@ namespace ServForOracle.NetCore
         public bool IsCollection { get; private set; }
         public bool IsCollectionValid => UnderType != null;
 
-        public OracleUdtInfo(string objectName, bool isCollection)
+        public OracleUdtInfo(string objectName, bool isCollection = false)
         {
             if (string.IsNullOrWhiteSpace(objectName))
             {
@@ -43,7 +43,7 @@ namespace ServForOracle.NetCore
             IsCollection = isCollection;
         }
 
-        public OracleUdtInfo(string schema, string objectName, bool isCollection)
+        public OracleUdtInfo(string schema, string objectName, bool isCollection = false)
         {
             if (string.IsNullOrWhiteSpace(objectName))
             {
@@ -59,11 +59,11 @@ namespace ServForOracle.NetCore
             IsCollection = isCollection;
         }
 
-        public OracleUdtInfo(string schema, string collectionName, OracleUdtInfo underUdt)
-            : this(schema, collectionName, isCollection: true)
+        public OracleUdtInfo(string schema, string objectName, OracleUdtInfo collectionUdt)
+            : this(schema, objectName, isCollection: true)
         {
-            UnderType = underUdt ?? throw new ArgumentNullException(nameof(underUdt));
-            UnderType.OverType = this;
+            OverType = collectionUdt ?? throw new ArgumentNullException(nameof(collectionUdt));
+            OverType.UnderType = this;
         }
 
         public string GetDeclaredLine(string parameterName)
