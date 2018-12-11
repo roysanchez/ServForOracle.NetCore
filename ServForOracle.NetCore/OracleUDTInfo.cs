@@ -11,7 +11,7 @@ namespace ServForOracle.NetCore
         public string ObjectSchema { get; private set; }
         public string ObjectName { get; private set; }
 
-        public bool IsCollection { get; private set; }
+        public bool IsCollection { get; internal set; }
         public bool IsCollectionValid => UnderType != null;
 
         public OracleUdtInfo(string objectName, bool isCollection = false)
@@ -60,10 +60,21 @@ namespace ServForOracle.NetCore
         }
 
         public OracleUdtInfo(string schema, string objectName, OracleUdtInfo collectionUdt)
-            : this(schema, objectName, isCollection: true)
+            : this(schema, objectName)
         {
             OverType = collectionUdt ?? throw new ArgumentNullException(nameof(collectionUdt));
+            collectionUdt.IsCollection = true;
             OverType.UnderType = this;
+        }
+
+        public OracleUdtInfo(string schema, string objectName, string collectionName)
+            : this(schema, objectName, new OracleUdtInfo(schema, collectionName, isCollection: true))
+        {
+        }
+
+        public OracleUdtInfo(string schema, string objectName, string collectionSchema, string collectionName)
+            : this(schema, objectName, new OracleUdtInfo(collectionSchema, collectionName, isCollection: true))
+        {
         }
 
         public string GetDeclaredLine(string parameterName)
