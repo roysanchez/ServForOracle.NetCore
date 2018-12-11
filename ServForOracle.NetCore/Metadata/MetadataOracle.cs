@@ -170,7 +170,7 @@ namespace ServForOracle.NetCore.Metadata
                 }
             }
 
-            if (Enumerable.Any(list))
+            if (!Enumerable.Any(list))
             {
                 return null;
             }
