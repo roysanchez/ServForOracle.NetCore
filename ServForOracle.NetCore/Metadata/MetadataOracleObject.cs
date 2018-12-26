@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using ServForOracle.NetCore.Extensions;
 using System.Threading.Tasks;
 using System.Data;
+using ServForOracle.NetCore.OracleAbstracts;
 
 namespace ServForOracle.NetCore.Metadata
 {

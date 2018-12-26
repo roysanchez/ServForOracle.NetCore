@@ -1,4 +1,5 @@
 ﻿using ServForOracle.NetCore.Metadata;
+using ServForOracle.NetCore.OracleAbstracts;
 using System;
 using System.Linq;
 using System.Linq.Expressions;

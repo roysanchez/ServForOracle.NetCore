@@ -1,5 +1,6 @@
 ﻿using Oracle.ManagedDataAccess.Client;
 using ServForOracle.NetCore.Extensions;
+using ServForOracle.NetCore.OracleAbstracts;
 using System;
 using System.Collections.Generic;
 using System.Data;

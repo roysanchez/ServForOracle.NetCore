@@ -1,4 +1,5 @@
 ﻿using ServForOracle.NetCore.Extensions;
+using ServForOracle.NetCore.OracleAbstracts;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

@@ -2,6 +2,7 @@
 using Oracle.ManagedDataAccess.Types;
 using ServForOracle.NetCore.Extensions;
 using ServForOracle.NetCore.Metadata;
+using ServForOracle.NetCore.OracleAbstracts;
 using System;
 using System.Data;
 using System.Threading.Tasks;
