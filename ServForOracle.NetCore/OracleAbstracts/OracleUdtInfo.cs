@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace ServForOracle.NetCore
+namespace ServForOracle.NetCore.OracleAbstracts
 {
     public class OracleUdtInfo : IEquatable<OracleUdtInfo>, IEqualityComparer<OracleUdtInfo>
     {

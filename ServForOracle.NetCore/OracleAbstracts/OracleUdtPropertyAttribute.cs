@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace ServForOracle.NetCore
+namespace ServForOracle.NetCore.OracleAbstracts
 {
     [AttributeUsage(AttributeTargets.Property, AllowMultiple = false)]
     public class OracleUdtPropertyAttribute: Attribute

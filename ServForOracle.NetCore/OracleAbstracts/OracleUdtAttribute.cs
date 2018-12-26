@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ServForOracle.NetCore
+namespace ServForOracle.NetCore.OracleAbstracts
 {
     /// <summary>
     /// Attribute that specifies the Oracle UDT Name, must have the format "SCHEMA.UDTOBJECTNAME"

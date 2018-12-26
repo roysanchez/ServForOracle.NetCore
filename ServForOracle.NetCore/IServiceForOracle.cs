@@ -1,4 +1,5 @@
-﻿using ServForOracle.NetCore.Parameters;
+﻿using ServForOracle.NetCore.OracleAbstracts;
+using ServForOracle.NetCore.Parameters;
 using System;
 using System.Collections.Generic;
 using System.Text;
