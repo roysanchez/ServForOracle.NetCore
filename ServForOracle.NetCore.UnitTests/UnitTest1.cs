@@ -1,7 +1,7 @@
-using Oracle.ManagedDataAccess.Client;
 using System;
 using Xunit;
 using ServForOracle.NetCore.Config;
+using ServForOracle.NetCore.OracleAbstracts;
 
 namespace ServForOracle.NetCore.UnitTests
 {
