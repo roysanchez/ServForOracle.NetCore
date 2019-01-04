@@ -64,7 +64,7 @@ namespace ServForOracle.NetCore.Metadata
             {
                 var workedName = parameterName + "_" + dependenciesCounter++;
                 var subConstructor = GenerateConstructor(prop.PropertyMetadata.UDTInfo.FullObjectName, prop.PropertyMetadata.Properties.ToArray());
-                BuildQueryConstructor(baseString, prop.NETProperty.PropertyType, prop.NETProperty.GetValue(value), workedName, ref startNumber, prop.PropertyMetadata, subConstructor);
+                BuildQueryConstructor(baseString, prop.NETProperty.PropertyType, value != null ? prop.NETProperty.GetValue(value) : null, workedName, ref startNumber, prop.PropertyMetadata, subConstructor);
                 workedTypes.Add(prop.Name, workedName);
             }
 
