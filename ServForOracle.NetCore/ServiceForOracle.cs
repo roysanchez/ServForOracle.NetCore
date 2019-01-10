@@ -222,12 +222,24 @@ namespace ServForOracle.NetCore
             var declare = ProcessDeclaration(parameters);
             var body = ProcessBody(parameters, info);
 
-            var query = new StringBuilder(await beforeQuery?.Invoke(info));
+            //elvis operator is throwing null reference
+            string beforeQ = string.Empty;
+            if(beforeQuery != null)
+            {
+                beforeQ = await beforeQuery.Invoke(info);
+            }
+            var query = new StringBuilder(beforeQ);
             query.AppendLine(ProcessQuery(method, parameters, info));
 
             var outparameters = ProcessOutputParameters(parameters, info);
 
-            var additionalInfo = await beforeEnd?.Invoke(info);
+            AdditionalInformation additionalInfo = null;
+
+            if(beforeEnd != null)
+            {
+                additionalInfo = await beforeEnd.Invoke(info);
+            }
+
             if (additionalInfo != null)
             {
                 declare.AppendLine(additionalInfo.Declare);

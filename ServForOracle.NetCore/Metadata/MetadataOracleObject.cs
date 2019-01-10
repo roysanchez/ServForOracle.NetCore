@@ -361,7 +361,7 @@ namespace ServForOracle.NetCore.Metadata
             {
                 while (await reader.ReadAsync())
                 {
-                    ReadObjectInstance(type, reader, OracleTypeNetMetadata, ref counter);
+                    instance = ReadObjectInstance(type, reader, OracleTypeNetMetadata, ref counter);
                 }
 
                 return (T)instance;
