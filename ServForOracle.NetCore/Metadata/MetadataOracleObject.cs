@@ -94,7 +94,7 @@ namespace ServForOracle.NetCore.Metadata
 
             return constructor;
         }
-        
+
         private void BuildQueryConstructor(StringBuilder baseString, Type type, object value, string name, ref int startNumber, MetadataOracleNetTypeDefinition metadata, string constructor)
         {
             if (type.IsCollection())
@@ -121,21 +121,21 @@ namespace ServForOracle.NetCore.Metadata
             var propertiesParameters = new List<OracleParameter>();
             foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
             {
-                if (prop.PropertyMetadata != null)
+                if (value != null && prop.NETProperty.GetValue(value) != null)
                 {
-                    if (prop.NETProperty.PropertyType.IsCollection())
+                    if (prop.PropertyMetadata != null)
                     {
-                        propertiesParameters.AddRange(ProcessCollectionParameters(prop.NETProperty.GetValue(value) as IEnumerable, prop.PropertyMetadata, startNumber, out startNumber));
+                        if (prop.NETProperty.PropertyType.IsCollection())
+                        {
+                            propertiesParameters.AddRange(ProcessCollectionParameters(prop.NETProperty.GetValue(value) as IEnumerable, prop.PropertyMetadata, startNumber, out startNumber));
+                        }
+                        else
+                        {
+                            propertiesParameters.AddRange(ProcessOracleParameter(prop.NETProperty.GetValue(value), prop.PropertyMetadata,
+                                startNumber, out startNumber));
+                        }
                     }
                     else
-                    {
-                        propertiesParameters.AddRange(ProcessOracleParameter(prop.NETProperty.GetValue(value), prop.PropertyMetadata,
-                            startNumber, out startNumber));
-                    }
-                }
-                else
-                {
-                    if (value != null && prop.NETProperty.GetValue(value) != null)
                     {
                         propertiesParameters.Add(
                         GetOracleParameter(
@@ -213,7 +213,7 @@ namespace ServForOracle.NetCore.Metadata
                 }
                 else
                 {
-                    if(isRoot)
+                    if (isRoot)
                     {
                         select.Append($"{tableName}.{prop.Name} {prop.NETProperty.Name}");
                     }
