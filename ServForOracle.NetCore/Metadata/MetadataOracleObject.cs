@@ -75,7 +75,7 @@ namespace ServForOracle.NetCore.Metadata
                     if (prop.PropertyMetadata != null)
                     {
                         workedTypes.TryGetValue(prop.Name, out var subtype);
-                        constructor = regex.Replace(constructor, subtype);
+                        constructor = regex.Replace(constructor, subtype, 1);
                     }
                     else if (value != null && prop.NETProperty.GetValue(value) != null)
                     {
