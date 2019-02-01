@@ -119,32 +119,34 @@ namespace ServForOracle.NetCore.Metadata
         private IEnumerable<OracleParameter> ProcessOracleParameter(object value, MetadataOracleNetTypeDefinition metadata, int startNumber, out int newNumber)
         {
             var propertiesParameters = new List<OracleParameter>();
-            foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null).OrderBy(c => c.Order))
+
+            foreach (var prop in metadata.Properties.Where(c => c.PropertyMetadata != null).OrderBy(c => c.Order))
             {
                 if (value != null && prop.NETProperty.GetValue(value) != null)
                 {
-                    if (prop.PropertyMetadata != null)
+                    if (prop.NETProperty.PropertyType.IsCollection())
                     {
-                        if (prop.NETProperty.PropertyType.IsCollection())
-                        {
-                            propertiesParameters.AddRange(ProcessCollectionParameters(prop.NETProperty.GetValue(value) as IEnumerable, prop.PropertyMetadata, startNumber, out startNumber));
-                        }
-                        else
-                        {
-                            propertiesParameters.AddRange(ProcessOracleParameter(prop.NETProperty.GetValue(value), prop.PropertyMetadata,
-                                startNumber, out startNumber));
-                        }
+                        propertiesParameters.AddRange(ProcessCollectionParameters(prop.NETProperty.GetValue(value) as IEnumerable, prop.PropertyMetadata, startNumber, out startNumber));
                     }
                     else
                     {
-                        propertiesParameters.Add(
-                        GetOracleParameter(
-                            type: prop.NETProperty.PropertyType,
-                            direction: ParameterDirection.Input,
-                            name: $":{startNumber++}",
-                            value: prop.NETProperty.GetValue(value)
-                        ));
+                        propertiesParameters.AddRange(ProcessOracleParameter(prop.NETProperty.GetValue(value), prop.PropertyMetadata,
+                            startNumber, out startNumber));
                     }
+                }
+            }
+
+            foreach (var prop in metadata.Properties.Where(c => c.NETProperty != null && c.PropertyMetadata is null).OrderBy(c => c.Order))
+            {
+                if (value != null && prop.NETProperty.GetValue(value) != null)
+                {
+                    propertiesParameters.Add(
+                    GetOracleParameter(
+                        type: prop.NETProperty.PropertyType,
+                        direction: ParameterDirection.Input,
+                        name: $":{startNumber++}",
+                        value: prop.NETProperty.GetValue(value)
+                    ));
                 }
             }
 
