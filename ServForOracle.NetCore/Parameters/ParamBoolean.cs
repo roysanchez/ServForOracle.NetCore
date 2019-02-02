@@ -61,7 +61,7 @@ namespace ServForOracle.NetCore.Parameters
             _ParameterName = name;
         }
 
-        internal OracleParameter GetOracleParameters(int startNumber)
+        internal OracleParameter GetOracleParameter(int startNumber)
         {
             if (Direction == ParameterDirection.Output || Direction == ParameterDirection.InputOutput)
             {
@@ -76,7 +76,7 @@ namespace ServForOracle.NetCore.Parameters
         internal override PreparedOutputParameter PrepareOutputParameter(int startNumber)
         {
             var output = Metadata.OutputString(startNumber, _ParameterName);
-            return new PreparedOutputParameter(this, GetOracleParameters(startNumber), output);
+            return new PreparedOutputParameter(this, GetOracleParameter(startNumber), output);
         }
     }
 }

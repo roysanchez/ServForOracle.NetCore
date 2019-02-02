@@ -369,6 +369,11 @@ namespace ServForOracle.NetCore
 
             foreach (var param in parameters.Where(c => c is ParamManaged).Cast<ParamManaged>())
             {
+                if(param is ParamBoolean boolean && !(boolean.Direction == ParameterDirection.Output || boolean.Direction == ParameterDirection.InputOutput))
+                {
+                    continue;
+                }
+
                 var name = $"p{objCounter++}";
                 param.SetParameterName(name);
 
@@ -444,6 +449,22 @@ namespace ServForOracle.NetCore
                     {
                         info.Outputs.Add(new PreparedOutputParameter(clrType, oracleParameter, null));
                     }
+                }
+                else if(param is ParamBoolean boolean)
+                {
+                    var name = $":{info.ParameterCounter}";
+                    query.Append(name);
+                    if (boolean.Direction == ParameterDirection.Output || boolean.Direction == ParameterDirection.InputOutput)
+                    {
+                        var output = boolean.PrepareOutputParameter(info.ParameterCounter++);
+                        info.OracleParameterList.Add(output.OracleParameter);
+                    }
+                    else
+                    {
+                        boolean.SetParameterName($":{info.ParameterCounter}");
+                        info.OracleParameterList.Add(boolean.GetOracleParameter(info.ParameterCounter++));
+                    }
+                    
                 }
             }
 
