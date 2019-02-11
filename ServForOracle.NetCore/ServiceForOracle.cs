@@ -12,7 +12,9 @@ using ServForOracle.NetCore.Extensions;
 using System.Data.Common;
 using ServForOracle.NetCore.Config;
 using ServForOracle.NetCore.OracleAbstracts;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("ServForOracle.NetCore.UnitTests")]
 namespace ServForOracle.NetCore
 {
     public class ServiceForOracle : IServiceForOracle

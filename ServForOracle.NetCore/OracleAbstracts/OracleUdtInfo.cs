@@ -18,26 +18,39 @@ namespace ServForOracle.NetCore.OracleAbstracts
                 throw new ArgumentNullException(nameof(objectName));
             }
 
-            var errorString = $"The object {objectName} is invalid, it needs to havet the format SCHEMA.OBJECT_NAME";
-
-            var objectParts = objectName.ToUpper().Split('.');
-            if (objectParts.Length != 2)
+            if(objectName.Contains("|"))
             {
-                throw new ArgumentException(nameof(objectName), errorString);
+                var parts = objectName.Split('|');
+                (ObjectSchema, ObjectName) = SplitAndValidateName(parts[0]);
+                (CollectionSchema, CollectionName) = SplitAndValidateName(parts[1]);
+            }
+            else
+            {
+                (ObjectSchema, ObjectName) = SplitAndValidateName(objectName);
             }
 
-            if (string.IsNullOrWhiteSpace(objectParts[0]))
+            (string schema, string name) SplitAndValidateName(string name)
             {
-                throw new ArgumentException(nameof(objectName), errorString);
-            }
-            if (string.IsNullOrWhiteSpace(objectParts[1]))
-            {
-                throw new ArgumentException(nameof(objectName), errorString);
-            }
+                var errorString = $"The object {name} is invalid, it needs to havet the format SCHEMA.OBJECT_NAME or" +
+                " SCHEMA.OBJECTNAME|SCHEMA.COLLECTIONNAME";
 
-            ObjectSchema = objectParts[0];
-            ObjectName = objectParts[1];
+                var objectParts = name.Split('.');
+                if (name.Length != 2)
+                {
+                    throw new ArgumentException(nameof(name), errorString);
+                }
 
+                if (string.IsNullOrWhiteSpace(objectParts[0]))
+                {
+                    throw new ArgumentException(nameof(name), errorString);
+                }
+                if (string.IsNullOrWhiteSpace(objectParts[1]))
+                {
+                    throw new ArgumentException(nameof(name), errorString);
+                }
+
+                return (objectParts[0], objectParts[1]);
+            }
         }
 
         public OracleUdtInfo(string schema, string objectName)
@@ -75,7 +88,7 @@ namespace ServForOracle.NetCore.OracleAbstracts
                 throw new ArgumentNullException(nameof(collectionSchema));
             }
 
-            CollectionSchema = collectionSchema;
+            CollectionSchema = collectionSchema.ToUpper();
         }
 
         public bool IsCollectionValid => !string.IsNullOrWhiteSpace(CollectionName);
