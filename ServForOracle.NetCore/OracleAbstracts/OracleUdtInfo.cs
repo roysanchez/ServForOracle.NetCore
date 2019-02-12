@@ -35,7 +35,7 @@ namespace ServForOracle.NetCore.OracleAbstracts
                 " SCHEMA.OBJECTNAME|SCHEMA.COLLECTIONNAME";
 
                 var objectParts = name.Split('.');
-                if (name.Length != 2)
+                if (objectParts.Length != 2)
                 {
                     throw new ArgumentException(nameof(name), errorString);
                 }
