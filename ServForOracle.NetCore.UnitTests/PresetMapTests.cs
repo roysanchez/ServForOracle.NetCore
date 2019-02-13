@@ -3,6 +3,7 @@ using Xunit;
 using ServForOracle.NetCore.Config;
 using ServForOracle.NetCore.OracleAbstracts;
 using AutoFixture.Xunit2;
+using System.Linq.Expressions;
 
 namespace ServForOracle.NetCore.UnitTests
 {
@@ -13,6 +14,11 @@ namespace ServForOracle.NetCore.UnitTests
         {
             UDTInfoTests = new UDTInfoTests();
         }
+
+        private readonly (Expression<Func<TestClass, object>> property, string UDTPropertyName)[] NullReplacedProperties = null;
+
+        private readonly (Expression<Func<TestClass, object>> property, string UDTPropertyName) ReplacedPropertiesNullNewName = (c => c.Roy, null);
+
         public class TestClass
         {
             public string Roy { get; set; }
@@ -31,14 +37,6 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, AutoData]
-        public void PresetConstructorAllParameters_CollectionSchemaNull_Throws(string objectSchema, string objectName, string collectionName)
-        {
-            var PresetConfiguration = new ConfigurePresetMappings();
-
-            Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>(objectSchema, objectName, (String)null, collectionName));
-        }
-
-        [Theory, AutoData]
         public void PresetConstructorAllParametersWithProperties(string objectSchema, string objectName, string collectionSchema, string collectionName, string propertyName)
         {
             var PresetConfiguration = new ConfigurePresetMappings();
@@ -53,6 +51,30 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, AutoData]
+        public void PresetConstructorAllParameters_CollectionSchemaNull_Throws(string objectSchema, string objectName, string collectionName)
+        {
+            var PresetConfiguration = new ConfigurePresetMappings();
+
+            Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>(objectSchema, objectName, (String)null, collectionName));
+        }
+
+        [Theory, AutoData]
+        public void PresetConstructorAllParametersWithNullProperties_Throws(string objectSchema, string objectName, string collectionSchema, string collectionName)
+        {
+            var PresetConfiguration = new ConfigurePresetMappings();
+
+            Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>(objectSchema, objectName, collectionSchema, collectionName, null));
+        }
+
+        [Theory, AutoData]
+        public void PresetConstructorAllParametersWithPropertiesNullNewName_Throws(string objectSchema, string objectName, string collectionSchema, string collectionName)
+        {
+            var PresetConfiguration = new ConfigurePresetMappings();
+
+            Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(objectSchema, objectName, collectionSchema, collectionName, ReplacedPropertiesNullNewName));
+        }
+
+        [Theory, AutoData]
         public void PresetConstructorTwoParametersExceptProperties(string objectSchema, string objectName)
         {
             var PresetConfiguration = new ConfigurePresetMappings();
@@ -63,6 +85,20 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.Equal(typeof(TestClass), test.Type);
 
             UDTInfoTests.AssertUDTInfo(test.Info, objectSchema, objectName);
+        }
+
+        [Theory, AutoData]
+        public void PresetConstructorTwoParametersWithProperties(string objectSchema, string objectName, string propertyName)
+        {
+            var PresetConfiguration = new ConfigurePresetMappings();
+            var test = new PresetMap<TestClass>(objectSchema, objectName, (c => c.Roy,propertyName));
+
+            Assert.NotNull(test);
+            Assert.NotNull(test.Type);
+            Assert.Equal(typeof(TestClass), test.Type);
+
+            UDTInfoTests.AssertUDTInfo(test.Info, objectSchema, objectName);
+            UDTInfoTests.AssertReplacedProperties(test.ReplacedProperties, nameof(TestClass.Roy), propertyName);
         }
 
         [Theory, AutoData]
@@ -80,17 +116,19 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, AutoData]
-        public void PresetConstructorTwoParametersWithProperties(string objectSchema, string objectName, string propertyName)
+        public void PresetConstructorTwoParametersWithNullProperties_Throws(string objectSchema, string objectName)
         {
             var PresetConfiguration = new ConfigurePresetMappings();
-            var test = new PresetMap<TestClass>(objectSchema, objectName, (c => c.Roy, propertyName));
 
-            Assert.NotNull(test);
-            Assert.NotNull(test.Type);
-            Assert.Equal(typeof(TestClass), test.Type);
+            Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>(objectSchema, objectName, NullReplacedProperties));
+        }
 
-            UDTInfoTests.AssertUDTInfo(test.Info, objectSchema, objectName);
-            UDTInfoTests.AssertReplacedProperties(test.ReplacedProperties, nameof(TestClass.Roy), propertyName);
+        [Theory, AutoData]
+        public void PresetConstructorTwoParametersWithPropertiesNullNewName_Throws(string objectSchema, string objectName)
+        {
+            var PresetConfiguration = new ConfigurePresetMappings();
+
+            Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(objectSchema, objectName, ReplacedPropertiesNullNewName));
         }
 
         [Theory, AutoData]
@@ -127,6 +165,23 @@ namespace ServForOracle.NetCore.UnitTests
 
             Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>(objectSchema, objectName, (string)null));
         }
+
+        [Theory, AutoData]
+        public void PresetConstructorThreeParametersWithNullProperties_Throws(string objectSchema, string objectName, string collectionName)
+        {
+            var PresetConfiguration = new ConfigurePresetMappings();
+
+            Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>(objectSchema, objectName, collectionName, NullReplacedProperties));
+        }
+
+        [Theory, AutoData]
+        public void PresetConstructorThreeParametersWithPropertiesNullNewName_Throws(string objectSchema, string objectName, string collectionName)
+        {
+            var PresetConfiguration = new ConfigurePresetMappings();
+
+            Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(objectSchema, objectName, collectionName, ReplacedPropertiesNullNewName));
+        }
+
 
         [Theory, AutoData]
         public void PresetConstructorOneParameterWithoutCollectionExceptProperties(string objectSchema, string objectName)
@@ -227,6 +282,73 @@ namespace ServForOracle.NetCore.UnitTests
             var fullName = $"{objectSchema}.{objectName}|{objectSchema}.";
 
             Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(fullName));
+        }
+
+        [Theory, AutoData]
+        public void PresetConstructorOneParametersWithNullProperties_Throws(string objectSchema, string objectName, string collectionName)
+        {
+            var PresetConfiguration = new ConfigurePresetMappings();
+            var fullName = $"{objectSchema}.{objectName}|{objectSchema}.{collectionName}";
+
+            Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>(fullName, NullReplacedProperties));
+        }
+
+        [Theory, AutoData]
+        public void PresetConstructorOneParametersWithPropertiesNullNewName_Throws(string objectSchema, string objectName, string collectionName)
+        {
+            var PresetConfiguration = new ConfigurePresetMappings();
+            var fullName = $"{objectSchema}.{objectName}|{objectSchema}.{collectionName}";
+
+            Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(fullName, ReplacedPropertiesNullNewName));
+        }
+
+        [Theory, AutoData]
+        public void PresetConstructorOracleUdtInfoExceptProperties(string objectSchema, string objectName, string collectionName)
+        {
+            var PresetConfiguration = new ConfigurePresetMappings();
+            var info = new OracleUdtInfo(objectSchema, objectName, collectionName);
+
+            var test = new PresetMap<TestClass>(info);
+
+            Assert.NotNull(test);
+            Assert.NotNull(test.Type);
+            Assert.Equal(typeof(TestClass), test.Type);
+
+            Assert.Equal(info, test.Info);
+        }
+
+        [Theory, AutoData]
+        public void PresetConstructorOracleUdtInfWithProperties(string objectSchema, string objectName, string collectionName, string propertyName)
+        {
+            var PresetConfiguration = new ConfigurePresetMappings();
+            var info = new OracleUdtInfo(objectSchema, objectName, collectionName);
+
+            var test = new PresetMap<TestClass>(info, (c => c.Roy, propertyName));
+
+            Assert.NotNull(test);
+            Assert.NotNull(test.Type);
+            Assert.Equal(typeof(TestClass), test.Type);
+
+            Assert.Equal(info, test.Info);
+            UDTInfoTests.AssertReplacedProperties(test.ReplacedProperties, nameof(TestClass.Roy), propertyName);
+        }
+
+        [Theory, AutoData]
+        public void Preset_PropertiesMappedCorrectly(string objectSchema, string objectName, string collectionName, string propertyName)
+        {
+            var PresetConfiguration = new ConfigurePresetMappings();
+            var info = new OracleUdtInfo(objectSchema, objectName, collectionName);
+
+            var test = new PresetMap<TestClass>(info, (c => c.Roy, propertyName));
+
+            Assert.NotNull(test);
+            Assert.NotNull(test.ReplacedProperties);
+            Assert.Single(test.ReplacedProperties);
+
+            var replaced = test.ReplacedProperties[0];
+            Assert.NotNull(replaced);
+            Assert.Equal(nameof(TestClass.Roy).ToUpper(), replaced.NetPropertyName);
+            Assert.Equal(propertyName.ToUpper(), replaced.UDTPropertyName);
         }
     }
 }

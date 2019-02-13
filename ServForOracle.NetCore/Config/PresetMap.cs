@@ -34,6 +34,7 @@ namespace ServForOracle.NetCore.Config
             : this(replacedProperties)
         {
             Info = info;
+            Type = typeof(T);
         }
 
         private PresetMap(params (Expression<Func<T, object>> property, string UDTPropertyName)[] replacedProperties)
@@ -49,7 +50,11 @@ namespace ServForOracle.NetCore.Config
         private UdtPropertyNetPropertyMap[] ConvertToUDTPropertyMapArray(
                 (Expression<Func<T, object>> action, string newName)[] replacedPropertiesUdtNames)
         {
-            Type = typeof(T);
+            if(replacedPropertiesUdtNames.Any(c => string.IsNullOrWhiteSpace(c.newName)))
+            {
+                throw new ArgumentException("The replaced properties cannot be null or empty space.");
+            }
+
             return replacedPropertiesUdtNames.Select(
                 c =>
                 {

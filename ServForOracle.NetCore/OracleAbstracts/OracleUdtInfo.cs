@@ -92,18 +92,8 @@ namespace ServForOracle.NetCore.OracleAbstracts
         }
 
         public bool IsCollectionValid => !string.IsNullOrWhiteSpace(CollectionName);
-        public string FullObjectName
-        {
-            get
-            {
-                if(string.IsNullOrWhiteSpace(ObjectSchema) || string.IsNullOrWhiteSpace(ObjectName))
-                {
-                    throw new Exception("The UDT object is not set up correctly, doesn't have the object configured, udt=" + ToString());
-                }
+        public string FullObjectName => $"{ObjectSchema}.{ObjectName}";
 
-                return $"{ObjectSchema}.{ObjectName}"; ;
-            }
-        }
         public string FullCollectionName
         {
             get
