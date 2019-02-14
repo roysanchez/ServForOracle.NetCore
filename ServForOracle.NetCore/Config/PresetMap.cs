@@ -60,8 +60,16 @@ namespace ServForOracle.NetCore.Config
                 {
                     if (!(c.action.Body is MemberExpression memberExpression))
                     {
+                        //this only happens if the property is boxed
                         var unaryExpression = c.action.Body as UnaryExpression;
-                        memberExpression = unaryExpression.Operand as MemberExpression;
+                        if (unaryExpression is null)
+                        {
+                            throw new ArgumentException($"The replaced property {c.newName} has an invalid mapping.");
+                        }
+                        else
+                        {
+                            memberExpression = unaryExpression.Operand as MemberExpression;
+                        }
                     }
 
                     return new UdtPropertyNetPropertyMap(memberExpression.Member.Name, c.newName);

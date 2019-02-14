@@ -22,6 +22,11 @@ namespace ServForOracle.NetCore.UnitTests
         public class TestClass
         {
             public string Roy { get; set; }
+            public SubClass SubClass { get; set; }
+        }
+        public class SubClass
+        {
+            public string Roy2 { get; set; }
         }
 
         [Theory, AutoData]
@@ -340,6 +345,34 @@ namespace ServForOracle.NetCore.UnitTests
             var info = new OracleUdtInfo(objectSchema, objectName, collectionName);
 
             var test = new PresetMap<TestClass>(info, (c => c.Roy, propertyName));
+
+            Assert.NotNull(test);
+            Assert.NotNull(test.ReplacedProperties);
+            Assert.Single(test.ReplacedProperties);
+
+            var replaced = test.ReplacedProperties[0];
+            Assert.NotNull(replaced);
+            Assert.Equal(nameof(TestClass.Roy).ToUpper(), replaced.NetPropertyName);
+            Assert.Equal(propertyName.ToUpper(), replaced.UDTPropertyName);
+        }
+
+        [Theory, AutoData]
+        public void Preset_PropertiesMap_IncorrectValues_ThrowsErrors(string objectSchema, string objectName, string collectionName, string propertyName)
+        {
+            var PresetConfiguration = new ConfigurePresetMappings();
+            var info = new OracleUdtInfo(objectSchema, objectName, collectionName);
+
+            Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(info, (c => null, propertyName)));
+            Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(info, (c => new TestClass(), propertyName)));
+        }
+
+        [Theory, AutoData]
+        public void Preset_PropertiesMap_BoxedValues_HandlesCorrectly(string objectSchema, string objectName, string collectionName, string propertyName)
+        {
+            var PresetConfiguration = new ConfigurePresetMappings();
+            var info = new OracleUdtInfo(objectSchema, objectName, collectionName);
+
+            var test = new PresetMap<TestClass>(info, (c => (object)c.Roy, propertyName));
 
             Assert.NotNull(test);
             Assert.NotNull(test.ReplacedProperties);
