@@ -16,6 +16,7 @@ using System.Runtime.CompilerServices;
 using ServForOracle.NetCore.Cache;
 using Microsoft.Extensions.Logging;
 
+[assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 [assembly: InternalsVisibleTo("ServForOracle.NetCore.UnitTests")]
 namespace ServForOracle.NetCore
 {

@@ -9,12 +9,13 @@ using System.Text;
 
 namespace ServForOracle.NetCore.Cache
 {
-    public class ServForOracleCache
+    public class ServForOracleCache: IServForOracleCache
     {
-        public readonly IMemoryCache Cache;
+        public IMemoryCache Cache { get; private set; }
+
         private static ServForOracleCache servForOracleCache;
 
-        private ServForOracleCache(IMemoryCache memoryCache)
+        internal ServForOracleCache(IMemoryCache memoryCache)
         {
             Cache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
         }
@@ -29,7 +30,7 @@ namespace ServForOracle.NetCore.Cache
             return servForOracleCache;
         }
 
-        internal void SaveUdtInfo(string name, OracleUdtInfo info, UdtPropertyNetPropertyMap[] props, bool fuzzyNameMatch)
+        internal virtual void SaveUdtInfo(string name, OracleUdtInfo info, UdtPropertyNetPropertyMap[] props, bool fuzzyNameMatch)
         {
             using (var entry = Cache.CreateEntry($"udt-{name}"))
             {
@@ -37,13 +38,13 @@ namespace ServForOracle.NetCore.Cache
             }
         }
 
-        internal (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool FuzzyMatch) GetOtherUdtInfo(string name)
+        internal virtual (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool FuzzyMatch) GetOtherUdtInfo(string name)
         {
             Cache.TryGetValue($"udt-{name}", out (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool FuzzyMatch) preset);
             return preset;
         }
 
-        internal (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool FuzzyMatch) PresetGetValueOrDefault(Type type)
+        internal virtual (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool FuzzyMatch) PresetGetValueOrDefault(Type type)
         {
             if (type.IsCollection())
             {
@@ -55,18 +56,18 @@ namespace ServForOracle.NetCore.Cache
             }
         }
 
-        internal void AddOracleUDTPresets(Type Type, OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool fuzzyNameMatch = true)
+        internal virtual void AddOracleUDTPresets(Type Type, OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool fuzzyNameMatch = true)
         {
             SaveUdtInfo(Type.FullName, Info, Props, fuzzyNameMatch);
         }
 
-        internal MetadataOracle GetMetadata(string name)
+        internal virtual MetadataOracle GetMetadata(string name)
         {
             Cache.TryGetValue($"matadata-{name}", out MetadataOracle metadata);
             return metadata;
         }
 
-        internal void SaveMetadata(string name, MetadataOracle metadata)
+        internal virtual void SaveMetadata(string name, MetadataOracle metadata)
         {
             using (var entry = Cache.CreateEntry($"metadata-{name}"))
             {
@@ -74,7 +75,7 @@ namespace ServForOracle.NetCore.Cache
             }
         }
 
-        internal void SaveTypeDefinition(MetadataOracleTypeDefinition def)
+        internal virtual void SaveTypeDefinition(MetadataOracleTypeDefinition def)
         {
             using (var entry = Cache.CreateEntry($"def-{def.UDTInfo.FullObjectName}"))
             {
@@ -82,10 +83,11 @@ namespace ServForOracle.NetCore.Cache
             }
         }
 
-        internal MetadataOracleTypeDefinition GetTypeDefinition(string fullObjectName)
+        internal virtual MetadataOracleTypeDefinition GetTypeDefinition(string fullObjectName)
         {
             Cache.TryGetValue($"def-{fullObjectName}", out MetadataOracleTypeDefinition info);
             return info;
         }
+        
     }
 }

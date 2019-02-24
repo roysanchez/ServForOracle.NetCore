@@ -124,6 +124,7 @@ namespace ServForOracle.NetCore.OracleAbstracts
                    CollectionSchema == other.CollectionSchema &&
                    CollectionName == other.CollectionName;
         }
+
         public override int GetHashCode()
         {
             var hashCode = -1158407366;

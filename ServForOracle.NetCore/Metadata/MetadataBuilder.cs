@@ -18,7 +18,7 @@ namespace ServForOracle.NetCore.Metadata
         private const string COLLECTION = "COLLECTION";
 
         public DbConnection OracleConnection { get; private set; }
-        public ServForOracleCache Cache { get; private set; }
+        private readonly ServForOracleCache Cache;
         private readonly ILogger Logger;
 
         public MetadataBuilder(DbConnection connection, ServForOracleCache cache, ILogger logger)

@@ -13,12 +13,7 @@ namespace ServForOracle.NetCore.Config
         private readonly ILogger<ConfigurePresetMappings> _logger;
         private readonly ServForOracleCache _cache;
 
-        public ConfigurePresetMappings(ILogger logger, IMemoryCache memoryCache = null)
-            :this(null, ServForOracleCache.Create(memoryCache))
-        {
-        }
-
-        internal ConfigurePresetMappings(ILogger<ConfigurePresetMappings> logger, ServForOracleCache cache)
+        public ConfigurePresetMappings(ILogger<ConfigurePresetMappings> logger, ServForOracleCache cache)
         {
             _logger = logger;
             _cache = cache;

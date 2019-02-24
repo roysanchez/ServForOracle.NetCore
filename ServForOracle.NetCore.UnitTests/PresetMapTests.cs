@@ -4,12 +4,19 @@ using ServForOracle.NetCore.Config;
 using ServForOracle.NetCore.OracleAbstracts;
 using AutoFixture.Xunit2;
 using System.Linq.Expressions;
+using Microsoft.Extensions.Caching.Memory;
+using Moq;
+using Microsoft.Extensions.Logging;
+using ServForOracle.NetCore.Cache;
 
 namespace ServForOracle.NetCore.UnitTests
 {
     public class PresetMapTests
     {
         private readonly UDTInfoTests UDTInfoTests;
+        private readonly Mock<ServForOracleCache> _memoryCacheMoq = new Mock<ServForOracleCache>(new Mock<IMemoryCache>().Object);
+        private readonly Mock<ILogger<ConfigurePresetMappings>> _loggerMoq = new Mock<ILogger<ConfigurePresetMappings>>();
+
         public PresetMapTests()
         {
             UDTInfoTests = new UDTInfoTests();
@@ -32,7 +39,8 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorAllParametersExceptProperties(string objectSchema, string objectName, string collectionSchema, string collectionName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var test = new PresetMap<TestClass>(objectSchema, objectName, collectionSchema, collectionName);
 
             Assert.NotNull(test.Info);
@@ -44,7 +52,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorAllParametersWithProperties(string objectSchema, string objectName, string collectionSchema, string collectionName, string propertyName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var test = new PresetMap<TestClass>(objectSchema, objectName, collectionSchema, collectionName, (c => c.Roy, propertyName));
 
             Assert.NotNull(test);
@@ -58,7 +66,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorAllParameters_CollectionSchemaNull_Throws(string objectSchema, string objectName, string collectionName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
 
             Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>(objectSchema, objectName, (String)null, collectionName));
         }
@@ -66,7 +74,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorAllParametersWithNullProperties_Throws(string objectSchema, string objectName, string collectionSchema, string collectionName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
 
             Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>(objectSchema, objectName, collectionSchema, collectionName, null));
         }
@@ -74,7 +82,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorAllParametersWithPropertiesNullNewName_Throws(string objectSchema, string objectName, string collectionSchema, string collectionName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
 
             Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(objectSchema, objectName, collectionSchema, collectionName, ReplacedPropertiesNullNewName));
         }
@@ -82,7 +90,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorTwoParametersExceptProperties(string objectSchema, string objectName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var test = new PresetMap<TestClass>(objectSchema, objectName);
 
             Assert.NotNull(test);
@@ -95,7 +103,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorTwoParametersWithProperties(string objectSchema, string objectName, string propertyName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var test = new PresetMap<TestClass>(objectSchema, objectName, (c => c.Roy,propertyName));
 
             Assert.NotNull(test);
@@ -109,21 +117,21 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorTwoParametersSchemaNull_Throws(string objectSchema)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>(objectSchema, (string)null));
         }
 
         [Theory, AutoData]
         public void PresetConstructorTwoParametersObjectNameNull_Throws(string objectName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>((string)null, objectName));
         }
 
         [Theory, AutoData]
         public void PresetConstructorTwoParametersWithNullProperties_Throws(string objectSchema, string objectName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
 
             Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>(objectSchema, objectName, NullReplacedProperties));
         }
@@ -131,7 +139,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorTwoParametersWithPropertiesNullNewName_Throws(string objectSchema, string objectName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
 
             Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(objectSchema, objectName, ReplacedPropertiesNullNewName));
         }
@@ -139,7 +147,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorThreeParametersExceptProperties(string objectSchema, string objectName, string collectonName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var test = new PresetMap<TestClass>(objectSchema, objectName, collectonName);
 
             Assert.NotNull(test);
@@ -152,7 +160,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorThreeParametersWithProperties(string objectSchema, string objectName, string collectionName, string propertyName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var test = new PresetMap<TestClass>(objectSchema, objectName, collectionName, (c => c.Roy, propertyName));
 
             Assert.NotNull(test);
@@ -166,7 +174,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorThreeParametersCollectionNameNull_Throws(string objectSchema, string objectName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
 
             Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>(objectSchema, objectName, (string)null));
         }
@@ -174,7 +182,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorThreeParametersWithNullProperties_Throws(string objectSchema, string objectName, string collectionName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
 
             Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>(objectSchema, objectName, collectionName, NullReplacedProperties));
         }
@@ -182,7 +190,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorThreeParametersWithPropertiesNullNewName_Throws(string objectSchema, string objectName, string collectionName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
 
             Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(objectSchema, objectName, collectionName, ReplacedPropertiesNullNewName));
         }
@@ -191,7 +199,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorOneParameterWithoutCollectionExceptProperties(string objectSchema, string objectName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var fullName = $"{objectSchema}.{objectName}";
             var test = new PresetMap<TestClass>(fullName);
 
@@ -205,7 +213,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorOneParametersWithoutCollectionWithProperties(string objectSchema, string objectName, string propertyName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var fullName = $"{objectSchema}.{objectName}";
             var test = new PresetMap<TestClass>(fullName, (c => c.Roy, propertyName));
 
@@ -220,7 +228,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorOneParameterWithCollectionExceptProperties(string objectSchema, string collectionName, string objectName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var fullName = $"{objectSchema}.{objectName}|{objectSchema}.{collectionName}";
             var test = new PresetMap<TestClass>(fullName);
 
@@ -234,7 +242,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorOneParametersWithCollectionWithProperties(string objectSchema, string objectName, string collectionName, string propertyName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var fullName = $"{objectSchema}.{objectName}|{objectSchema}.{collectionName}";
             var test = new PresetMap<TestClass>(fullName, (c => c.Roy, propertyName));
 
@@ -249,14 +257,14 @@ namespace ServForOracle.NetCore.UnitTests
         [Fact]
         public void PresetConstructorOneParametersNullValue_Throws()
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>((string)null));
         }
 
         [Theory, AutoData]
         public void PresetConstructorOneParameterWithoutCollectionNoSchema_Throws(string objectName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var fullName = $".{objectName}";
 
             Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(fullName));
@@ -265,7 +273,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorOneParameterWithoutCollectionNoObjectName_Throws(string objectSchema)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var fullName = $"{objectSchema}.";
 
             Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(fullName));
@@ -274,7 +282,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorOneParameterWithCollectionNoSchemaForCollection_Throws(string objectSchema, string objectName,string collectionName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var fullName = $"{objectSchema}.{objectName}|.{collectionName}";
 
             Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(fullName));
@@ -283,7 +291,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorOneParameterWithCollectionNoNameForCollection_Throws(string objectSchema, string objectName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var fullName = $"{objectSchema}.{objectName}|{objectSchema}.";
 
             Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(fullName));
@@ -292,7 +300,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorOneParametersWithNullProperties_Throws(string objectSchema, string objectName, string collectionName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var fullName = $"{objectSchema}.{objectName}|{objectSchema}.{collectionName}";
 
             Assert.Throws<ArgumentNullException>(() => new PresetMap<TestClass>(fullName, NullReplacedProperties));
@@ -301,7 +309,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorOneParametersWithPropertiesNullNewName_Throws(string objectSchema, string objectName, string collectionName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var fullName = $"{objectSchema}.{objectName}|{objectSchema}.{collectionName}";
 
             Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(fullName, ReplacedPropertiesNullNewName));
@@ -310,7 +318,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorOracleUdtInfoExceptProperties(string objectSchema, string objectName, string collectionName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var info = new OracleUdtInfo(objectSchema, objectName, collectionName);
 
             var test = new PresetMap<TestClass>(info);
@@ -325,7 +333,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void PresetConstructorOracleUdtInfWithProperties(string objectSchema, string objectName, string collectionName, string propertyName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var info = new OracleUdtInfo(objectSchema, objectName, collectionName);
 
             var test = new PresetMap<TestClass>(info, (c => c.Roy, propertyName));
@@ -341,7 +349,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void Preset_PropertiesMappedCorrectly(string objectSchema, string objectName, string collectionName, string propertyName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var info = new OracleUdtInfo(objectSchema, objectName, collectionName);
 
             var test = new PresetMap<TestClass>(info, (c => c.Roy, propertyName));
@@ -359,7 +367,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void Preset_PropertiesMap_IncorrectValues_ThrowsErrors(string objectSchema, string objectName, string collectionName, string propertyName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var info = new OracleUdtInfo(objectSchema, objectName, collectionName);
 
             Assert.Throws<ArgumentException>(() => new PresetMap<TestClass>(info, (c => null, propertyName)));
@@ -369,7 +377,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, AutoData]
         public void Preset_PropertiesMap_BoxedValues_HandlesCorrectly(string objectSchema, string objectName, string collectionName, string propertyName)
         {
-            var PresetConfiguration = new ConfigurePresetMappings();
+            var PresetConfiguration = new ConfigurePresetMappings(_loggerMoq.Object, _memoryCacheMoq.Object);
             var info = new OracleUdtInfo(objectSchema, objectName, collectionName);
 
             var test = new PresetMap<TestClass>(info, (c => (object)c.Roy, propertyName));
