@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using ServForOracle.NetCore.Cache;
 using ServForOracle.NetCore.Metadata;
 using System;
 using System.Collections.Generic;
@@ -9,14 +11,17 @@ namespace ServForOracle.NetCore.Config
     public class ConfigurePresetMappings
     {
         private readonly ILogger<ConfigurePresetMappings> _logger;
-        public ConfigurePresetMappings()
-        {
+        private readonly ServForOracleCache _cache;
 
+        public ConfigurePresetMappings(ILogger logger, IMemoryCache memoryCache = null)
+            :this(null, ServForOracleCache.Create(memoryCache))
+        {
         }
 
-        public ConfigurePresetMappings(ILogger<ConfigurePresetMappings> logger)
+        internal ConfigurePresetMappings(ILogger<ConfigurePresetMappings> logger, ServForOracleCache cache)
         {
             _logger = logger;
+            _cache = cache;
         }
 
         public void AddOracleUDT(params PresetMap[] presets)
@@ -25,7 +30,7 @@ namespace ServForOracle.NetCore.Config
             {
                 foreach (var p in presets)
                 {
-                    MetadataBuilder.AddOracleUDTPresets(p.Type, p.Info, p.ReplacedProperties);
+                    _cache.AddOracleUDTPresets(p.Type, p.Info, p.ReplacedProperties);
                 }
             }
             else

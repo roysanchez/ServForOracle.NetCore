@@ -48,7 +48,7 @@ namespace ServForOracle.NetCore.Parameters
 
         internal override async Task LoadObjectMetadataAsync(MetadataBuilder builder)
         {
-            Metadata = await builder.GetOrRegisterMetadataOracleObjectAsync<T>(UDTInfo);
+            Metadata = await builder.GetOrRegisterMetadataOracleObjectAsync<T>(UDTInfo).ConfigureAwait(false);
             _UDTInfo = Metadata.OracleTypeNetMetadata.UDTInfo;
             MetadataLoaded = true;
         }
@@ -65,7 +65,7 @@ namespace ServForOracle.NetCore.Parameters
 
         internal override async Task SetOutputValueAsync(object value)
         {
-            Value = (T)(await Metadata.GetValueFromRefCursorAsync(Type, value as OracleRefCursor));
+            Value = (T)(await Metadata.GetValueFromRefCursorAsync(Type, value as OracleRefCursor).ConfigureAwait(false));
             base.Value = Value;
         }
 

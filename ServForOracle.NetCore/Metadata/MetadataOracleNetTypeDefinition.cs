@@ -1,4 +1,5 @@
-﻿using ServForOracle.NetCore.Extensions;
+﻿using ServForOracle.NetCore.Cache;
+using ServForOracle.NetCore.Extensions;
 using ServForOracle.NetCore.OracleAbstracts;
 using System;
 using System.Collections.Generic;
@@ -13,14 +14,17 @@ namespace ServForOracle.NetCore.Metadata
         public new virtual IEnumerable<MetadataOraclePropertyNetTypeDefinition> Properties { get; set; }
 
         private readonly Regex Regex = new Regex(Regex.Escape("_"));
+        private readonly ServForOracleCache Cache;
 
-        public MetadataOracleNetTypeDefinition(Type type, MetadataOracleTypeDefinition baseMetadataDefinition,
+        public MetadataOracleNetTypeDefinition(ServForOracleCache cache, Type type, MetadataOracleTypeDefinition baseMetadataDefinition,
            UdtPropertyNetPropertyMap[] presetProperties, bool fuzzyNameMatch)
         {
             if (baseMetadataDefinition == null)
             {
                 throw new ArgumentNullException(nameof(baseMetadataDefinition));
             }
+
+            Cache = cache;
 
             UDTInfo = baseMetadataDefinition.UDTInfo;
             Properties = ProcessPresetNetTypePropertiesMap(type, baseMetadataDefinition, presetProperties, fuzzyNameMatch);
@@ -97,17 +101,19 @@ namespace ServForOracle.NetCore.Metadata
             if (propertyType.IsCollection())
             {
                 return new MetadataOracleNetTypeDefinition(
+                                            Cache,
                                             propertyType.GetCollectionUnderType(),
                                             propertyObject.MetadataOracleType,
-                                            MetadataBase.PresetGetValueOrDefault(propertyType.GetCollectionUnderType()).Props,
+                                            Cache.PresetGetValueOrDefault(propertyType.GetCollectionUnderType()).Props,
                                             fuzzyNameMatch);
             }
             else
             {
                 return new MetadataOracleNetTypeDefinition(
+                                            Cache,
                                             propertyType,
                                             propertyObject.MetadataOracleType,
-                                            MetadataBase.PresetGetValueOrDefault(propertyType).Props,
+                                            Cache.PresetGetValueOrDefault(propertyType).Props,
                                             fuzzyNameMatch);
             }
         }

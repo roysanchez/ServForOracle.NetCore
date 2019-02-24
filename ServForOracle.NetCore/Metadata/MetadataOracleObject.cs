@@ -11,6 +11,7 @@ using ServForOracle.NetCore.Extensions;
 using System.Threading.Tasks;
 using System.Data;
 using ServForOracle.NetCore.OracleAbstracts;
+using ServForOracle.NetCore.Cache;
 
 namespace ServForOracle.NetCore.Metadata
 {
@@ -21,16 +22,16 @@ namespace ServForOracle.NetCore.Metadata
         private readonly Type Type;
         internal readonly MetadataOracleNetTypeDefinition OracleTypeNetMetadata;
 
-        public MetadataOracleObject(MetadataOracleTypeDefinition metadataOracleType, UdtPropertyNetPropertyMap[] customProperties, bool fuzzyNameMatch)
+        public MetadataOracleObject(ServForOracleCache cache, MetadataOracleTypeDefinition metadataOracleType, UdtPropertyNetPropertyMap[] customProperties, bool fuzzyNameMatch)
         {
             Type = typeof(T);
             if (Type.IsCollection())
             {
-                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(Type.GetCollectionUnderType(), metadataOracleType, customProperties, fuzzyNameMatch);
+                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(cache, Type.GetCollectionUnderType(), metadataOracleType, customProperties, fuzzyNameMatch);
             }
             else
             {
-                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(Type, metadataOracleType, customProperties, fuzzyNameMatch);
+                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(cache, Type, metadataOracleType, customProperties, fuzzyNameMatch);
             }
 
             ConstructorString = GenerateConstructor(metadataOracleType.UDTInfo.FullObjectName, metadataOracleType.Properties.ToArray());
@@ -351,7 +352,7 @@ namespace ServForOracle.NetCore.Metadata
             if (type.IsCollection())
             {
                 var subType = type.GetCollectionUnderType();
-                while (await reader.ReadAsync())
+                while (await reader.ReadAsync().ConfigureAwait(false))
                 {
                     counter = 0;
                     instance.Add(ReadObjectInstance(subType, reader, OracleTypeNetMetadata, ref counter));
@@ -361,7 +362,7 @@ namespace ServForOracle.NetCore.Metadata
             }
             else
             {
-                while (await reader.ReadAsync())
+                while (await reader.ReadAsync().ConfigureAwait(false))
                 {
                     instance = ReadObjectInstance(type, reader, OracleTypeNetMetadata, ref counter);
                 }

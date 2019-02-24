@@ -1,4 +1,5 @@
 ﻿using Oracle.ManagedDataAccess.Client;
+using ServForOracle.NetCore.Cache;
 using ServForOracle.NetCore.Extensions;
 using ServForOracle.NetCore.OracleAbstracts;
 using System;
@@ -11,19 +12,21 @@ using System.Threading.Tasks;
 
 namespace ServForOracle.NetCore.Metadata
 {
-    internal class MetadataBuilder: MetadataBase
+    internal class MetadataBuilder
     {
         private const string COLLECTION = "COLLECTION";
 
         public DbConnection OracleConnection { get; private set; }
+        public ServForOracleCache Cache { get; private set; }
 
-        public MetadataBuilder(DbConnection connection)
+        public MetadataBuilder(DbConnection connection, ServForOracleCache cache)
         {
             if(connection is null || string.IsNullOrWhiteSpace(connection.ConnectionString))
             {
                 throw new ArgumentNullException(nameof(connection));
             }
 
+            Cache = cache;
             OracleConnection = connection;
         }
 
@@ -72,7 +75,7 @@ namespace ServForOracle.NetCore.Metadata
         private void GetTypeAndCachedMetadata<T>(out Type type, out MetadataOracle metadata)
         {
             type = typeof(T);
-            TypeDefinitionsOracleUDT.TryGetValue(type, out metadata);
+            metadata = Cache.GetMetadata(type.FullName);
         }
 
         private async Task<object> RegisterAsync(Type type, DbConnection con)
@@ -81,16 +84,16 @@ namespace ServForOracle.NetCore.Metadata
             return await RegisterAsync(type, con, udtInfo);
         }
 
-        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleTypeDefinition, UdtPropertyNetPropertyMap[], bool)"
+        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(ServForOracleCache, MetadataOracleTypeDefinition, UdtPropertyNetPropertyMap[], bool)"
         private async Task<object> RegisterAsync(Type type, DbConnection con, OracleUdtInfo udtInfo)
         {
             var metadataGenericType = typeof(MetadataOracleObject<>).MakeGenericType(type);
             var typeMetadata = await GetOrCreateOracleTypeMetadataAsync(con, udtInfo);
 
-            var (_, props, fuzzyMatch) = PresetGetValueOrDefault(type);
-            var metadata = metadataGenericType.CreateInstance(typeMetadata, props, fuzzyMatch);
+            var (_, props, fuzzyMatch) = Cache.PresetGetValueOrDefault(type);
+            var metadata = metadataGenericType.CreateInstance(Cache, typeMetadata, props, fuzzyMatch);
 
-            TypeDefinitionsOracleUDT.TryAdd(type, metadata as MetadataOracle);
+            Cache.SaveMetadata(type.FullName, metadata as MetadataOracle);
 
             return metadata;
         }
@@ -101,16 +104,16 @@ namespace ServForOracle.NetCore.Metadata
             return Register(type, con, udtInfo);
         }
 
-        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleTypeDefinition, UdtPropertyNetPropertyMap[], bool)"
+        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(ServForOracleCache, MetadataOracleTypeDefinition, UdtPropertyNetPropertyMap[], bool)"
         private object Register(Type type, DbConnection con, OracleUdtInfo udtInfo)
         {
             var metadataGenericType = typeof(MetadataOracleObject<>).MakeGenericType(type);
             var typeMetadata = GetOrCreateOracleTypeMetadata(con, udtInfo);
 
-            var (_, props, fuzzyMatch) = PresetGetValueOrDefault(type);
-            var metadata = metadataGenericType.CreateInstance(typeMetadata, props, fuzzyMatch);
+            var (_, props, fuzzyMatch) = Cache.PresetGetValueOrDefault(type);
+            var metadata = metadataGenericType.CreateInstance(Cache, typeMetadata, props, fuzzyMatch);
 
-            TypeDefinitionsOracleUDT.TryAdd(type, metadata as MetadataOracle);
+            Cache.SaveMetadata(type.FullName, metadata as MetadataOracle);
 
             return metadata;
         }
@@ -122,12 +125,12 @@ namespace ServForOracle.NetCore.Metadata
             {
                 var underType = type.GetCollectionUnderType();
                 udtInfo = underType.GetCustomAttribute<OracleUdtAttribute>()?.UDTInfo
-                    ?? PresetGetValueOrDefault(underType).Info;
+                    ?? Cache.PresetGetValueOrDefault(underType).Info;
             }
             else
             {
                 udtInfo = type.GetCustomAttribute<OracleUdtAttribute>()?.UDTInfo
-                    ?? PresetGetValueOrDefault(type).Info;
+                    ?? Cache.PresetGetValueOrDefault(type).Info;
             }
 
             if (udtInfo == null)
@@ -147,7 +150,7 @@ namespace ServForOracle.NetCore.Metadata
                 await OracleConnection.OpenAsync();
             }
 
-            var exists = OracleUDTs.FirstOrDefault(c => c.UDTInfo.Equals(udtInfo));
+            var exists = Cache.GetTypeDefinition(udtInfo.FullObjectName);
             if (exists != null)
                 return exists;
 
@@ -164,7 +167,7 @@ namespace ServForOracle.NetCore.Metadata
                 OracleConnection.Open();
             }
 
-            var exists = OracleUDTs.FirstOrDefault(c => c.UDTInfo.Equals(udtInfo));
+            var exists = Cache.GetTypeDefinition(udtInfo.FullObjectName);
             if (exists != null)
                 return exists;
 
@@ -192,15 +195,15 @@ namespace ServForOracle.NetCore.Metadata
 
         private MetadataOracleTypeDefinition CreateAndSaveMetadata(OracleUdtInfo udtInfo, List<MetadataOracleTypePropertyDefinition> properties)
         {
-            var metadata = new MetadataOracleTypeDefinition
+            var typedef = new MetadataOracleTypeDefinition
             {
                 Properties = properties,
                 UDTInfo = udtInfo
             };
 
-            OracleUDTs.Add(metadata);
+            Cache.SaveTypeDefinition(typedef);
 
-            return metadata;
+            return typedef;
         }
 
         private List<MetadataOracleTypePropertyDefinition> ExecuteReaderAndLoadTypeDefinition(DbCommand cmd)
