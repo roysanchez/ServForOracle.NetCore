@@ -41,7 +41,7 @@ namespace ServForOracle.NetCore
         {
             using (var connection = _DbFactory.CreateConnection())
             {
-                var builder = new MetadataBuilder(connection, _Cache);
+                var builder = new MetadataBuilder(connection, _Cache, _Logger);
                 await ExecuteAsync(builder, connection, procedure, parameters).ConfigureAwait(false);
             }
         }
@@ -50,7 +50,7 @@ namespace ServForOracle.NetCore
         {
             using (var connection = _DbFactory.CreateConnection())
             {
-                var builder = new MetadataBuilder(connection, _Cache);
+                var builder = new MetadataBuilder(connection, _Cache, _Logger);
                 Execute(builder, connection, procedure, parameters);
             }
         }
@@ -71,7 +71,7 @@ namespace ServForOracle.NetCore
             OracleParameter retOra = null;
             using (var connection = _DbFactory.CreateConnection())
             {
-                var builder = new MetadataBuilder(connection, _Cache);
+                var builder = new MetadataBuilder(connection, _Cache, _Logger);
                 await ExecuteAsync(builder, connection, function, parameters, (info) => Task.FromResult(FunctionBeforeQuery<T>(builder, info, udtInfo, out returnMetadata, out retOra)),
                 (info) =>
                 {
@@ -99,7 +99,7 @@ namespace ServForOracle.NetCore
             OracleParameter retOra = null;
             using (var connection = _DbFactory.CreateConnection())
             {
-                var builder = new MetadataBuilder(connection, _Cache);
+                var builder = new MetadataBuilder(connection, _Cache, _Logger);
 
                 Execute(builder, connection, function, parameters, (info) => FunctionBeforeQuery<T>(builder, info, udtInfo, out returnMetadata, out retOra),
                 (info) =>
@@ -224,6 +224,8 @@ namespace ServForOracle.NetCore
             Func<ExecutionInformation, Task<string>> beforeQuery = null,
             Func<ExecutionInformation, Task<AdditionalInformation>> beforeEnd = null)
         {
+            _Logger?.LogInformation("Executing asynchroniously {method}", method);
+
             await LoadObjectParametersMetadataAsync(builder, parameters).ConfigureAwait(false);
 
             var info = new ExecutionInformation();
@@ -266,6 +268,8 @@ namespace ServForOracle.NetCore
             Func<ExecutionInformation, string> beforeQuery = null,
             Func<ExecutionInformation, AdditionalInformation> beforeEnd = null)
         {
+            _Logger?.LogInformation("Executing {method}", method);
+
             LoadObjectParametersMetadata(builder, parameters);
 
             var info = new ExecutionInformation();
@@ -332,6 +336,8 @@ namespace ServForOracle.NetCore
             cmd.Parameters.AddRange(oracleParameterList.ToArray());
             cmd.CommandText = execute;
 
+            _Logger?.LogDebug("Executing asynchronously \r\n {execute}", execute);
+
             await cmd.ExecuteNonQueryAsync().ConfigureAwait(false);
         }
 
@@ -346,6 +352,7 @@ namespace ServForOracle.NetCore
             cmd.Parameters.AddRange(oracleParameterList.ToArray());
             cmd.CommandText = execute;
 
+            _Logger?.LogDebug("Executing \r\n {execute}", execute);
             cmd.ExecuteNonQuery();
         }
 

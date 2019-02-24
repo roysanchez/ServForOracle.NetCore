@@ -16,12 +16,12 @@ namespace ServForOracle.NetCore.Cache
 
         private ServForOracleCache(IMemoryCache memoryCache)
         {
-            Cache = memoryCache;
+            Cache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
         }
 
         public static ServForOracleCache Create(IMemoryCache memoryCache)
         {
-            if(servForOracleCache is null)
+            if (servForOracleCache is null)
             {
                 servForOracleCache = new ServForOracleCache(memoryCache);
             }
@@ -29,7 +29,7 @@ namespace ServForOracle.NetCore.Cache
             return servForOracleCache;
         }
 
-         internal void SaveUdtInfo(string name, OracleUdtInfo info, UdtPropertyNetPropertyMap[] props, bool fuzzyNameMatch)
+        internal void SaveUdtInfo(string name, OracleUdtInfo info, UdtPropertyNetPropertyMap[] props, bool fuzzyNameMatch)
         {
             using (var entry = Cache.CreateEntry($"udt-{name}"))
             {

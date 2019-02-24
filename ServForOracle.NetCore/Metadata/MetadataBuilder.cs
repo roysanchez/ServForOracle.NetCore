@@ -1,4 +1,5 @@
-﻿using Oracle.ManagedDataAccess.Client;
+﻿using Microsoft.Extensions.Logging;
+using Oracle.ManagedDataAccess.Client;
 using ServForOracle.NetCore.Cache;
 using ServForOracle.NetCore.Extensions;
 using ServForOracle.NetCore.OracleAbstracts;
@@ -18,8 +19,9 @@ namespace ServForOracle.NetCore.Metadata
 
         public DbConnection OracleConnection { get; private set; }
         public ServForOracleCache Cache { get; private set; }
+        private readonly ILogger Logger;
 
-        public MetadataBuilder(DbConnection connection, ServForOracleCache cache)
+        public MetadataBuilder(DbConnection connection, ServForOracleCache cache, ILogger logger)
         {
             if(connection is null || string.IsNullOrWhiteSpace(connection.ConnectionString))
             {
@@ -27,6 +29,7 @@ namespace ServForOracle.NetCore.Metadata
             }
 
             Cache = cache;
+            Logger = logger;
             OracleConnection = connection;
         }
 
@@ -113,6 +116,7 @@ namespace ServForOracle.NetCore.Metadata
             var (_, props, fuzzyMatch) = Cache.PresetGetValueOrDefault(type);
             var metadata = metadataGenericType.CreateInstance(Cache, typeMetadata, props, fuzzyMatch);
 
+            Logger?.LogDebug("Saving cache for the type {typeName}", type.FullName);
             Cache.SaveMetadata(type.FullName, metadata as MetadataOracle);
 
             return metadata;
@@ -135,9 +139,10 @@ namespace ServForOracle.NetCore.Metadata
 
             if (udtInfo == null)
             {
-                throw new ArgumentException($"The type {type.FullName} needs to have the {nameof(OracleUdtAttribute)}" +
+                var exception = new ArgumentException($"The type {type.FullName} needs to have the {nameof(OracleUdtAttribute)}" +
                     $" attribute set or pass the {nameof(OracleUdtInfo)} class to the execute method.");
-
+                Logger?.LogError(exception, "Error finding the {typeName} in the Cache", type.FullName);
+                throw exception;
             }
 
             return udtInfo;
@@ -147,7 +152,7 @@ namespace ServForOracle.NetCore.Metadata
         {
             if (OracleConnection.State != ConnectionState.Open)
             {
-                await OracleConnection.OpenAsync();
+                await OracleConnection.OpenAsync().ConfigureAwait(false);
             }
 
             var exists = Cache.GetTypeDefinition(udtInfo.FullObjectName);
@@ -156,7 +161,7 @@ namespace ServForOracle.NetCore.Metadata
 
             var cmd = CreateCommand(connection, udtInfo);
 
-            var properties = await ExecuteReaderAndLoadTypeDefinitionAsync(cmd);
+            var properties = await ExecuteReaderAndLoadTypeDefinitionAsync(cmd).ConfigureAwait(false);
             return CreateAndSaveMetadata(udtInfo, properties);
         }
 
@@ -201,6 +206,7 @@ namespace ServForOracle.NetCore.Metadata
                 UDTInfo = udtInfo
             };
 
+            Logger?.LogInformation("Saving the metadata for the type {udtName}", udtInfo.FullObjectName);
             Cache.SaveTypeDefinition(typedef);
 
             return typedef;
@@ -279,11 +285,11 @@ namespace ServForOracle.NetCore.Metadata
 
                     if (reader.GetString(4) == COLLECTION)
                     {
-                        property.MetadataOracleType = await GetOrCreateOracleTypeMetadataAsync(cmd.Connection, await GetOracleCollectionUnderlyingTypeAsync(cmd.Connection, reader.GetString(2), reader.GetString(3)));
+                        property.MetadataOracleType = await GetOrCreateOracleTypeMetadataAsync(cmd.Connection, await GetOracleCollectionUnderlyingTypeAsync(cmd.Connection, reader.GetString(2), reader.GetString(3))).ConfigureAwait(false);
                     }
                     else
                     {
-                        property.MetadataOracleType = await GetOrCreateOracleTypeMetadataAsync(cmd.Connection, new OracleUdtInfo(reader.GetString(2), reader.GetString(3)));
+                        property.MetadataOracleType = await GetOrCreateOracleTypeMetadataAsync(cmd.Connection, new OracleUdtInfo(reader.GetString(2), reader.GetString(3))).ConfigureAwait(false);
                     }
 
                     properties.Add(property);
@@ -315,9 +321,9 @@ namespace ServForOracle.NetCore.Metadata
             //TODO make recursive
             var cmd = CreateDbCommandCollectionUnderType(con, schema, collectionName);
 
-            var reader = await cmd.ExecuteReaderAsync();
+            var reader = await cmd.ExecuteReaderAsync().ConfigureAwait(false);
 
-            if (await reader.ReadAsync())
+            if (await reader.ReadAsync().ConfigureAwait(false))
             {
                 return new OracleUdtInfo(reader.GetString(0), reader.GetString(1), schema, collectionName);
             }
