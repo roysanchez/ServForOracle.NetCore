@@ -28,8 +28,8 @@ namespace ServForOracle.NetCore.Metadata
                 throw new ArgumentNullException(nameof(connection));
             }
 
-            Cache = cache;
-            Logger = logger;
+            Cache = cache ?? throw new ArgumentNullException(nameof(cache));
+            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
             OracleConnection = connection;
         }
 
