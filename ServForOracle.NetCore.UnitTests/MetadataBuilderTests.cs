@@ -7,9 +7,12 @@ using ServForOracle.NetCore.Metadata;
 using ServForOracle.NetCore.OracleAbstracts;
 using ServForOracle.NetCore.UnitTests.Config;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,25 +20,131 @@ using Xunit;
 
 namespace ServForOracle.NetCore.UnitTests
 {
-    public class TestDbCommand : DbCommand
+    public class TestDbParameterCollection : DbParameterCollection
     {
-        Mock<DbDataReader> _reader;
+        public List<DbParameter> _Parameters { get; set; } = new List<DbParameter>();
+        public override int Count => _Parameters.Count;
 
-        public TestDbCommand(Mock<DbDataReader> reader)
+        public virtual object _syncRoot { get; set; }
+        public override object SyncRoot => _syncRoot;
+
+        public override int Add(object value)
         {
-            _reader = reader;
+            _Parameters.Add(value as DbParameter);
+            return _Parameters.IndexOf(value as DbParameter);
         }
 
-        public override string CommandText { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override int CommandTimeout { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override CommandType CommandType { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override bool DesignTimeVisible { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public override UpdateRowSource UpdatedRowSource { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        protected override DbConnection DbConnection { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public override void AddRange(Array values)
+        {
+            _Parameters.AddRange(values as DbParameter[]);
+        }
 
-        protected override DbParameterCollection DbParameterCollection => throw new NotImplementedException();
+        public override void Clear()
+        {
+            _Parameters.Clear();
+        }
 
-        protected override DbTransaction DbTransaction { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public override bool Contains(object value)
+        {
+            return _Parameters.Any(p => p.Value == value);
+        }
+
+        public override bool Contains(string value)
+        {
+            return _Parameters.Any(p => p.ParameterName == value);
+        }
+
+        public override void CopyTo(Array array, int index)
+        {
+            array.CopyTo(_Parameters.ToArray(), index);
+        }
+
+        public override IEnumerator GetEnumerator()
+        {
+            return _Parameters.GetEnumerator();
+        }
+
+        public override int IndexOf(object value)
+        {
+            return _Parameters.FindIndex(c => c.Value == value);
+        }
+
+        public override int IndexOf(string parameterName)
+        {
+            return _Parameters.FindIndex(c => c.ParameterName == parameterName);
+        }
+
+        public override void Insert(int index, object value)
+        {
+            _Parameters.Insert(index, value as DbParameter);
+        }
+
+        public override void Remove(object value)
+        {
+            _Parameters.Remove(value as DbParameter);
+        }
+
+        public override void RemoveAt(int index)
+        {
+            _Parameters.RemoveAt(index);
+        }
+
+        public override void RemoveAt(string parameterName)
+        {
+            _Parameters.RemoveAt(_Parameters.FindIndex(p => p.ParameterName == parameterName));
+        }
+
+        protected override DbParameter GetParameter(int index)
+        {
+            return _Parameters[index];
+        }
+
+        protected override DbParameter GetParameter(string parameterName)
+        {
+            return _Parameters.FirstOrDefault(p => p.ParameterName == parameterName);
+        }
+
+        protected override void SetParameter(int index, DbParameter value)
+        {
+            _Parameters[index] = value;
+        }
+
+        protected override void SetParameter(string parameterName, DbParameter value)
+        {
+            RemoveAt(parameterName);
+            Add(value);
+        }
+    }
+    public class TestDbCommand : DbCommand
+    {
+        public TestDbCommand()
+        {
+            
+        }
+
+        public virtual string _CommandText { get; set; }
+        public override string CommandText { get => _CommandText; set => _CommandText = value; }
+
+        public virtual int _CommandTimeout { get; set; }
+        public override int CommandTimeout { get => _CommandTimeout; set => _CommandTimeout = value; }
+
+        public virtual CommandType _CommandType { get; set; }
+        public override CommandType CommandType { get => _CommandType; set => _CommandType = value; }
+
+        public virtual bool _DesignTimeVisible { get; set; }
+        public override bool DesignTimeVisible { get => _DesignTimeVisible; set => _DesignTimeVisible = value; }
+
+        public virtual UpdateRowSource _UpdateRowSource { get; set; }
+        public override UpdateRowSource UpdatedRowSource { get => _UpdateRowSource; set => _UpdateRowSource = value; }
+
+        public virtual DbConnection _DbConnection { get; set; }
+        protected override DbConnection DbConnection { get => _DbConnection; set => _DbConnection = value; }
+
+        public virtual TestDbParameterCollection _DbParameterCollection { get; set; } = new TestDbParameterCollection();
+        protected override DbParameterCollection DbParameterCollection => _DbParameterCollection;
+
+        public virtual DbTransaction _DbTransaction { get; set; }
+        protected override DbTransaction DbTransaction { get => _DbTransaction; set => _DbTransaction = value; }
 
         public override void Cancel()
         {
@@ -57,35 +166,33 @@ namespace ServForOracle.NetCore.UnitTests
             throw new NotImplementedException();
         }
 
-        protected override DbParameter CreateDbParameter()
-        {
-            throw new NotImplementedException();
-        }
+        public virtual DbParameter _CreateDbParameter() => throw new NotImplementedException();
+        protected override DbParameter CreateDbParameter() => _CreateDbParameter();
 
-        protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior)
-        {
-            return _reader.Object;
-        }
+        public virtual DbDataReader _ExecuteDbDataReader(CommandBehavior behavior) => throw new NotImplementedException();
+        protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => _ExecuteDbDataReader(behavior);
+
+        public virtual Task<DbDataReader> _ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) => throw new NotImplementedException();
+        protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+            => _ExecuteDbDataReaderAsync(behavior, cancellationToken);
     }
 
     public class TestDbConnection : DbConnection
     {
-        private readonly Mock<TestDbCommand> _mock;
+        public virtual string _ConnectionString { get; set; }
+        public override string ConnectionString { get => _ConnectionString; set => _ConnectionString = value; }
 
-        public TestDbConnection(Mock<TestDbCommand> mock)
-        {
-            _mock = mock;
-        }
+        public virtual string _Database { get; set; }
+        public override string Database => _Database;
 
-        public override string ConnectionString { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public virtual string _DataSource { get; set; }
+        public override string DataSource => _DataSource;
 
-        public override string Database => throw new NotImplementedException();
+        public virtual string _ServerVersion { get; set; }
+        public override string ServerVersion => _ServerVersion;
 
-        public override string DataSource => throw new NotImplementedException();
-
-        public override string ServerVersion => throw new NotImplementedException();
-
-        public override ConnectionState State => throw new NotImplementedException();
+        public ConnectionState _State;
+        public override ConnectionState State => _State;
 
         public override void ChangeDatabase(string databaseName)
         {
@@ -102,15 +209,11 @@ namespace ServForOracle.NetCore.UnitTests
             throw new NotImplementedException();
         }
 
-        protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
-        {
-            throw new NotImplementedException();
-        }
+        public virtual DbTransaction _BeginDbTransaccion(IsolationLevel isolationLevel) => throw new NotImplementedException();
+        protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => _BeginDbTransaccion(isolationLevel);
 
-        protected override DbCommand CreateDbCommand()
-        {
-            return _mock.Object;
-        }
+        public virtual DbCommand _CreateDbCommand() => throw new NotImplementedException();
+        protected override DbCommand CreateDbCommand() => _CreateDbCommand();
     }
 
     public class MetadataBuilderTests
@@ -131,8 +234,8 @@ namespace ServForOracle.NetCore.UnitTests
         {
             var fix = new Fixture();
             readerMoq = new Mock<DbDataReader>();
-            cmdMoq = new Mock<TestDbCommand>(readerMoq);
-            connectionMoq = new Mock<TestDbConnection>(cmdMoq);
+            cmdMoq = new Mock<TestDbCommand>() { CallBase = true };
+            connectionMoq = new Mock<TestDbConnection>() { CallBase = true };
             var x = connectionMoq.Object;
             connectionMoq.SetupProperty(c => c.ConnectionString, fix.Create<string>());
         }
@@ -180,29 +283,107 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal async Task GetMetadataOracleObjectAsync_NotInCache_CallsDb(OracleUdtInfo info, MetadataOracleTypeDefinition typeDefinition, UdtPropertyNetPropertyMap[] properties, int order, string name)
+        internal async Task GetMetadataOracleObjectAsync_NotInCache_CallsDb_PlainType(OracleUdtInfo info, int order, string name,
+             (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool FuzzyMatch) preset)
         {
-            var metadata = new MetadataOracleObject<TestRoy>(cacheMoq.Object, typeDefinition, properties, fuzzyNameMatch: true);
+            connectionMoq.Setup(c => c.OpenAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => connectionMoq.Object._State = ConnectionState.Open);
+            connectionMoq.Setup(c => c._CreateDbCommand()).Returns(cmdMoq.Object);
 
-            
-            
 
-            //connectionMoq.Setup(c => c.CreateCommand()).Returns(cmd.Object);
-            //cmdMoq.Setup(c => c.ExecuteReaderAsync()).ReturnsAsync(readerMoq.Object);
+            cmdMoq.Setup(c => c._ExecuteDbDataReaderAsync(It.IsAny<CommandBehavior>(), It.IsAny<CancellationToken>())).ReturnsAsync(readerMoq.Object);
             readerMoq.SetupSequence(r => r.ReadAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true).ReturnsAsync(false);
             readerMoq.Setup(r => r.IsDBNullAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(true);
             readerMoq.Setup(r => r.GetInt32(0)).Returns(order);
             readerMoq.Setup(r => r.GetString(1)).Returns(name);
 
-            cacheMoq.Setup(c => c.SaveTypeDefinition(It.IsAny<MetadataOracleTypeDefinition>()))
-                .Verifiable();
+            cacheMoq.Setup(c => c.SaveTypeDefinition(It.IsAny<MetadataOracleTypeDefinition>()));
+            cacheMoq.Setup(c => c.PresetGetValueOrDefault(typeof(TestRoy)))
+                .Returns(preset);
+
+            MetadataOracle metadata = null;
+            cacheMoq.Setup(c => c.SaveMetadata(typeof(TestRoy).FullName, It.IsAny<MetadataOracle>()))
+                .Callback((string n, object meta) => metadata = meta as MetadataOracle);
 
             var builder = new MetadataBuilder(connectionMoq.Object, cacheMoq.Object, loggerMoq.Object);
 
             var result = await builder.GetOrRegisterMetadataOracleObjectAsync<TestRoy>(info);
 
-            cacheMoq.Verify();
+            cacheMoq.VerifyAll();
+            readerMoq.VerifyAll();
+            Assert.NotNull(result);
+            Assert.NotNull(result.OracleTypeNetMetadata);
+
+            Assert.NotNull(result.OracleTypeNetMetadata.Properties);
+            Assert.Single(result.OracleTypeNetMetadata.Properties);
+            Assert.Equal(order, result.OracleTypeNetMetadata.Properties.First().Order);
+            Assert.Equal(name, result.OracleTypeNetMetadata.Properties.First().Name);
+
+            Assert.NotNull(result.OracleTypeNetMetadata.UDTInfo);
+            Assert.Equal(info, result.OracleTypeNetMetadata.UDTInfo);
+
+            Assert.IsType<MetadataOracleObject<TestRoy>>(metadata);
             Assert.Equal(metadata, result);
+        }
+
+        [Theory, CustomAutoData]
+        internal async Task GetMetadataOracleObjectAsync_NotInCache_CallsDb_Object(OracleUdtInfo info, int[] order, string[] name,
+     (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool FuzzyMatch) preset)
+        {
+            connectionMoq.Setup(c => c.OpenAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => connectionMoq.Object._State = ConnectionState.Open);
+            connectionMoq.Setup(c => c._CreateDbCommand()).Returns(cmdMoq.Object);
+
+
+            cmdMoq.Setup(c => c._ExecuteDbDataReaderAsync(It.IsAny<CommandBehavior>(), It.IsAny<CancellationToken>())).ReturnsAsync(readerMoq.Object);
+            readerMoq.SetupSequence(r => r.ReadAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true)
+                .ReturnsAsync(true)
+                .ReturnsAsync(false);
+
+            readerMoq.SetupSequence(r => r.IsDBNullAsync(2, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false)
+                .ReturnsAsync(true);
+            
+            readerMoq.SetupSequence(r => r.GetInt32(0))
+                .Returns(order[0])
+                .Returns(order[1]);
+
+            readerMoq.SetupSequence(r => r.GetString(1))
+                .Returns(name[0])
+                .Returns(name[1]);
+
+            readerMoq.Setup(r => r.GetString(4)).Returns("OBJECT");
+
+            cacheMoq.Setup(c => c.SaveTypeDefinition(It.IsAny<MetadataOracleTypeDefinition>()));
+            cacheMoq.Setup(c => c.PresetGetValueOrDefault(typeof(TestRoy)))
+                .Returns(preset);
+
+            MetadataOracle metadata = null;
+            cacheMoq.Setup(c => c.SaveMetadata(typeof(TestRoy).FullName, It.IsAny<MetadataOracle>()))
+                .Callback((string n, object meta) => metadata = meta as MetadataOracle);
+
+            var builder = new MetadataBuilder(connectionMoq.Object, cacheMoq.Object, loggerMoq.Object);
+
+            var result = await builder.GetOrRegisterMetadataOracleObjectAsync<TestRoy>(info);
+
+            cacheMoq.VerifyAll();
+            readerMoq.VerifyAll();
+            Assert.NotNull(result);
+            Assert.NotNull(result.OracleTypeNetMetadata);
+
+            //Assert.NotNull(result.OracleTypeNetMetadata.Properties);
+            //Assert.Single(result.OracleTypeNetMetadata.Properties);
+            //Assert.Equal(order, result.OracleTypeNetMetadata.Properties.First().Order);
+            //Assert.Equal(name, result.OracleTypeNetMetadata.Properties.First().Name);
+
+            //Assert.NotNull(result.OracleTypeNetMetadata.UDTInfo);
+            //Assert.Equal(info, result.OracleTypeNetMetadata.UDTInfo);
+
+            //Assert.IsType<MetadataOracleObject<TestRoy>>(metadata);
+            //Assert.Equal(metadata, result);
         }
     }
 }
