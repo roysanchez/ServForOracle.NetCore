@@ -47,7 +47,7 @@ namespace ServForOracle.NetCore.Metadata
                 {
                     return await RegisterAsync(type, OracleConnection) as MetadataOracleObject<T>;
                 }
-            }
+            } 
             else
             {
                 return metadata as MetadataOracleObject<T>;
@@ -150,9 +150,9 @@ namespace ServForOracle.NetCore.Metadata
 
         private async Task<MetadataOracleTypeDefinition> GetOrCreateOracleTypeMetadataAsync(DbConnection connection, OracleUdtInfo udtInfo)
         {
-            if (OracleConnection.State != ConnectionState.Open)
+            if (connection.State != ConnectionState.Open)
             {
-                await OracleConnection.OpenAsync().ConfigureAwait(false);
+                await connection.OpenAsync().ConfigureAwait(false);
             }
 
             var exists = Cache.GetTypeDefinition(udtInfo.FullObjectName);
@@ -270,7 +270,7 @@ namespace ServForOracle.NetCore.Metadata
                     var property = new MetadataOracleTypePropertyDefinition
                     {
                         Order = reader.GetInt32(0),
-                        Name = reader.GetString(1)
+                        Name = reader.GetString(1)?.ToUpper()
                     };
 
                     properties.Add(property);
@@ -280,7 +280,7 @@ namespace ServForOracle.NetCore.Metadata
                     var property = new MetadataOracleTypeSubTypeDefinition
                     {
                         Order = reader.GetInt32(0),
-                        Name = reader.GetString(1)
+                        Name = reader.GetString(1)?.ToUpper()
                     };
 
                     if (reader.GetString(4) == COLLECTION)
@@ -308,11 +308,13 @@ namespace ServForOracle.NetCore.Metadata
 
             if (reader.Read())
             {
-                return new OracleUdtInfo(reader.GetString(0), reader.GetString(1), schema, collectionName);
+                return new OracleUdtInfo(reader.GetString(0)?.ToUpper(), reader.GetString(1)?.ToUpper(), schema, collectionName);
             }
             else
             {
-                return null;
+                var exceptionMsg = $"User connected to {con.DataSource} does not have permission to read the information about the collection type {schema}.{collectionName}";
+                Logger?.LogError(exceptionMsg);
+                throw new Exception(exceptionMsg);
             }
         }
 
@@ -329,7 +331,9 @@ namespace ServForOracle.NetCore.Metadata
             }
             else
             {
-                return null;
+                var exceptionMsg = $"User connected to {con.DataSource} does not have permission to read the information about the collection type {schema}.{collectionName}";
+                Logger?.LogError(exceptionMsg);
+                throw new Exception(exceptionMsg);
             }
         }
 
