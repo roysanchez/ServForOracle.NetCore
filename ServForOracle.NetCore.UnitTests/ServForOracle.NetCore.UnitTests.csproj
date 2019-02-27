@@ -23,4 +23,8 @@
     <ProjectReference Include="..\ServForOracle.NetCore\ServForOracle.NetCore.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="TestClasses\" />
+  </ItemGroup>
+
 </Project>
