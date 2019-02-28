@@ -156,14 +156,14 @@ namespace ServForOracle.NetCore.Metadata
 
         private MetadataOracleTypeDefinition GetOrCreateOracleTypeMetadata(DbConnection connection, OracleUdtInfo udtInfo)
         {
+            var exists = Cache.GetTypeDefinition(udtInfo.FullObjectName);
+            if (exists != null)
+                return exists;
+
             if (OracleConnection.State != ConnectionState.Open)
             {
                 OracleConnection.Open();
             }
-
-            var exists = Cache.GetTypeDefinition(udtInfo.FullObjectName);
-            if (exists != null)
-                return exists;
 
             var cmd = CreateCommand(connection, udtInfo);
 
