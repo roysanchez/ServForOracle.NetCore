@@ -48,7 +48,6 @@ namespace ServForOracle.NetCore.UnitTests
             var fix = new Fixture();
             cmdMoq = new Mock<TestDbCommand>() { CallBase = true };
             connectionMoq = new Mock<TestDbConnection>() { CallBase = true };
-            var x = connectionMoq.Object;
             connectionMoq.SetupProperty(c => c.ConnectionString, fix.Create<string>());
         }
 
@@ -197,7 +196,7 @@ namespace ServForOracle.NetCore.UnitTests
             subReaderMoq.Setup(r => r.GetInt32(0)).Returns(propOrder[1]);
             subReaderMoq.Setup(r => r.GetString(1)).Returns(propName[1]);
 
-            
+
             var builder = new MetadataBuilder(connectionMoq.Object, cacheMoq.Object, loggerMoq.Object);
 
             var result = await builder.GetOrRegisterMetadataOracleObjectAsync<SuperTestClass>(info);
@@ -232,8 +231,6 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal async Task GetMetadataOracleObjectAsync_NotInCache_CallsDb_Collection(OracleUdtInfo info, string schema, string objectName, string subObjectName, int[] propOrder, string[] propName)
         {
-            var fixture = new Fixture();
-
             var superType = typeof(SuperCollectionClass);
             var subtype = typeof(TestRoy);
 
@@ -331,6 +328,135 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.NotNull(subProp.NETProperty);
             Assert.Equal(subtype.GetProperties()[0], subProp.NETProperty);
             Assert.Null(subProp.PropertyMetadata);
+        }
+
+        [Theory, CustomAutoData]
+        internal async Task GetMetadataOracleObjectAsync_NotInCache_CallsDb_Collection_InvalidSub_Throws(OracleUdtInfo info, string schema, string objectName, int[] propOrder, string[] propName, string dataSource)
+        {
+            var superType = typeof(SuperCollectionClass);
+            var subtype = typeof(TestRoy);
+
+            var collectionCmdMoq = new Mock<TestDbCommand>() { CallBase = true };
+
+            var collectionReaderMoq = new Mock<DbDataReader>();
+            var readerMoq = new Mock<DbDataReader>();
+
+            var propMap = new[] { new UdtPropertyNetPropertyMap(nameof(SuperCollectionClass.Array), propName[0]) };
+            var subPropMap = new[] { new UdtPropertyNetPropertyMap(nameof(TestRoy.Name), propName[1]) };
+
+            connectionMoq.Setup(c => c.OpenAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
+                .Callback(() => connectionMoq.Object._State = ConnectionState.Open);
+            connectionMoq.Object._DataSource = dataSource;
+
+            cmdMoq.Object.Connection = connectionMoq.Object;
+            connectionMoq.SetupSequence(c => c._CreateDbCommand())
+                .Returns(cmdMoq.Object)
+                .Returns(collectionCmdMoq.Object);
+
+            cmdMoq.Setup(c => c._ExecuteDbDataReaderAsync(It.IsAny<CommandBehavior>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(readerMoq.Object);
+
+            readerMoq.Setup(r => r.ReadAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            readerMoq.Setup(r => r.IsDBNullAsync(2, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            readerMoq.Setup(r => r.GetInt32(0)).Returns(propOrder[0]);
+            readerMoq.Setup(r => r.GetString(1)).Returns(propName[0]);
+            readerMoq.Setup(r => r.GetString(2)).Returns(schema);
+            readerMoq.Setup(r => r.GetString(3)).Returns(objectName);
+            readerMoq.Setup(r => r.GetString(4)).Returns("COLLECTION");
+
+            collectionCmdMoq.Setup(c => c._ExecuteDbDataReaderAsync(It.IsAny<CommandBehavior>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(collectionReaderMoq.Object);
+
+            collectionReaderMoq.Setup(r => r.ReadAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var builder = new MetadataBuilder(connectionMoq.Object, cacheMoq.Object, loggerMoq.Object);
+
+            var exception = await Assert.ThrowsAsync<Exception>(() => builder.GetOrRegisterMetadataOracleObjectAsync<SuperCollectionClass>(info));
+
+            Assert.NotNull(exception);
+            Assert.Equal($"User connected to {dataSource} does not have permission to read the information about the collection type {schema}.{objectName}", exception.Message);
+
+            cmdMoq.VerifyAll();
+            readerMoq.VerifyAll();
+            collectionCmdMoq.VerifyAll();
+            collectionReaderMoq.VerifyAll();
+        }
+
+        [Theory, CustomAutoData]
+        internal async Task GetMetadataOracleObjectAsync_TypeDefinitionInCache(MetadataOracleTypeDefinition metadataOracleType)
+        {
+            var readerMoq = new Mock<DbDataReader>();
+            var info = metadataOracleType.UDTInfo;
+            var properties = metadataOracleType.Properties.ToArray();
+
+            cacheMoq.Setup(c => c.GetTypeDefinition(info.FullObjectName)).Returns(metadataOracleType);
+
+            var builder = new MetadataBuilder(connectionMoq.Object, cacheMoq.Object, loggerMoq.Object);
+
+            var metadata = await builder.GetOrRegisterMetadataOracleObjectAsync<TestRoy>(info);
+
+            cmdMoq.VerifyAll();
+
+
+            Assert.NotNull(metadata);
+            Assert.NotNull(metadata.OracleTypeNetMetadata);
+            Assert.Equal(info, metadata.OracleTypeNetMetadata.UDTInfo);
+            
+            Assert.Collection(metadata.OracleTypeNetMetadata.Properties,
+                p => Assert.Equal(properties[0].Name, p.Name),
+                p => Assert.Equal(properties[1].Name, p.Name),
+                p => Assert.Equal(properties[2].Name, p.Name));
+        }
+
+
+        [Theory, CustomAutoData]
+        internal async Task GetMetadataOracleObjectAsync_NoUdt_Object_InAttributeOrPreset(MetadataOracleTypeDefinition metadataOracleType)
+        {
+            var readerMoq = new Mock<DbDataReader>();
+            var info = metadataOracleType.UDTInfo;
+            var properties = metadataOracleType.Properties.ToArray();
+            var type = typeof(TestRoy);
+
+            cacheMoq.Setup(c => c.GetTypeDefinition(info.FullObjectName)).Returns(metadataOracleType);
+            cacheMoq.Setup(c => c.GetUdtInfoFromAttributeOrPresetCache(type)).Returns(info);
+
+            var builder = new MetadataBuilder(connectionMoq.Object, cacheMoq.Object, loggerMoq.Object);
+
+            var metadata = await builder.GetOrRegisterMetadataOracleObjectAsync<TestRoy>(null);
+
+            cmdMoq.VerifyAll();
+
+            Assert.NotNull(metadata);
+            Assert.NotNull(metadata.OracleTypeNetMetadata);
+            Assert.Equal(info, metadata.OracleTypeNetMetadata.UDTInfo);
+
+            Assert.Collection(metadata.OracleTypeNetMetadata.Properties,
+                p => Assert.Equal(properties[0].Name, p.Name),
+                p => Assert.Equal(properties[1].Name, p.Name),
+                p => Assert.Equal(properties[2].Name, p.Name));
+        }
+
+        [Theory, CustomAutoData]
+        internal async Task GetMetadataOracleObjectAsync_NoUdt_Object_NotInAttributeOrPreset_ThrowsArgumentException(MetadataOracleTypeDefinition metadataOracleType)
+        {
+            var readerMoq = new Mock<DbDataReader>();
+            var info = metadataOracleType.UDTInfo;
+            var properties = metadataOracleType.Properties.ToArray();
+            var type = typeof(TestRoy);
+
+            cacheMoq.Setup(c => c.GetTypeDefinition(info.FullObjectName)).Returns(metadataOracleType);
+
+            var builder = new MetadataBuilder(connectionMoq.Object, cacheMoq.Object, loggerMoq.Object);
+
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() => builder.GetOrRegisterMetadataOracleObjectAsync<TestRoy>(null));
+
+            Assert.Equal($"The type {type.FullName} needs to have the {nameof(OracleUdtAttribute)} attribute set or pass the {nameof(OracleUdtInfo)} class to the execute method.", exception.Message);
         }
     }
 }
