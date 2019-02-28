@@ -5,6 +5,7 @@ using ServForOracle.NetCore.Metadata;
 using ServForOracle.NetCore.OracleAbstracts;
 using System;
 using System.Collections.Generic;
+using System.Reflection;
 using System.Text;
 
 namespace ServForOracle.NetCore.Cache
@@ -88,6 +89,20 @@ namespace ServForOracle.NetCore.Cache
             Cache.TryGetValue($"def-{fullObjectName}", out MetadataOracleTypeDefinition info);
             return info;
         }
-        
+
+        internal virtual OracleUdtInfo GetUdtInfoFromAttributeOrPresetCache(Type type)
+        {
+            if (type.IsCollection())
+            {
+                var underType = type.GetCollectionUnderType();
+                return underType.GetCustomAttribute<OracleUdtAttribute>()?.UDTInfo
+                    ?? PresetGetValueOrDefault(underType).Info;
+            }
+            else
+            {
+                return type.GetCustomAttribute<OracleUdtAttribute>()?.UDTInfo
+                    ?? PresetGetValueOrDefault(type).Info;
+            }
+        }
     }
 }

@@ -124,19 +124,8 @@ namespace ServForOracle.NetCore.Metadata
 
         private OracleUdtInfo GetUDTInfo(Type type)
         {
-            OracleUdtInfo udtInfo;
-            if (type.IsCollection())
-            {
-                var underType = type.GetCollectionUnderType();
-                udtInfo = underType.GetCustomAttribute<OracleUdtAttribute>()?.UDTInfo
-                    ?? Cache.PresetGetValueOrDefault(underType).Info;
-            }
-            else
-            {
-                udtInfo = type.GetCustomAttribute<OracleUdtAttribute>()?.UDTInfo
-                    ?? Cache.PresetGetValueOrDefault(type).Info;
-            }
-
+            var udtInfo = Cache.GetUdtInfoFromAttributeOrPresetCache(type);
+            
             if (udtInfo == null)
             {
                 var exception = new ArgumentException($"The type {type.FullName} needs to have the {nameof(OracleUdtAttribute)}" +
@@ -150,14 +139,14 @@ namespace ServForOracle.NetCore.Metadata
 
         private async Task<MetadataOracleTypeDefinition> GetOrCreateOracleTypeMetadataAsync(DbConnection connection, OracleUdtInfo udtInfo)
         {
+            var exists = Cache.GetTypeDefinition(udtInfo.FullObjectName);
+            if (exists != null)
+                return exists;
+
             if (connection.State != ConnectionState.Open)
             {
                 await connection.OpenAsync().ConfigureAwait(false);
             }
-
-            var exists = Cache.GetTypeDefinition(udtInfo.FullObjectName);
-            if (exists != null)
-                return exists;
 
             var cmd = CreateCommand(connection, udtInfo);
 
