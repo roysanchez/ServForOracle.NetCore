@@ -8,11 +8,12 @@ addons:
     organization: "roysanchez-github"
 install:
   - dotnet tool install dotnet-sonarscanner --version 4.4.2 --tool-path .tools
+  - dotnet tool install coverlet.console --version 1.4.1 --tool-path .tools
   - dotnet restore
 script:
-  - $TRAVIS_BUILD_DIR/.tools/dotnet-sonarscanner begin /k:"roysanchez_ServForOracle.NetCore" /n:"ServForOracle.NetCore" /d:sonar.login="$SONAR_TOKEN" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.xunit.reportsPaths="$TRAVIS_BUILD_DIR/ServForOracle.NetCore.UnitTests/test_result.xml"
+  - $TRAVIS_BUILD_DIR/.tools/dotnet-sonarscanner begin /k:"roysanchez_ServForOracle.NetCore" /n:"ServForOracle.NetCore" /d:sonar.login="$SONAR_TOKEN" /d:sonar.host.url="https://sonarcloud.io" /d:sonar.cs.opencover.reportsPaths="$TRAVIS_BUILD_DIR/coverage.opencover.xml"
   - dotnet build
-  - dotnet test --logger:"xunit;LogFilePath=test_result.xml"
+  - $TRAVIS_BUILD_DIR/.tools/coverlet $TRAVIS_BUILD_DIR/ServForOracle.NetCore.UnitTests/bin/Debug/netcoreapp2.1/ServForOracle.NetCore.UnitTests.dll --target "dotnet" --targetargs "test .\ServForOracle.NetCore.UnitTests --no-build" --include "[ServForOracle.NetCore]ServForOracle.NetCore*" --format opencover
   - $TRAVIS_BUILD_DIR/.tools/dotnet-sonarscanner end /d:sonar.login="$SONAR_TOKEN"
 notifications:
   email: false
