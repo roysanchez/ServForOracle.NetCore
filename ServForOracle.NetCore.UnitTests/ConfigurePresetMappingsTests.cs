@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging.Internal;
 using Moq;
 using ServForOracle.NetCore.Cache;
 using ServForOracle.NetCore.Config;
+using ServForOracle.NetCore.UnitTests.Config;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -20,14 +21,12 @@ namespace ServForOracle.NetCore.UnitTests
             public string Roy { get; set; }
         }
 
-        [Theory, AutoData]
-        public void AddOracleUDT_ValidParameterWontCallsLogger(string objectSchema, string objectName)
+        [Theory, CustomAutoData]
+        public void AddOracleUDT_ValidParameterWontCallsLogger(string objectSchema, string objectName, Mock<ServForOracleCache> servForOracleCache)
         {
             var test = new PresetMap<TestClass>(objectSchema, objectName);
             var logger = new Mock<ILogger<ConfigurePresetMappings>>(MockBehavior.Strict);
-            var memoryCacheMoq = new Mock<IMemoryCache>();
-            var servForOracleCache = new Mock<ServForOracleCache>(memoryCacheMoq.Object);
-
+            
             var config = new ConfigurePresetMappings(logger.Object, servForOracleCache.Object);
 
             //Throws if log is called
@@ -37,14 +36,12 @@ namespace ServForOracle.NetCore.UnitTests
             servForOracleCache.Verify(m => m.AddOracleUDTPresets(test.Type, test.Info, test.ReplacedProperties, true), Times.Once);
         }
 
-        [Theory, AutoData]
-        public void AddOracleUDT_NullParameterCallsLogger(string objectSchema, string objectName)
+        [Theory, CustomAutoData]
+        public void AddOracleUDT_NullParameterCallsLogger(string objectSchema, string objectName, Mock<ServForOracleCache> servForOracleCache)
         {
             var test = new PresetMap<TestClass>(objectSchema, objectName);
             var logger = new Mock<ILogger<ConfigurePresetMappings>>(MockBehavior.Strict);
-            var memoryCacheMoq = new Mock<IMemoryCache>();
-            var servForOracleCache = new Mock<ServForOracleCache>(memoryCacheMoq.Object);
-
+            
             logger.Setup(l => l.Log(LogLevel.Warning, 0, It.IsAny<FormattedLogValues>(), null, It.IsAny<Func<object, Exception, string>>()))
                 .Verifiable();
             

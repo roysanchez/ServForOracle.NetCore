@@ -1,4 +1,5 @@
 ﻿using AutoFixture;
+using AutoFixture.AutoMoq;
 using AutoFixture.Xunit2;
 using ServForOracle.NetCore.OracleAbstracts;
 using System;
@@ -11,7 +12,8 @@ namespace ServForOracle.NetCore.UnitTests.Config
     {
         public CustomAutoDataAttribute()
             : base(() => new Fixture()
-            .Customize(new UdtInfoCustomization()))
+            .Customize(new UdtInfoCustomization())
+            .Customize(new AutoMoqCustomization()))
         { }
     }
 
