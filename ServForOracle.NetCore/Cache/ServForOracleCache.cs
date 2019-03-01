@@ -15,6 +15,7 @@ namespace ServForOracle.NetCore.Cache
         public IMemoryCache Cache { get; private set; }
 
         private static ServForOracleCache servForOracleCache;
+        private static readonly object padlock = new object();
 
         internal ServForOracleCache(IMemoryCache memoryCache)
         {
@@ -25,7 +26,13 @@ namespace ServForOracle.NetCore.Cache
         {
             if (servForOracleCache is null)
             {
-                servForOracleCache = new ServForOracleCache(memoryCache);
+                lock (padlock)
+                {
+                    if(servForOracleCache is null)
+                    {
+                        servForOracleCache = new ServForOracleCache(memoryCache);
+                    }
+                }
             }
 
             return servForOracleCache;
