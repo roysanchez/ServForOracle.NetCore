@@ -7,7 +7,7 @@ addons:
   sonarcloud:
     organization: "roysanchez-github"
 install:
-  - dotnet tool install dotnet-sonarscanner --version 4.4.2 --tool-path .tools
+  - dotnet tool install dotnet-sonarscanner --version 4.6.0 --tool-path .tools
   - dotnet tool install coverlet.console --version 1.4.1 --tool-path .tools
   - dotnet restore
 script:
