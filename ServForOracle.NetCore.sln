@@ -7,6 +7,12 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServForOracle.NetCore", "Se
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ServForOracle.NetCore.UnitTests", "ServForOracle.NetCore.UnitTests\ServForOracle.NetCore.UnitTests.csproj", "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{65BE3CC5-C613-4EEC-B9D8-3F7D8791F808}"
+	ProjectSection(SolutionItems) = preProject
+		coverlet-coverage.cmd = coverlet-coverage.cmd
+		nuget-deploy.sh = nuget-deploy.sh
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
