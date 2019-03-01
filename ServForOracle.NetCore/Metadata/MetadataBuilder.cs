@@ -203,11 +203,6 @@ namespace ServForOracle.NetCore.Metadata
 
         private List<MetadataOracleTypePropertyDefinition> ExecuteReaderAndLoadTypeDefinition(DbCommand cmd)
         {
-            if (cmd == null)
-            {
-                throw new ArgumentNullException(nameof(cmd));
-            }
-
             var reader = cmd.ExecuteReader();
             var properties = new List<MetadataOracleTypePropertyDefinition>();
 
@@ -218,7 +213,7 @@ namespace ServForOracle.NetCore.Metadata
                     var property = new MetadataOracleTypePropertyDefinition
                     {
                         Order = reader.GetInt32(0),
-                        Name = reader.GetString(1)
+                        Name = reader.GetString(1)?.ToUpper()
                     };
 
                     properties.Add(property);
@@ -228,7 +223,7 @@ namespace ServForOracle.NetCore.Metadata
                     var property = new MetadataOracleTypeSubTypeDefinition
                     {
                         Order = reader.GetInt32(0),
-                        Name = reader.GetString(1)
+                        Name = reader.GetString(1)?.ToUpper()
                     };
 
                     if (reader.GetString(4) == COLLECTION)
