@@ -379,7 +379,7 @@ namespace ServForOracle.NetCore.UnitTests
 
             var builder = new MetadataBuilder(connectionMoq.Object, cacheMoq.Object, loggerMoq.Object);
 
-            var exception = await Assert.ThrowsAsync<Exception>(() => builder.GetOrRegisterMetadataOracleObjectAsync<SuperCollectionClass>(info));
+            var exception = await Assert.ThrowsAsync<ArgumentException>(() => builder.GetOrRegisterMetadataOracleObjectAsync<SuperCollectionClass>(info));
 
             Assert.NotNull(exception);
             Assert.Equal($"User connected to {dataSource} does not have permission to read the information about the collection type {schema}.{objectName}", exception.Message);
@@ -762,7 +762,7 @@ namespace ServForOracle.NetCore.UnitTests
 
             var builder = new MetadataBuilder(connectionMoq.Object, cacheMoq.Object, loggerMoq.Object);
 
-            var exception = Assert.Throws<Exception>(() => builder.GetOrRegisterMetadataOracleObject<SuperCollectionClass>(info));
+            var exception = Assert.Throws<ArgumentException>(() => builder.GetOrRegisterMetadataOracleObject<SuperCollectionClass>(info));
 
             Assert.NotNull(exception);
             Assert.Equal($"User connected to {dataSource} does not have permission to read the information about the collection type {schema}.{objectName}", exception.Message);

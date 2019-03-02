@@ -298,7 +298,7 @@ namespace ServForOracle.NetCore.Metadata
             {
                 var exceptionMsg = $"User connected to {con.DataSource} does not have permission to read the information about the collection type {schema}.{collectionName}";
                 Logger?.LogError(exceptionMsg);
-                throw new Exception(exceptionMsg);
+                throw new ArgumentException(message: exceptionMsg);
             }
         }
 
@@ -317,7 +317,7 @@ namespace ServForOracle.NetCore.Metadata
             {
                 var exceptionMsg = $"User connected to {con.DataSource} does not have permission to read the information about the collection type {schema}.{collectionName}";
                 Logger?.LogError(exceptionMsg);
-                throw new Exception(exceptionMsg);
+                throw new ArgumentException(message: exceptionMsg);
             }
         }
 
