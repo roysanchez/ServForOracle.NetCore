@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using Xunit;
+using ServForOracle.NetCore.Extensions;
 
 namespace ServForOracle.NetCore.UnitTests
 {
@@ -19,6 +20,7 @@ namespace ServForOracle.NetCore.UnitTests
         {
 
         }
+        UDTInfoAttributeTests udtInfoAttributeTests = new UDTInfoAttributeTests();
 
         public ServForOracleCacheTests()
         {
@@ -261,6 +263,79 @@ namespace ServForOracle.NetCore.UnitTests
             var actual = cache.GetTypeDefinition(name);
 
             Assert.Equal(definition, actual);
+        }
+
+        [Theory, CustomAutoData]
+        internal void GetUdtInfoFromAttributeOrPresetCache_FromAttribute_IsCollection(IMemoryCache memory, Mock<Type> colTypeMock, string schema, string objectName, string collectionSchema, string collectionName)
+        {
+            colTypeMock.SetReturnsDefault(true);
+            
+            var type = udtInfoAttributeTests.GetTypeWithAttribute(schema, objectName, collectionSchema, collectionName);
+
+            colTypeMock.Setup(t => t.GetGenericArguments()).Returns(new[] { type });
+
+            var cache = ServForOracleCache.Create(memory);
+
+            var udtInfo = cache.GetUdtInfoFromAttributeOrPresetCache(colTypeMock.Object);
+
+            Assert.NotNull(udtInfo);
+            Assert.Equal(schema, udtInfo.ObjectSchema, ignoreCase: true);
+            Assert.Equal(objectName, udtInfo.ObjectName, ignoreCase: true);
+            Assert.Equal(collectionSchema, udtInfo.CollectionSchema, ignoreCase: true);
+            Assert.Equal(collectionName, udtInfo.CollectionName, ignoreCase: true);
+        }
+
+        [Theory, CustomAutoData]
+        internal void GetUdtInfoFromAttributeOrPresetCache_FromCache_IsCollection(Mock<IMemoryCache> memoryMock, Type type, OracleUdtInfo info)
+        {
+            var colType = type.CreateListType();
+
+            (OracleUdtInfo Info, UdtPropertyNetPropertyMap[], bool) expectedValue = (info, default, default);
+            object validParameter = expectedValue;
+
+            memoryMock.Setup(m => m.TryGetValue($"udt-{type.FullName}", out validParameter))
+                .Returns(true);
+
+            var cache = ServForOracleCache.Create(memoryMock.Object);
+
+            var udtInfo = cache.GetUdtInfoFromAttributeOrPresetCache(colType);
+
+            Assert.NotNull(udtInfo);
+            Assert.Equal(expectedValue.Info, udtInfo);
+        }
+
+
+        [Theory, CustomAutoData]
+        internal void GetUdtInfoFromAttributeOrPresetCache_FromCache_IsObject(Mock<IMemoryCache> memoryMock, Type type, OracleUdtInfo info)
+        {
+            (OracleUdtInfo Info, UdtPropertyNetPropertyMap[], bool) expectedValue = (info, default, default);
+            object validParameter = expectedValue;
+
+            memoryMock.Setup(m => m.TryGetValue($"udt-{type.FullName}", out validParameter))
+                .Returns(true);
+
+            var cache = ServForOracleCache.Create(memoryMock.Object);
+
+            var udtInfo = cache.GetUdtInfoFromAttributeOrPresetCache(type);
+
+            Assert.NotNull(udtInfo);
+            Assert.Equal(expectedValue.Info, udtInfo);
+        }
+
+        [Theory, CustomAutoData]
+        internal void GetUdtInfoFromAttributeOrPresetCache_FromAttribute_IsObject(IMemoryCache memory, string schema, string objectName, string collectionSchema, string collectionName)
+        {
+            var type = udtInfoAttributeTests.GetTypeWithAttribute(schema, objectName, collectionSchema, collectionName);
+
+            var cache = ServForOracleCache.Create(memory);
+
+            var udtInfo = cache.GetUdtInfoFromAttributeOrPresetCache(type);
+
+            Assert.NotNull(udtInfo);
+            Assert.Equal(schema, udtInfo.ObjectSchema, ignoreCase: true);
+            Assert.Equal(objectName, udtInfo.ObjectName, ignoreCase: true);
+            Assert.Equal(collectionSchema, udtInfo.CollectionSchema, ignoreCase: true);
+            Assert.Equal(collectionName, udtInfo.CollectionName, ignoreCase: true);
         }
     }
 }
