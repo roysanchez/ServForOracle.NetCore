@@ -71,7 +71,7 @@ namespace ServForOracle.NetCore.Cache
 
         internal virtual MetadataOracle GetMetadata(string name)
         {
-            Cache.TryGetValue($"matadata-{name}", out MetadataOracle metadata);
+            Cache.TryGetValue($"metadata-{name}", out MetadataOracle metadata);
             return metadata;
         }
 
