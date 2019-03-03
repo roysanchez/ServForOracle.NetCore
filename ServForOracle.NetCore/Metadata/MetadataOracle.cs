@@ -109,7 +109,18 @@ namespace ServForOracle.NetCore.Metadata
                 ):
                     if (CheckIfNotNull(intervalYM, isNullable, retType.FullName))
                     {
-                        value = intervalYM.Value;
+                        if(retType == typeof(long) || retType == typeof(long?))
+                        {
+                            value = intervalYM.Value;
+                        }
+                        else if (retType == typeof(float) || retType == typeof(float?))
+                        {
+                            value = (float)intervalYM.TotalYears;
+                        }
+                        else
+                        { 
+                            value = intervalYM.TotalYears;
+                        }
                     }
                     break;
                 case OracleBinary binary when retType == typeof(byte[]):
@@ -117,13 +128,13 @@ namespace ServForOracle.NetCore.Metadata
                     break;
                 case OracleTimeStamp timestamp when retType == typeof(DateTime) || retType == typeof(DateTime?):
                     if (CheckIfNotNull(timestamp, isNullable, retType.FullName))
-                        value = timestamp;
+                        value = timestamp.Value;
                     else
                         throw castError;
                     break;
                 case OracleTimeStampLTZ timestampLTZ when retType == typeof(DateTime) || retType == typeof(DateTime?):
                     if (CheckIfNotNull(timestampLTZ, isNullable, retType.FullName))
-                        value = timestampLTZ;
+                        value = timestampLTZ.Value;
                     else
                         throw castError;
                     break;
@@ -291,7 +302,7 @@ namespace ServForOracle.NetCore.Metadata
 
         private bool CheckIfNotNull(INullable value, bool destinationTypeIsNullable, string typeName)
         {
-            var castError = new InvalidCastException($"Can't cast a null value to {typeName}"); ;
+            var castError = new InvalidCastException($"Can't cast a null value to {typeName}");
 
             if (value.IsNull)
             {
