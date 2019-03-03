@@ -42,9 +42,17 @@ namespace ServForOracle.NetCore.Extensions
 
         public static object CreateInstance(this Type type, params object[] arguments)
         {
+            //TODO Add support for nullable types
             if (type.IsCollection())
             {
-                return Activator.CreateInstance(type.GetCollectionUnderType().CreateListType(), arguments);
+                if (type.IsArray)
+                {
+                    return Enumerable.ToArray((dynamic)Activator.CreateInstance(type.GetCollectionUnderType().CreateListType(), arguments));
+                }
+                else
+                {
+                    return Activator.CreateInstance(type.GetCollectionUnderType().CreateListType(), arguments);
+                }
             }
             else return Activator.CreateInstance(type, arguments);
         }
