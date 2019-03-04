@@ -8,11 +8,15 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
+using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Xml;
+using System.Xml.Linq;
+using System.Xml.Serialization;
 using Xunit;
 
 namespace ServForOracle.NetCore.UnitTests
@@ -21,8 +25,103 @@ namespace ServForOracle.NetCore.UnitTests
     {
         public class TestClass
         {
-
         }
+
+        [Serializable]
+        public class XmlTestObject : IEquatable<XmlTestObject>
+        {
+            public string Prop1 { get; set; }
+            public DateTime Prop2 { get; set; }
+            public int Prop3 { get; set; }
+            public float Prop4 { get; set; }
+            public double Prop5 { get; set; }
+            public decimal Prop6 { get; set; }
+            public long Prop7 { get; set; }
+            //it's not configured so its going to return null
+            public sbyte? Prop8 { get; set; }
+            public bool Prop9 { get; set; }
+            public TimeSpan Prop10 { get; set; }
+            public uint Prop11 { get; set; }
+            public ulong Prop12 { get; set; }
+            public Guid Prop13 { get; set; }
+
+            public override bool Equals(object obj)
+            {
+                return Equals(obj as XmlTestObject);
+            }
+
+            public bool Equals(XmlTestObject other)
+            {
+                return other != null &&
+                       Prop1 == other.Prop1 &&
+                       Prop2 == other.Prop2 &&
+                       Prop3 == other.Prop3 &&
+                       Prop4 == other.Prop4 &&
+                       Prop5 == other.Prop5 &&
+                       Prop6 == other.Prop6 &&
+                       Prop7 == other.Prop7 &&
+                       //Prop8.Equals(other.Prop8) &&
+                       Prop9 == other.Prop9 &&
+                       Prop10.Equals(other.Prop10) &&
+                       Prop11 == other.Prop11 &&
+                       Prop12 == other.Prop12 &&
+                       Prop13.Equals(other.Prop13);
+            }
+
+            public int GetHashCode(XmlTestObject obj)
+            {
+                if (obj is null)
+                    return 0;
+                else
+                {
+                    return obj.GetHashCode();
+                }
+            }
+
+            public override int GetHashCode()
+            {
+                var hash = new HashCode();
+                hash.Add(Prop1);
+                hash.Add(Prop2);
+                hash.Add(Prop3);
+                hash.Add(Prop4);
+                hash.Add(Prop5);
+                hash.Add(Prop6);
+                hash.Add(Prop7);
+                //hash.Add(Prop8);
+                hash.Add(Prop9);
+                hash.Add(Prop10);
+                hash.Add(Prop11);
+                hash.Add(Prop12);
+                hash.Add(Prop13);
+                return hash.ToHashCode();
+            }
+        }
+
+        [Serializable]
+        public class XmlTestDateTimeOffset
+        {
+            public DateTimeOffset Date { get; set; }
+        }
+
+        public XElement ToXElement<T>(T obj)
+        {
+            using (var memoryStream = new MemoryStream())
+            {
+                using (TextWriter streamWriter = new StreamWriter(memoryStream))
+                {
+                    var xmlSerializer = new XmlSerializer(typeof(T));
+                xmlSerializer.Serialize(streamWriter, obj);
+                    return XElement.Parse("<roy>" + XElement.Parse(new ASCIIEncoding().GetString(memoryStream.ToArray())).ToString() + "</roy>");
+                }
+            }
+        }
+
+        //public static XmlTestClass FromXElement<T>(this XElement xElement)
+        //{
+        //    var xmlSerializer = new XmlSerializer(typeof(T));
+        //    return (T)xmlSerializer.Deserialize(xElement.CreateReader());
+        //}
 
         public DateTime? Truncate(DateTime? dateTime)
         {
@@ -670,6 +769,34 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         #endregion GetValueFromOracleXML
+
+        #region GetValueFromXMLElement
+
+        [Theory, CustomAutoData]
+        public void GetValueFromXMLElement_Object(XmlTestObject xml)
+        {
+            var xelement = ToXElement(xml);
+            var metadata = new MetadataOracle();
+
+            var actual = metadata.GetValueFromXMLElement(typeof(XmlTestObject), xelement);
+
+            Assert.NotNull(actual);
+            Assert.Equal(xml, actual);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetValueFromXMLElement_Object_DateTimeOffset(DateTimeOffset date)
+        {
+            var xelement = XElement.Parse($"<roy><x><Date>{date.ToString("o")}</Date></x></roy>");
+            var metadata = new MetadataOracle();
+
+            var actual = metadata.GetValueFromXMLElement(typeof(XmlTestDateTimeOffset), xelement);
+
+            Assert.NotNull(actual);
+            Assert.Equal(date, actual.Date);
+        }
+
+        #endregion GetValueFromXMLElement
 
         [Theory, CustomAutoData]
         public void GetOracleParameterForRefCursor(int startNumber)
