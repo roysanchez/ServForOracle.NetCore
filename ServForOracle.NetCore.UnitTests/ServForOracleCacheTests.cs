@@ -35,7 +35,7 @@ namespace ServForOracle.NetCore.UnitTests
 
         private void ResetStaticCacheField()
         {
-            var field = typeof(ServForOracleCache).GetField("servForOracleCache", BindingFlags.Static | BindingFlags.NonPublic);
+            var field = typeof(ServForOracleCache).GetField("_servForOracleCache", BindingFlags.Static | BindingFlags.NonPublic);
             if (field != null)
                 field.SetValue(null, null);
         }
