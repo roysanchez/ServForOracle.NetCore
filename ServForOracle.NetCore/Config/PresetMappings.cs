@@ -1,10 +1,5 @@
-﻿using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using ServForOracle.NetCore.Cache;
-using ServForOracle.NetCore.Metadata;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ServForOracle.NetCore.Config
 {

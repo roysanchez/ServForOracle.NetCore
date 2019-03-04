@@ -8,5 +8,6 @@ namespace ServForOracle.NetCore.OracleAbstracts
     public interface IDbConnectionFactory
     {
         DbConnection CreateConnection();
+        void Dispose();
     }
 }

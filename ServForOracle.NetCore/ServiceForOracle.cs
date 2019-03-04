@@ -10,7 +10,7 @@ using ServForOracle.NetCore.Metadata;
 using System.Threading.Tasks;
 using ServForOracle.NetCore.Extensions;
 using System.Data.Common;
-using ServForOracle.NetCore.Config;
+using System.Diagnostics;
 using ServForOracle.NetCore.OracleAbstracts;
 using System.Runtime.CompilerServices;
 using ServForOracle.NetCore.Cache;
@@ -40,19 +40,33 @@ namespace ServForOracle.NetCore
 
         public async Task ExecuteProcedureAsync(string procedure, params IParam[] parameters)
         {
-            using (var connection = _DbFactory.CreateConnection())
+            try
             {
-                var builder = new MetadataBuilder(connection, _Cache, _Logger);
-                await ExecuteAsync(builder, connection, procedure, parameters).ConfigureAwait(false);
+                using (var connection = _DbFactory.CreateConnection())
+                {
+                    var builder = new MetadataBuilder(connection, _Cache, _Logger);
+                    await ExecuteAsync(builder, connection, procedure, parameters).ConfigureAwait(false);
+                }
+            }
+            finally
+            {
+                _DbFactory.Dispose();
             }
         }
 
         public void ExecuteProcedure(string procedure, params IParam[] parameters)
         {
-            using (var connection = _DbFactory.CreateConnection())
+            try
             {
-                var builder = new MetadataBuilder(connection, _Cache, _Logger);
-                Execute(builder, connection, procedure, parameters);
+                using (var connection = _DbFactory.CreateConnection())
+                {
+                    var builder = new MetadataBuilder(connection, _Cache, _Logger);
+                    Execute(builder, connection, procedure, parameters);
+                }
+            }
+            finally
+            {
+                _DbFactory.Dispose();
             }
         }
 
@@ -70,57 +84,70 @@ namespace ServForOracle.NetCore
         {
             MetadataOracle returnMetadata = null;
             OracleParameter retOra = null;
-            using (var connection = _DbFactory.CreateConnection())
+            try
             {
-                var builder = new MetadataBuilder(connection, _Cache, _Logger);
-                await ExecuteAsync(builder, connection, function, parameters, (info) => Task.FromResult(FunctionBeforeQuery<T>(builder, info, udtInfo, out returnMetadata, out retOra)),
-                (info) =>
+                using (var connection = _DbFactory.CreateConnection())
                 {
-                    if (returnMetadata is MetadataOracleObject<T> metadata)
-                    {
-                        return Task.FromResult(ReturnValueAdditionalInformation(info, udtInfo, metadata, out retOra));
-                    }
-                    else if (returnMetadata is MetadataOracleBoolean metadataBoolean)
-                    {
-                        return Task.FromResult(ReturnValueAdditionalInformationBoolean<T>(info, metadataBoolean, out retOra));
-                    }
-                    else
-                    {
-                        return Task.FromResult<AdditionalInformation>(null);
-                    }
-                }).ConfigureAwait(false);
+                    var builder = new MetadataBuilder(connection, _Cache, _Logger);
+                    await ExecuteAsync(builder, connection, function, parameters,
+                        (info) => Task.FromResult(FunctionBeforeQuery<T>(builder, info, udtInfo, out returnMetadata,
+                            out retOra)),
+                        (info) =>
+                        {
+                            if (returnMetadata is MetadataOracleObject<T> metadata)
+                            {
+                                return Task.FromResult(
+                                    ReturnValueAdditionalInformation(info, udtInfo, metadata, out retOra));
+                            }
+                            else if (returnMetadata is MetadataOracleBoolean metadataBoolean)
+                            {
+                                return Task.FromResult(
+                                    ReturnValueAdditionalInformationBoolean<T>(info, metadataBoolean, out retOra));
+                            }
+                            else
+                            {
+                                return Task.FromResult<AdditionalInformation>(null);
+                            }
+                        }).ConfigureAwait(false);
 
-                return GetReturnParameterOtuputValue<T>(retOra, returnMetadata);
+                    return GetReturnParameterOtuputValue<T>(retOra, returnMetadata);
+                }
             }
+            finally{ _DbFactory.Dispose(); }
         }
 
         public T ExecuteFunction<T>(string function, OracleUdtInfo udtInfo, params IParam[] parameters)
         {
             MetadataOracle returnMetadata = null;
             OracleParameter retOra = null;
-            using (var connection = _DbFactory.CreateConnection())
+            try
             {
-                var builder = new MetadataBuilder(connection, _Cache, _Logger);
-
-                Execute(builder, connection, function, parameters, (info) => FunctionBeforeQuery<T>(builder, info, udtInfo, out returnMetadata, out retOra),
-                (info) =>
+                using (var connection = _DbFactory.CreateConnection())
                 {
-                    if (returnMetadata is MetadataOracleObject<T> metadata)
-                    {
-                        return ReturnValueAdditionalInformation(info, udtInfo, metadata, out retOra);
-                    }
-                    else if (returnMetadata is MetadataOracleBoolean metadataBoolean)
-                    {
-                        return ReturnValueAdditionalInformationBoolean<T>(info, metadataBoolean, out retOra);
-                    }
-                    else
-                    {
-                        return null;
-                    }
-                });
+                    var builder = new MetadataBuilder(connection, _Cache, _Logger);
 
-                return GetReturnParameterOtuputValue<T>(retOra, returnMetadata);
+                    Execute(builder, connection, function, parameters,
+                        (info) => FunctionBeforeQuery<T>(builder, info, udtInfo, out returnMetadata, out retOra),
+                        (info) =>
+                        {
+                            if (returnMetadata is MetadataOracleObject<T> metadata)
+                            {
+                                return ReturnValueAdditionalInformation(info, udtInfo, metadata, out retOra);
+                            }
+                            else if (returnMetadata is MetadataOracleBoolean metadataBoolean)
+                            {
+                                return ReturnValueAdditionalInformationBoolean<T>(info, metadataBoolean, out retOra);
+                            }
+                            else
+                            {
+                                return null;
+                            }
+                        });
+
+                    return GetReturnParameterOtuputValue<T>(retOra, returnMetadata);
+                }
             }
+            finally{ _DbFactory.Dispose(); }
         }
 
         private AdditionalInformation ReturnValueAdditionalInformationBoolean<T>(ExecutionInformation info,
@@ -187,6 +214,7 @@ namespace ServForOracle.NetCore
             }
             else
             {
+               
                 return (T)returnMetadata.ConvertOracleParameterToBaseType(returnType, retOra);
             }
         }
@@ -291,7 +319,7 @@ namespace ServForOracle.NetCore
 
             var execute = PrepareStatement(declare.ToString(), body, query.ToString(), outparameters.ToString());
 
-            ExecuteNonQuery(connection, info.OracleParameterList, execute.ToString());
+            ExecuteNonQuery(connection, info.OracleParameterList, execute);
 
             ProcessOutParameters(info.Outputs);
         }
@@ -299,10 +327,10 @@ namespace ServForOracle.NetCore
         private string PrepareStatement(string declare, string body, string query, string outparameters)
         {
             var execute = new StringBuilder();
-            execute.AppendLine(declare.ToString());
+            execute.AppendLine(declare);
             execute.AppendLine(body);
             execute.AppendLine(query);
-            execute.AppendLine(outparameters.ToString());
+            execute.AppendLine(outparameters);
             execute.Append("end;");
             return execute.ToString();
         }
@@ -408,13 +436,13 @@ namespace ServForOracle.NetCore
             {
                 if (param.Direction == ParameterDirection.Input || param.Direction == ParameterDirection.InputOutput)
                 {
-                    var (Constructor, LastNumber) = param.BuildQueryConstructorString(info.ParameterCounter);
+                    var (constructor, lastNumber) = param.BuildQueryConstructorString(info.ParameterCounter);
                     var oraParameters = param.GetOracleParameters(info.ParameterCounter);
 
                     info.OracleParameterList.AddRange(oraParameters);
 
-                    body.AppendLine(Constructor);
-                    info.ParameterCounter = LastNumber;
+                    body.AppendLine(constructor);
+                    info.ParameterCounter = lastNumber;
                 }
             }
 

@@ -1,12 +1,9 @@
 ﻿using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
 using ServForOracle.NetCore.Extensions;
 using ServForOracle.NetCore.Metadata;
 using ServForOracle.NetCore.OracleAbstracts;
 using System;
-using System.Collections.Generic;
 using System.Reflection;
-using System.Text;
 
 namespace ServForOracle.NetCore.Cache
 {
@@ -14,8 +11,8 @@ namespace ServForOracle.NetCore.Cache
     {
         public IMemoryCache Cache { get; private set; }
 
-        private static ServForOracleCache servForOracleCache;
-        private static readonly object padlock = new object();
+        private static ServForOracleCache _servForOracleCache;
+        private static readonly object Padlock = new object();
 
         internal ServForOracleCache(IMemoryCache memoryCache)
         {
@@ -24,18 +21,18 @@ namespace ServForOracle.NetCore.Cache
 
         public static ServForOracleCache Create(IMemoryCache memoryCache)
         {
-            if (servForOracleCache is null)
+            if (_servForOracleCache is null)
             {
-                lock (padlock)
+                lock (Padlock)
                 {
-                    if(servForOracleCache is null)
+                    if(_servForOracleCache is null)
                     {
-                        servForOracleCache = new ServForOracleCache(memoryCache);
+                        _servForOracleCache = new ServForOracleCache(memoryCache);
                     }
                 }
             }
 
-            return servForOracleCache;
+            return _servForOracleCache;
         }
 
         internal virtual void SaveUdtInfo(string name, OracleUdtInfo info, UdtPropertyNetPropertyMap[] props, bool fuzzyNameMatch)
@@ -64,9 +61,9 @@ namespace ServForOracle.NetCore.Cache
             }
         }
 
-        internal virtual void AddOracleUDTPresets(Type Type, OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool fuzzyNameMatch = true)
+        internal virtual void AddOracleUDTPresets(Type type, OracleUdtInfo info, UdtPropertyNetPropertyMap[] props, bool fuzzyNameMatch = true)
         {
-            SaveUdtInfo(Type.FullName, Info, Props, fuzzyNameMatch);
+            SaveUdtInfo(type.FullName, info, props, fuzzyNameMatch);
         }
 
         internal virtual MetadataOracle GetMetadata(string name)
