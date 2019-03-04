@@ -215,7 +215,7 @@ namespace ServForOracle.NetCore.Metadata
             var properties = objectType.GetProperties();
             foreach (var prop in properties)
             {
-                var element = elements.FirstOrDefault(c => c.Name == prop.Name);
+                var element = elements.FirstOrDefault(c => c.Name?.LocalName == prop.Name);
 
                 if (element is null || string.IsNullOrWhiteSpace(element.Value))
                 {
