@@ -160,7 +160,7 @@ namespace ServForOracle.NetCore.Metadata
             }
 
             var underType = listType.GetCollectionUnderType();
-            dynamic list = listType.CreateInstance();
+            dynamic list = underType.CreateListType().CreateInstance();
 
             foreach (var el in xml.Elements())
             {
@@ -283,12 +283,12 @@ namespace ServForOracle.NetCore.Metadata
         {
             if (retType.IsCollection())
             {
-                var list = GetObjectArrayFromXML(retType, doc.Elements().First());
+                var list = GetObjectArrayFromXML(retType, doc.Elements().FirstOrDefault());
                 return list;
             }
             else
             {
-                dynamic obj = GetObjectFromXML(retType, doc.Elements().First());
+                dynamic obj = GetObjectFromXML(retType, doc.Elements().FirstOrDefault());
                 return obj;
             }
         }
