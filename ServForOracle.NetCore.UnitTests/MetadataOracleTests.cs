@@ -98,6 +98,104 @@ namespace ServForOracle.NetCore.UnitTests
             }
         }
 
+        public class XmlTestComplexObject : IEquatable<XmlTestComplexObject>
+        {
+            public XmlTestSimpleObject[] SimpleObjectArray { get; set; }
+            public XmlTestSimpleObject SimpleObject { get; set; }
+            public string SimpleProperty { get; set; }
+            public string NullProperty { get; set; }
+
+            public override bool Equals(object obj)
+            {
+                return Equals(obj as XmlTestComplexObject);
+            }
+
+            public bool Equals(XmlTestComplexObject other)
+            {
+                var x = new XmlTestComparer();
+                return other != null &&
+                       x.Equals(SimpleObjectArray, other.SimpleObjectArray) &&
+                       x.Equals(SimpleObject, other.SimpleObject) &&
+                       SimpleProperty == other.SimpleProperty &&
+                       NullProperty == other.NullProperty;
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(SimpleObjectArray, SimpleObject, SimpleProperty, NullProperty);
+            }
+        }
+
+        public class XmlTestComparer
+        {
+            public bool Equals(XmlTestSimpleObject[] x, XmlTestSimpleObject[] y)
+            {
+                if (x is null && y is null)
+                {
+                    return true;
+                }
+                else if (x is null || y is null)
+                {
+                    return false;
+                }
+                else if (x.Length != y.Length)
+                {
+                    return false;
+                }
+                for (int i = 0; i < x.Length; i++)
+                {
+                    if(!Equals(x[i], y[i]))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            public bool Equals(XmlTestSimpleObject x, XmlTestSimpleObject y)
+            {
+                if (x is null && y is null)
+                {
+                    return true;
+                }
+                else if (x is null || y is null)
+                {
+                    return false;
+                }
+                return x.Equals(y);
+            }
+
+            public int GetHashCode(XmlTestSimpleObject obj)
+            {
+                if (obj is null)
+                    return 0;
+                else
+                    return obj.GetHashCode();
+            }
+        }
+
+        public class XmlTestSimpleObject : IEquatable<XmlTestSimpleObject>
+        {
+            public string StringProperty { get; set; }
+
+            public override bool Equals(object obj)
+            {
+                return Equals(obj as XmlTestSimpleObject);
+            }
+
+            public bool Equals(XmlTestSimpleObject other)
+            {
+                return other != null &&
+                       StringProperty == other.StringProperty;
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(StringProperty);
+            }
+        }
+
         [Serializable]
         public class XmlTestDateTimeOffset
         {
@@ -111,7 +209,7 @@ namespace ServForOracle.NetCore.UnitTests
                 using (TextWriter streamWriter = new StreamWriter(memoryStream))
                 {
                     var xmlSerializer = new XmlSerializer(typeof(T));
-                xmlSerializer.Serialize(streamWriter, obj);
+                    xmlSerializer.Serialize(streamWriter, obj);
                     return XElement.Parse("<roy>" + XElement.Parse(new ASCIIEncoding().GetString(memoryStream.ToArray())).ToString() + "</roy>");
                 }
             }
@@ -691,7 +789,7 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.Equal(ParameterDirection.Output, parameter.Direction);
             Assert.Equal(p1, parameter.Value);
             Assert.Equal(32000, parameter.Size);
-                
+
         }
 
         [Theory, CustomAutoData]
@@ -781,6 +879,7 @@ namespace ServForOracle.NetCore.UnitTests
             var actual = metadata.GetValueFromXMLElement(typeof(XmlTestObject), xelement);
 
             Assert.NotNull(actual);
+            Assert.IsType<XmlTestObject>(actual);
             Assert.Equal(xml, actual);
         }
 
@@ -793,7 +892,106 @@ namespace ServForOracle.NetCore.UnitTests
             var actual = metadata.GetValueFromXMLElement(typeof(XmlTestDateTimeOffset), xelement);
 
             Assert.NotNull(actual);
+            Assert.IsType<XmlTestDateTimeOffset>(actual);
             Assert.Equal(date, actual.Date);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetValueFromXMLElement_Object_Complex(XmlTestComplexObject complex)
+        {
+            complex.NullProperty = null;
+            var xelement = ToXElement(complex);
+            var metadata = new MetadataOracle();
+
+            var actual = metadata.GetValueFromXMLElement(typeof(XmlTestComplexObject), xelement);
+
+            Assert.NotNull(actual);
+            Assert.IsType<XmlTestComplexObject>(actual);
+            Assert.Equal(complex, actual);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetValueFromXMLElement_Object_NotMatchedXml_ReturnsNull(XmlTestDateTimeOffset date)
+        {
+            var xelement = ToXElement(date);
+            var metadata = new MetadataOracle();
+
+            var actual = metadata.GetValueFromXMLElement(typeof(XmlTestComplexObject), xelement);
+
+            Assert.Null(actual);
+        }
+
+        [Fact]
+        public void GetValueFromXMLElement_Object_NoElements_ReturnsNull()
+        {
+            var xelement = XElement.Parse("<roy></roy>");
+            var metadata = new MetadataOracle();
+
+            var actual = metadata.GetValueFromXMLElement(typeof(XmlTestComplexObject), xelement);
+
+            Assert.Null(actual);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetValueFromXMLElement_Collection(XmlTestObject[] xml)
+        {
+            var xelement = ToXElement(xml);
+            var metadata = new MetadataOracle();
+
+            var actual = metadata.GetValueFromXMLElement(typeof(XmlTestObject[]), xelement);
+
+            Assert.NotNull(actual);
+            Assert.IsType<XmlTestObject[]>(actual);
+            Assert.Equal(xml, actual);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetValueFromXMLElement_Collection_List(List<XmlTestObject> xml)
+        {
+            var xelement = ToXElement(xml);
+            var metadata = new MetadataOracle();
+
+            var actual = metadata.GetValueFromXMLElement(typeof(List<XmlTestObject>), xelement);
+
+            Assert.NotNull(actual);
+            Assert.IsType<List<XmlTestObject>>(actual);
+            Assert.Equal(xml, actual);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetValueFromXMLElement_Collection_Of_Collection(XmlTestSimpleObject[][] xml)
+        {
+            var xelement = ToXElement(xml);
+            var metadata = new MetadataOracle();
+
+            var actual = metadata.GetValueFromXMLElement(typeof(XmlTestSimpleObject[][]), xelement);
+
+            Assert.NotNull(actual);
+            Assert.IsType<XmlTestSimpleObject[][]>(actual);
+            Assert.Equal(xml, actual);
+        }
+
+        [Fact]
+        public void GetValueFromXMLElement_Collection_NoElements_ReturnsNull()
+        {
+            var xelement = XElement.Parse("<roy></roy>");
+            var metadata = new MetadataOracle();
+
+            var actual = metadata.GetValueFromXMLElement(typeof(XmlTestComplexObject[]), xelement);
+
+            Assert.Null(actual);
+        }
+
+        [Fact]
+        public void GetValueFromXMLElement_Collection_Empty_ReturnsNull()
+        {
+            var simpleArray = new XmlTestSimpleObject[3];
+            var xelement = ToXElement(simpleArray);
+            var metadata = new MetadataOracle();
+
+            var actual = metadata.GetValueFromXMLElement(typeof(XmlTestSimpleObject[]), xelement);
+
+            Assert.Null(actual);
         }
 
         #endregion GetValueFromXMLElement
