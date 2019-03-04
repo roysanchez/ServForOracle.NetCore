@@ -11,11 +11,17 @@ namespace ServForOracle.NetCore.Metadata
     {
         public string GetDeclareLine(string parameterName)
         {
+            if (string.IsNullOrWhiteSpace(parameterName))
+                throw new ArgumentNullException(nameof(parameterName));
+
             return $"{parameterName} boolean;";
         }
 
         public string OutputString(int startNumber, string fieldName)
         {
+            if (string.IsNullOrWhiteSpace(fieldName))
+                throw new ArgumentNullException(nameof(fieldName));
+
             var retStr = $@"
                 if({fieldName}) then
                     :{startNumber} := 1;
