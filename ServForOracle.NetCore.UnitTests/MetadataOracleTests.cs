@@ -11,6 +11,7 @@ using System.Data.Common;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.Serialization;
 using System.Text;
 using Xunit;
 
@@ -624,6 +625,51 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         #endregion GetOracleParameter
+
+        #region GetValueFromOracleXML
+
+        [Fact]
+        public void GetValueFromOracleXML_ParametersNull_ReturnsNull()
+        {
+            var metadata = new MetadataOracle();
+
+            Assert.Null(metadata.GetValueFromOracleXML(typeof(string), null));
+            Assert.Null(metadata.GetValueFromOracleXML(typeof(string), OracleXmlType.Null));
+            Assert.Null(metadata.GetValueFromOracleXML(null, OracleXmlType.Null));
+        }
+
+        [Theory, CustomAutoData]
+        public void GetValueFromOracleXML_Object(string expected)
+        {
+            var metadata = new MetadataOracle();
+            var connection = new OracleConnection();
+            var type = typeof(OracleXmlType);
+
+            var typeData = FormatterServices.GetUninitializedObject(
+            Assembly.GetAssembly(type).GetType("OracleInternal.ServiceObjects.OraXmlTypeData"));
+
+            typeData.GetType().GetField("m_typeOfXmlData", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(typeData, 2);
+
+            typeData.GetType().GetField("m_xmlStr", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(typeData, $"<e>{expected}</e>");
+
+            var xmlImpl = FormatterServices.GetUninitializedObject(
+            Assembly.GetAssembly(connection.GetType()).GetType("OracleInternal.ServiceObjects.OracleXmlTypeImpl"));
+
+            xmlImpl.GetType().GetField("m_syncLock", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(xmlImpl, new object());
+            xmlImpl.GetType().GetField("m_xmlTypeData", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(xmlImpl, typeData);
+
+            var xmlType = (OracleXmlType)FormatterServices.GetUninitializedObject(typeof(OracleXmlType));
+            type.GetField("m_xmlTypeImpl", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(xmlType, xmlImpl);
+            type.GetField("m_bClosed", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(xmlType, false);
+            type.GetField("m_bNotNull", BindingFlags.NonPublic | BindingFlags.Instance).SetValue(xmlType, true);
+
+
+            var result = metadata.GetValueFromOracleXML(typeof(string), xmlType);
+
+            Assert.Equal(expected, result);
+        }
+
+        #endregion GetValueFromOracleXML
 
         [Theory, CustomAutoData]
         public void GetOracleParameterForRefCursor(int startNumber)
