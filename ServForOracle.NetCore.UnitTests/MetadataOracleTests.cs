@@ -1,10 +1,12 @@
-﻿using Moq;
+﻿using AutoFixture;
+using Moq;
 using Oracle.ManagedDataAccess.Client;
 using Oracle.ManagedDataAccess.Types;
 using ServForOracle.NetCore.Metadata;
 using ServForOracle.NetCore.UnitTests.Config;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -32,6 +34,8 @@ namespace ServForOracle.NetCore.UnitTests
             if (dateTime == DateTime.MinValue || dateTime == DateTime.MaxValue) return dateTime;
             return dateTime.AddTicks(-(dateTime.Ticks % timeSpan.Ticks));
         }
+
+        #region ConvertOracleParameterToBaseType
 
         [Fact]
         public void ConvertOracleParameterToBaseType_OracleParamIsNull()
@@ -421,6 +425,217 @@ namespace ServForOracle.NetCore.UnitTests
             var metadata = new MetadataOracle();
 
             Assert.Null(metadata.ConvertOracleParameterToBaseType(typeof(int?), test));
+        }
+
+        #endregion ConvertOracleParameterToBaseType
+
+        #region GetOracleParameter
+
+        [Theory, CustomAutoData]
+        public void GetOracleParameter_IsValueType_Char(char p1, ParameterDirection direction, string name)
+        {
+            var metadata = new MetadataOracle();
+
+            var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
+
+            Assert.NotNull(parameter);
+            Assert.Equal(OracleDbType.Char, parameter.OracleDbType);
+            Assert.Equal(direction, parameter.Direction);
+            Assert.Equal(p1, parameter.Value);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetOracleParameter_IsValueType_Short(short p1, ParameterDirection direction, string name)
+        {
+            var metadata = new MetadataOracle();
+
+            var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
+
+            Assert.NotNull(parameter);
+            Assert.Equal(OracleDbType.Int16, parameter.OracleDbType);
+            Assert.Equal(direction, parameter.Direction);
+            Assert.Equal(p1, parameter.Value);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetOracleParameter_IsValueType_Int(int p1, ParameterDirection direction, string name)
+        {
+            var metadata = new MetadataOracle();
+
+            var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
+
+            Assert.NotNull(parameter);
+            Assert.Equal(OracleDbType.Int32, parameter.OracleDbType);
+            Assert.Equal(direction, parameter.Direction);
+            Assert.Equal(p1, parameter.Value);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetOracleParameter_IsValueType_Long(long p1, ParameterDirection direction, string name)
+        {
+            var metadata = new MetadataOracle();
+
+            var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
+
+            Assert.NotNull(parameter);
+            Assert.Equal(OracleDbType.Int64, parameter.OracleDbType);
+            Assert.Equal(direction, parameter.Direction);
+            Assert.Equal(p1, parameter.Value);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetOracleParameter_IsValueType_Float(float p1, ParameterDirection direction, string name)
+        {
+            var metadata = new MetadataOracle();
+
+            var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
+
+            Assert.NotNull(parameter);
+            Assert.Equal(OracleDbType.Single, parameter.OracleDbType);
+            Assert.Equal(direction, parameter.Direction);
+            Assert.Equal(p1, parameter.Value);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetOracleParameter_IsValueType_Double(double p1, ParameterDirection direction, string name)
+        {
+            var metadata = new MetadataOracle();
+
+            var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
+
+            Assert.NotNull(parameter);
+            Assert.Equal(OracleDbType.Double, parameter.OracleDbType);
+            Assert.Equal(direction, parameter.Direction);
+            Assert.Equal(p1, parameter.Value);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetOracleParameter_IsValueType_Decimal(decimal p1, ParameterDirection direction, string name)
+        {
+            var metadata = new MetadataOracle();
+
+            var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
+
+            Assert.NotNull(parameter);
+            Assert.Equal(OracleDbType.Decimal, parameter.OracleDbType);
+            Assert.Equal(direction, parameter.Direction);
+            Assert.Equal(p1, parameter.Value);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetOracleParameter_IsValueType_DateTime(DateTime p1, ParameterDirection direction, string name)
+        {
+            var metadata = new MetadataOracle();
+
+            var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
+
+            Assert.NotNull(parameter);
+            Assert.Equal(OracleDbType.Date, parameter.OracleDbType);
+            Assert.Equal(direction, parameter.Direction);
+            Assert.Equal(p1, parameter.Value);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetOracleParameter_IsValueType_Bool(bool p1, ParameterDirection direction, string name)
+        {
+            var metadata = new MetadataOracle();
+
+            var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
+
+            Assert.NotNull(parameter);
+            Assert.Equal(OracleDbType.Boolean, parameter.OracleDbType);
+            Assert.Equal(direction, parameter.Direction);
+            Assert.Equal(p1, parameter.Value);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetOracleParameter_IsValueType_ByteArray(byte[] p1, ParameterDirection direction, string name)
+        {
+            var metadata = new MetadataOracle();
+
+            var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
+
+            Assert.NotNull(parameter);
+            Assert.Equal(OracleDbType.Blob, parameter.OracleDbType);
+            Assert.Equal(direction, parameter.Direction);
+            Assert.Equal(p1, parameter.Value);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetOracleParameter_IsValueType_String(string p1, ParameterDirection direction, string name)
+        {
+            var fixture = new Fixture();
+            var metadata = new MetadataOracle();
+
+            var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
+
+            Assert.NotNull(parameter);
+            Assert.Equal(OracleDbType.Varchar2, parameter.OracleDbType);
+            Assert.Equal(direction, parameter.Direction);
+            Assert.Equal(p1, parameter.Value);
+
+            if (direction != ParameterDirection.Input)
+                Assert.Equal(32000, parameter.Size);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetOracleParameter_IsValueType_String_OutputSize(string p1, string name)
+        {
+            var fixture = new Fixture();
+            var metadata = new MetadataOracle();
+
+            var parameter = metadata.GetOracleParameter(p1.GetType(), ParameterDirection.Output, name, p1);
+
+            Assert.NotNull(parameter);
+            Assert.Equal(OracleDbType.Varchar2, parameter.OracleDbType);
+            Assert.Equal(ParameterDirection.Output, parameter.Direction);
+            Assert.Equal(p1, parameter.Value);
+            Assert.Equal(32000, parameter.Size);
+                
+        }
+
+        [Theory, CustomAutoData]
+        public void GetOracleParameter_IsValueType_String_Clob(char value, ParameterDirection direction, string name)
+        {
+            var fixture = new Fixture();
+            var metadata = new MetadataOracle();
+            var str = new string(value, 32001);
+
+            var parameter = metadata.GetOracleParameter(str.GetType(), direction, name, str);
+
+            Assert.NotNull(parameter);
+            Assert.Equal(OracleDbType.Clob, parameter.OracleDbType);
+            Assert.Equal(direction, parameter.Direction);
+            Assert.Equal(str, parameter.Value);
+            Assert.Equal(default(int), parameter.Size);
+        }
+
+        [Theory, CustomAutoData]
+        public void GetOracleParameter_IsValueType_NotHandledType(ParameterDirection direction, string name)
+        {
+            var fixture = new Fixture();
+            var metadata = new MetadataOracle();
+
+            var parameter = metadata.GetOracleParameter(typeof(object), direction, name, DBNull.Value);
+
+            Assert.NotNull(parameter);
+            Assert.Equal(OracleDbType.Varchar2, parameter.OracleDbType);
+            Assert.Equal(direction, parameter.Direction);
+        }
+
+        #endregion GetOracleParameter
+
+        [Theory, CustomAutoData]
+        public void GetOracleParameterForRefCursor(int startNumber)
+        {
+            var metadata = new MetadataOracle();
+
+            var refCursor = metadata.GetOracleParameterForRefCursor(startNumber);
+
+            Assert.NotNull(refCursor);
+            Assert.Equal($":{startNumber}", refCursor.ParameterName);
+            Assert.Equal(OracleDbType.RefCursor, refCursor.OracleDbType);
+            Assert.Null(refCursor.Value);
         }
     }
 }
