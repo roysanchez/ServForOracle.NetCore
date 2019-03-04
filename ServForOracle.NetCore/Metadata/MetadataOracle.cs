@@ -332,10 +332,6 @@ namespace ServForOracle.NetCore.Metadata
                 {
                     param.OracleDbType = OracleDbType.Char;
                 }
-                else if (type == typeof(sbyte) || type == typeof(sbyte?))
-                {
-                    param.OracleDbType = OracleDbType.Byte;
-                }
                 else if (type == typeof(short) || type == typeof(short?)
                     || type == typeof(byte) || type == typeof(byte?))
                 {
