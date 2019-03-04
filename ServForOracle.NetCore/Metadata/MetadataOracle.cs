@@ -279,15 +279,8 @@ namespace ServForOracle.NetCore.Metadata
                 return null;
         }
 
-        public dynamic GetValueFromOracleXML(Type retType, OracleXmlType xml)
+        public dynamic GetValueFromXMLElement(Type retType, XElement doc)
         {
-            if (xml is null || xml.IsNull || retType is null)
-            {
-                return null;
-            }
-
-            XElement doc = XElement.Parse("<roy>" + xml.Value + "</roy>");
-
             if (retType.IsCollection())
             {
                 var list = GetObjectArrayFromXML(retType, doc.Elements().First());
@@ -298,6 +291,17 @@ namespace ServForOracle.NetCore.Metadata
                 dynamic obj = GetObjectFromXML(retType, doc.Elements().First());
                 return obj;
             }
+        }
+
+        public dynamic GetValueFromOracleXML(Type retType, OracleXmlType xml)
+        {
+            if (xml is null || retType is null  || xml.IsNull)
+            {
+                return null;
+            }
+
+            XElement doc = XElement.Parse("<roy>" + xml.Value + "</roy>");
+            return GetValueFromXMLElement(retType, doc);
         }
 
         private bool CheckIfNotNull(INullable value, bool destinationTypeIsNullable, string typeName)
