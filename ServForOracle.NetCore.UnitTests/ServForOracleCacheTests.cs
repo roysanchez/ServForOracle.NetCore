@@ -146,7 +146,9 @@ namespace ServForOracle.NetCore.UnitTests
 
             var actualValue = cache.PresetGetValueOrDefault(type);
 
-            Assert.Equal(expectedValue, actualValue);
+            Assert.Equal(expectedValue.fuzzyNameMatch, actualValue.FuzzyMatch);
+            Assert.Equal(expectedValue.info, actualValue.Info);
+            Assert.Equal(expectedValue.props, actualValue.Props);
         }
 
         [Theory, CustomAutoData]
