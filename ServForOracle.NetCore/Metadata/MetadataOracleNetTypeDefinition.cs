@@ -39,23 +39,23 @@ namespace ServForOracle.NetCore.Metadata
 
             foreach (var prop in baseMetadataDefinition.Properties)
             {
-                var netProperty = netProperties.FirstOrDefault(c => c.Name.ToUpper() == prop.Name);
+                var netProperty = netProperties.FirstOrDefault(c => string.Equals(c.Name, prop.Name, StringComparison.InvariantCultureIgnoreCase));
                 if (netProperty == null && fuzzyNameMatch)
                 {
                     //TODO Do more advance fuzzy matching, right now it only replaces the underscore
-                    netProperty = netProperties.FirstOrDefault(c => c.Name.ToUpper() == Regex.Replace(prop.Name, string.Empty));
+                    netProperty = netProperties.FirstOrDefault(c => string.Equals(c.Name, Regex.Replace(prop.Name, string.Empty), StringComparison.InvariantCultureIgnoreCase));
                 }
 
-                var presetNetPropertyName = presetProperties.FirstOrDefault(c => c.UDTPropertyName == prop.Name)?.NetPropertyName;
-                var attributePropertyName = netAttibutes.FirstOrDefault(c => c.UDTPropertyName == prop.Name)?.NetPropertyName;
+                var presetNetPropertyName = presetProperties.FirstOrDefault(c => string.Equals(c.UDTPropertyName, prop.Name, StringComparison.InvariantCultureIgnoreCase))?.NetPropertyName;
+                var attributePropertyName = netAttibutes.FirstOrDefault(c => string.Equals(c.UDTPropertyName, prop.Name, StringComparison.InvariantCultureIgnoreCase))?.NetPropertyName;
 
                 if (!string.IsNullOrWhiteSpace(attributePropertyName))
                 {
-                    netProperty = netProperties.FirstOrDefault(c => c.Name.ToUpper() == attributePropertyName);
+                    netProperty = netProperties.FirstOrDefault(c => string.Equals(c.Name, attributePropertyName, StringComparison.InvariantCultureIgnoreCase));
                 }
                 else if (!string.IsNullOrWhiteSpace(presetNetPropertyName))
                 {
-                    netProperty = netProperties.FirstOrDefault(c => c.Name.ToUpper() == presetNetPropertyName);
+                    netProperty = netProperties.FirstOrDefault(c => string.Equals(c.Name, presetNetPropertyName, StringComparison.InvariantCultureIgnoreCase));
                 }
                 else
                 {
