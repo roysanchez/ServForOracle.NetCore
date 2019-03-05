@@ -22,19 +22,11 @@ namespace ServForOracle.NetCore.Metadata
         private readonly Type Type;
         internal readonly MetadataOracleNetTypeDefinition OracleTypeNetMetadata;
 
-        public MetadataOracleObject(ServForOracleCache cache, MetadataOracleTypeDefinition metadataOracleType, UdtPropertyNetPropertyMap[] customProperties, bool fuzzyNameMatch)
+        public MetadataOracleObject(MetadataOracleNetTypeDefinition oracleNetTypeDefinition)
         {
+            OracleTypeNetMetadata = oracleNetTypeDefinition ?? throw new ArgumentNullException(nameof(oracleNetTypeDefinition));
             Type = typeof(T);
-            if (Type.IsCollection())
-            {
-                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(cache, Type.GetCollectionUnderType(), metadataOracleType, customProperties, fuzzyNameMatch);
-            }
-            else
-            {
-                OracleTypeNetMetadata = new MetadataOracleNetTypeDefinition(cache, Type, metadataOracleType, customProperties, fuzzyNameMatch);
-            }
-
-            ConstructorString = GenerateConstructor(metadataOracleType.UDTInfo.FullObjectName, metadataOracleType.Properties.ToArray());
+            ConstructorString = GenerateConstructor(OracleTypeNetMetadata.UDTInfo.FullObjectName, OracleTypeNetMetadata.Properties.ToArray());
         }
 
         private string GenerateConstructor(string objectName, MetadataOracleTypePropertyDefinition[] properties)
