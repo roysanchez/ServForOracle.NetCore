@@ -81,7 +81,8 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal async Task GetMetadataOracleObjectAsync_FindsInCache(OracleUdtInfo info, MetadataOracleTypeDefinition typeDefinition, UdtPropertyNetPropertyMap[] properties)
         {
-            var metadata = new MetadataOracleObject<TestRoy>(cacheMoq.Object, typeDefinition, properties, fuzzyNameMatch: true);
+            var typedef = new MetadataOracleNetTypeDefinition(cacheMoq.Object, typeof(TestRoy), typeDefinition, properties, fuzzyNameMatch: true);
+            var metadata = new MetadataOracleObject<TestRoy>(typedef);
 
             cacheMoq.Setup(c => c.GetMetadata(typeof(TestRoy).FullName))
                 .Returns(metadata)
@@ -468,7 +469,8 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void GetMetadataOracleObject_FindsInCache(OracleUdtInfo info, MetadataOracleTypeDefinition typeDefinition, UdtPropertyNetPropertyMap[] properties)
         {
-            var metadata = new MetadataOracleObject<TestRoy>(cacheMoq.Object, typeDefinition, properties, fuzzyNameMatch: true);
+            var typedef = new MetadataOracleNetTypeDefinition(cacheMoq.Object, typeof(TestRoy), typeDefinition, properties, fuzzyNameMatch: true);
+            var metadata = new MetadataOracleObject<TestRoy>(typedef);
 
             cacheMoq.Setup(c => c.GetMetadata(typeof(TestRoy).FullName))
                 .Returns(metadata)
