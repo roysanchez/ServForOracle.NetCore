@@ -24,12 +24,13 @@ namespace ServForOracle.NetCore.UnitTests
 
         public ServForOracleCacheTests()
         {
-            ResetStaticCacheField();
+            
         }
 
         [Fact]
         public void Create_NullCache_ThrowsInvalidArgument()
         {
+            ResetStaticCacheField();
             Assert.Throws<ArgumentNullException>("memoryCache", () => ServForOracleCache.Create(null));
         }
 
@@ -43,6 +44,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void Create_IsSingleton(IMemoryCache memoryCache, IMemoryCache memoryCache2)
         {
+            ResetStaticCacheField();
             var cache1 = ServForOracleCache.Create(memoryCache);
             var cache2 = ServForOracleCache.Create(memoryCache2);
 
@@ -54,6 +56,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void CreateSaveUdtInfo_CreatesEntryInCache(Mock<IMemoryCache> memoryCache, Mock<ICacheEntry> entry, string name, OracleUdtInfo info, UdtPropertyNetPropertyMap[] props, bool fuzzyNameMatch)
         {
+            ResetStaticCacheField();
             var cache = ServForOracleCache.Create(memoryCache.Object);
 
             memoryCache.Setup(m => m.CreateEntry($"udt-{name}")).Returns(entry.Object);
@@ -68,6 +71,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void GetOtherUdtInfo_GetsEntryInCache(Mock<IMemoryCache> memoryCache, string name, OracleUdtInfo info, UdtPropertyNetPropertyMap[] props, bool fuzzyNameMatch)
         {
+            ResetStaticCacheField();
             var cache = ServForOracleCache.Create(memoryCache.Object);
 
             var expectedValue = (info, props, fuzzyNameMatch);
@@ -83,6 +87,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void GetOtherUdtInfo_GetsEntryNotInCache_ReturnsDefault(Mock<IMemoryCache> memoryCache, string name)
         {
+            ResetStaticCacheField();
             var cache = ServForOracleCache.Create(memoryCache.Object);
 
             (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool FuzzyMatch) expectedValue = default;
@@ -98,6 +103,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void PresetGetValueOrDefault_IsCollection(Mock<Type> typeMock, Mock<Type> type, Mock<IMemoryCache> memoryMock, OracleUdtInfo info, UdtPropertyNetPropertyMap[] props, bool fuzzyNameMatch, string fullName)
         {
+            ResetStaticCacheField();
             var expectedValue = (info, props, fuzzyNameMatch);
             object validParameter = expectedValue;
 
@@ -117,6 +123,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void PresetGetValueOrDefault_IsCollection_Default(Mock<Type> typeMock, Mock<Type> type, Mock<IMemoryCache> memoryMock, string fullName)
         {
+            ResetStaticCacheField();
             (OracleUdtInfo Info, UdtPropertyNetPropertyMap[] Props, bool FuzzyMatch) expectedValue = default;
             object validParameter = null;
 
@@ -136,6 +143,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void PresetGetValueOrDefault_IsObject(Mock<IMemoryCache> memoryMock, OracleUdtInfo info, UdtPropertyNetPropertyMap[] props, bool fuzzyNameMatch)
         {
+            ResetStaticCacheField();
             var expectedValue = (info, props, fuzzyNameMatch);
             object validParameter = expectedValue;
             var type = typeof(TestClass);
@@ -154,6 +162,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void PresetGetValueOrDefault_IsObject_Default(Mock<IMemoryCache> memoryMock, OracleUdtInfo info, UdtPropertyNetPropertyMap[] props, bool fuzzyNameMatch)
         {
+            ResetStaticCacheField();
             var expectedValue = (info, props, fuzzyNameMatch);
             object validParameter = expectedValue;
             var type = typeof(TestClass);
@@ -170,6 +179,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void AddOracleUDTPresets_CreatesEntryInCache(Mock<IMemoryCache> memoryCache, Mock<ICacheEntry> entry, Mock<Type> type, string fullName, OracleUdtInfo info, UdtPropertyNetPropertyMap[] props, bool fuzzyNameMatch)
         {
+            ResetStaticCacheField();
             var cache = ServForOracleCache.Create(memoryCache.Object);
 
             memoryCache.Setup(m => m.CreateEntry($"udt-{fullName}")).Returns(entry.Object);
@@ -185,6 +195,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void GetMetadata_ExistsInCache(MetadataOracle metadata, string name, Mock<IMemoryCache> memoryCache)
         {
+            ResetStaticCacheField();
             object validParameter = metadata;
             memoryCache.Setup(m => m.TryGetValue($"metadata-{name}", out validParameter)).Returns(true);
 
@@ -198,6 +209,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void GetMetadata_DoesNoExistsInCache_ReturnsDefault(string name, Mock<IMemoryCache> memoryCache)
         {
+            ResetStaticCacheField();
             object validParameter = null;
             MetadataOracle metadata = default;
 
@@ -213,6 +225,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void SaveMetadata_CreatesEntryInCache(Mock<IMemoryCache> memoryCache, Mock<ICacheEntry> entry, string name, MetadataOracle metadata)
         {
+            ResetStaticCacheField();
             var cache = ServForOracleCache.Create(memoryCache.Object);
 
             memoryCache.Setup(m => m.CreateEntry($"metadata-{name}")).Returns(entry.Object);
@@ -227,6 +240,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void SaveTypeDefinition_CreatesEntryInCache(Mock<IMemoryCache> memoryCache, Mock<ICacheEntry> entry, MetadataOracleTypeDefinition definition)
         {
+            ResetStaticCacheField();
             var cache = ServForOracleCache.Create(memoryCache.Object);
 
             memoryCache.Setup(m => m.CreateEntry($"def-{definition.UDTInfo.FullObjectName}")).Returns(entry.Object);
@@ -241,6 +255,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void GetTypeDefinition_ExistsInCache(Mock<IMemoryCache> memoryCache, MetadataOracleTypeDefinition definition)
         {
+            ResetStaticCacheField();
             object validParameter = definition;
 
             memoryCache.Setup(m => m.TryGetValue($"def-{definition.UDTInfo.FullObjectName}", out validParameter)).Returns(true);
@@ -255,6 +270,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void GetTypeDefinition_DoesNotExistsInCache_ReturnsDefault(Mock<IMemoryCache> memoryCache, string name)
         {
+            ResetStaticCacheField();
             object validParameter = null;
             MetadataOracleTypeDefinition definition = default;
 
@@ -270,6 +286,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void GetUdtInfoFromAttributeOrPresetCache_FromAttribute_IsCollection(IMemoryCache memory, Mock<Type> colTypeMock, string schema, string objectName, string collectionSchema, string collectionName)
         {
+            ResetStaticCacheField();
             colTypeMock.SetReturnsDefault(true);
             
             var type = udtInfoAttributeTests.GetTypeWithAttribute(schema, objectName, collectionSchema, collectionName);
@@ -290,6 +307,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void GetUdtInfoFromAttributeOrPresetCache_FromCache_IsCollection(Mock<IMemoryCache> memoryMock, Type type, OracleUdtInfo info)
         {
+            ResetStaticCacheField();
             var colType = type.CreateListType();
 
             (OracleUdtInfo Info, UdtPropertyNetPropertyMap[], bool) expectedValue = (info, default, default);
@@ -310,6 +328,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void GetUdtInfoFromAttributeOrPresetCache_FromCache_IsObject(Mock<IMemoryCache> memoryMock, Type type, OracleUdtInfo info)
         {
+            ResetStaticCacheField();
             (OracleUdtInfo Info, UdtPropertyNetPropertyMap[], bool) expectedValue = (info, default, default);
             object validParameter = expectedValue;
 
@@ -327,6 +346,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void GetUdtInfoFromAttributeOrPresetCache_FromAttribute_IsObject(IMemoryCache memory, string schema, string objectName, string collectionSchema, string collectionName)
         {
+            ResetStaticCacheField();
             var type = udtInfoAttributeTests.GetTypeWithAttribute(schema, objectName, collectionSchema, collectionName);
 
             var cache = ServForOracleCache.Create(memory);
