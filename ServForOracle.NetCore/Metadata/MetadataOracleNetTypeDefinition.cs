@@ -16,8 +16,7 @@ namespace ServForOracle.NetCore.Metadata
         private readonly Regex Regex = new Regex(Regex.Escape("_"));
         private readonly ServForOracleCache Cache;
 
-        public MetadataOracleNetTypeDefinition(ServForOracleCache cache, Type type, MetadataOracleTypeDefinition baseMetadataDefinition,
-           UdtPropertyNetPropertyMap[] presetProperties, bool fuzzyNameMatch)
+        public MetadataOracleNetTypeDefinition(ServForOracleCache cache, Type type, MetadataOracleTypeDefinition baseMetadataDefinition, UdtPropertyNetPropertyMap[] presetProperties, bool fuzzyNameMatch)
         {
             if (baseMetadataDefinition == null)
             {
