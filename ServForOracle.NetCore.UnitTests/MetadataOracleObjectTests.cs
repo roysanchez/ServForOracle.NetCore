@@ -87,7 +87,7 @@ namespace ServForOracle.NetCore.UnitTests
             var (constructor, lastNumber) = metadata.BuildQueryConstructorString(model, name, startNumber);
 
             Assert.NotNull(constructor);
-            var expectedConstructor = $"{name} := {metadataOracleType.UDTInfo.FullObjectName}({string.Join(',', metadataOracleType.Properties.OrderBy(c => c.Order).Select(c => $"{c.Name}=>null"))});\r\n";
+            var expectedConstructor = $"{name} := {metadataOracleType.UDTInfo.FullObjectName}({string.Join(',', metadataOracleType.Properties.OrderBy(c => c.Order).Select(c => $"{c.Name}=>null"))});"+ Environment.NewLine;
             Assert.Equal(expectedConstructor, constructor);
             Assert.Equal(startNumber, lastNumber);
         }
@@ -106,7 +106,7 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.NotNull(constructor);
             var expectedConstructor = $"{name} := {metadataOracleType.UDTInfo.FullObjectName}({prop.Name}=>:{startNumber++},"
                 +
-                $"{string.Join(',', metadataOracleType.Properties.OrderBy(c => c.Order).Where(c => c.Name != prop.Name).Select(c => $"{c.Name}=>null"))});\r\n";
+                $"{string.Join(',', metadataOracleType.Properties.OrderBy(c => c.Order).Where(c => c.Name != prop.Name).Select(c => $"{c.Name}=>null"))});" + Environment.NewLine;
             Assert.Equal(expectedConstructor, constructor);
             Assert.Equal(startNumber, lastNumber);
         }
@@ -127,7 +127,7 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.NotNull(constructor);
             var expectedConstructor = $"{name} := {metadataOracleType.UDTInfo.FullObjectName}({prop.Name}=>:{startNumber++},"
                 +
-                $"{string.Join(',', metadataOracleType.Properties.OrderBy(c => c.Order).Where(c => c.Name != prop.Name).Select(c => $"{c.Name}=>null"))});\r\n";
+                $"{string.Join(',', metadataOracleType.Properties.OrderBy(c => c.Order).Where(c => c.Name != prop.Name).Select(c => $"{c.Name}=>null"))});"+ Environment.NewLine;
             Assert.Equal(expectedConstructor, constructor);
             Assert.Equal(startNumber, lastNumber);
         }
