@@ -21,6 +21,11 @@ namespace ServForOracle.NetCore.UnitTests
             public string Prop1 { get; set; }
         }
 
+        public class ArrayTestClass
+        {
+            public string[] Prop1 { get; set; }
+        }
+
         private void CompareOracleTypeNetMetadata(MetadataOracleTypePropertyDefinition[] expected, MetadataOraclePropertyNetTypeDefinition[] actual)
         {
             Assert.NotEmpty(actual);
@@ -87,7 +92,7 @@ namespace ServForOracle.NetCore.UnitTests
             var (constructor, lastNumber) = metadata.BuildQueryConstructorString(model, name, startNumber);
 
             Assert.NotNull(constructor);
-            var expectedConstructor = $"{name} := {metadataOracleType.UDTInfo.FullObjectName}({string.Join(',', metadataOracleType.Properties.OrderBy(c => c.Order).Select(c => $"{c.Name}=>null"))});"+ Environment.NewLine;
+            var expectedConstructor = $"{name} := {metadataOracleType.UDTInfo.FullObjectName}({string.Join(',', metadataOracleType.Properties.OrderBy(c => c.Order).Select(c => $"{c.Name}=>null"))});" + Environment.NewLine;
             Assert.Equal(expectedConstructor, constructor);
             Assert.Equal(startNumber, lastNumber);
         }
@@ -112,23 +117,61 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal void BuildQueryConstructorString_Object_SimpleNetProperty_WithMetadata(ServForOracleCache cache, MetadataOracleTypeDefinition metadataOracleType, UdtPropertyNetPropertyMap[] customProperties, bool fuzzyNameMatch, SimpleTestClass model, string name, int startNumber)
+        internal void BuildQueryConstructorString_Object_SimpleNetProperty_WithMetadata(MetadataOracleNetTypeDefinition typedef, MetadataOracleNetTypeDefinition metTypeDef, SimpleTestClass model, string name, int startNumber)
         {
-            var prop = metadataOracleType.Properties.OrderBy(c => c.Order).First();
-            
+            var prop = typedef.Properties.OrderBy(c => c.Order).First();
+            prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
+            prop.PropertyMetadata = metTypeDef;
 
-            customProperties[0] = new UdtPropertyNetPropertyMap(nameof(SimpleTestClass.Prop1), prop.Name);
-
-            var typedef = new MetadataOracleNetTypeDefinition(cache, typeof(SimpleTestClass), metadataOracleType, customProperties, fuzzyNameMatch);
             var metadata = new MetadataOracleObject<SimpleTestClass>(typedef);
 
             var (constructor, lastNumber) = metadata.BuildQueryConstructorString(model, name, startNumber);
 
             Assert.NotNull(constructor);
-            var expectedConstructor = $"{name} := {metadataOracleType.UDTInfo.FullObjectName}({prop.Name}=>:{startNumber++},"
-                +
-                $"{string.Join(',', metadataOracleType.Properties.OrderBy(c => c.Order).Where(c => c.Name != prop.Name).Select(c => $"{c.Name}=>null"))});"+ Environment.NewLine;
+            var expectedConstructor = new StringBuilder();
+            expectedConstructor.AppendLine($"{name}_0 := {metTypeDef.UDTInfo.FullObjectName}({string.Join(',', metTypeDef.Properties.OrderBy(c => c.Order).Select(c => $"{c.Name}=>null"))});");
+
+            expectedConstructor.Append($"{name} := {typedef.UDTInfo.FullObjectName}({prop.Name}=>{name}_0,");
+            expectedConstructor.Append(string.Join(',', typedef.Properties.OrderBy(c => c.Order).Where(c => c.Name != prop.Name).Select(c => $"{c.Name}=>null")));
+            expectedConstructor.AppendLine(");");
+            Assert.Equal(expectedConstructor.ToString(), constructor);
+            Assert.Equal(startNumber, lastNumber);
+        }
+
+        [Theory, CustomAutoData]
+        internal void BuildQueryConstructorString_Object_SimpleNetProperty_NullPropertyValue(MetadataOracleNetTypeDefinition typedef, string name, int startNumber)
+        {
+            var prop = typedef.Properties.OrderBy(c => c.Order).First();
+            prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
+
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef);
+
+            var (constructor, lastNumber) = metadata.BuildQueryConstructorString(new SimpleTestClass(), name, startNumber);
+
+            Assert.NotNull(constructor);
+            var expectedConstructor = $"{name} := {typedef.UDTInfo.FullObjectName}({string.Join(',', typedef.Properties.OrderBy(c => c.Order).Select(c => $"{c.Name}=>null"))});" + Environment.NewLine;
             Assert.Equal(expectedConstructor, constructor);
+            Assert.Equal(startNumber, lastNumber);
+        }
+
+        [Theory, CustomAutoData]
+        internal void BuildQueryConstructorString_Array(MetadataOracleNetTypeDefinition typedef, SimpleTestClass[] model, string name, int startNumber)
+        {
+            var metadata = new MetadataOracleObject<SimpleTestClass[]>(typedef);
+
+            var (constructor, lastNumber) = metadata.BuildQueryConstructorString(model, name, startNumber);
+
+            Assert.NotNull(constructor);
+            var expectedConstructor = new StringBuilder();
+            for (var i = 0; i < model.Length; i++)
+            {
+                expectedConstructor.AppendLine($"{name}.extend;");
+                expectedConstructor.Append($"{name}({name}.last) := {typedef.UDTInfo.FullObjectName}(");
+                expectedConstructor.Append(string.Join(',', typedef.Properties.OrderBy(c => c.Order).Select(c => $"{c.Name}=>null")));
+                expectedConstructor.AppendLine(");");
+            }
+
+            Assert.Equal(expectedConstructor.ToString(), constructor);
             Assert.Equal(startNumber, lastNumber);
         }
     }

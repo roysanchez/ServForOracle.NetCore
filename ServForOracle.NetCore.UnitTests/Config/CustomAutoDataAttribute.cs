@@ -1,6 +1,8 @@
 ﻿using AutoFixture;
 using AutoFixture.AutoMoq;
 using AutoFixture.Xunit2;
+using ServForOracle.NetCore.Cache;
+using ServForOracle.NetCore.Metadata;
 using ServForOracle.NetCore.OracleAbstracts;
 using System;
 using System.Collections.Generic;
@@ -38,6 +40,11 @@ namespace ServForOracle.NetCore.UnitTests.Config
 
                 var newType = typeDef.CreateType();
                 return newType;
+            });
+
+            fixture.Register<ServForOracleCache, Type, MetadataOracleTypeDefinition, UdtPropertyNetPropertyMap[], MetadataOracleNetTypeDefinition>((cache, type, typedef, propMap) =>
+            {
+                return new MetadataOracleNetTypeDefinition(cache, type, typedef, propMap, true);
             });
         }
     }
