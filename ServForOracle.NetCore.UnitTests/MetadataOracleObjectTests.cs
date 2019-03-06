@@ -318,6 +318,43 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.Equal($"open :{startNumber} for select 1 dummy{Environment.NewLine} from dual;", actual);
         }
 
+        [Theory, CustomAutoData]
+        internal void GetRefCursorQuery_NetProperty_ReturnsRootQuery(MetadataOracleNetTypeDefinition typedef, int startNumber, string fieldName)
+        {
+            var prop = typedef.Properties.OrderBy(c => c.Order).First();
+            prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
+
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef);
+
+            var actual = metadata.GetRefCursorQuery(startNumber, fieldName);
+
+            Assert.NotNull(actual);
+            Assert.Equal($"open :{startNumber} for select value({fieldName}).{prop.Name} {prop.NETProperty.Name}{Environment.NewLine} from dual;", actual);
+        }
+
+        [Theory, CustomAutoData]
+        internal void GetRefCursorQuery_WithMetadata_ReturnsXMLElement(MetadataOracleNetTypeDefinition typedef, MetadataOracleNetTypeDefinition metaTypeProp, int startNumber, string fieldName)
+        {
+            var prop = typedef.Properties.OrderBy(c => c.Order).First();
+            prop.NETProperty = typeof(ComplexTestClass).GetProperty(nameof(ComplexTestClass.ObjectProp));
+            prop.PropertyMetadata = metaTypeProp;
+
+            var subProp = metaTypeProp.Properties.OrderBy(c => c.Order).First();
+            subProp.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
+
+            var metadata = new MetadataOracleObject<ComplexTestClass>(typedef);
+
+            var actual = metadata.GetRefCursorQuery(startNumber, fieldName);
+
+            Assert.NotNull(actual);
+
+            var expected = $"open :{startNumber} for select (select xmlelement( \"{prop.NETProperty.Name}\", xmlconcat( "
+                + $"XmlElement(\"{subProp.NETProperty.Name}\", value({fieldName}).{prop.Name}.{subProp.Name})) ) from dual) "
+                + $"{prop.NETProperty.Name}{Environment.NewLine} from dual;";
+
+            Assert.Equal(expected, actual);
+        }
+
 
         #endregion GetRefCursorQuery
     }
