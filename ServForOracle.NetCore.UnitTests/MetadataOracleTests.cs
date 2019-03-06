@@ -215,24 +215,6 @@ namespace ServForOracle.NetCore.UnitTests
             }
         }
 
-        //public static XmlTestClass FromXElement<T>(this XElement xElement)
-        //{
-        //    var xmlSerializer = new XmlSerializer(typeof(T));
-        //    return (T)xmlSerializer.Deserialize(xElement.CreateReader());
-        //}
-
-        public DateTime? Truncate(DateTime? dateTime)
-        {
-            if (!dateTime.HasValue) return null;
-            return Truncate(dateTime.Value);
-        }
-        public DateTime Truncate(DateTime dateTime)
-        {
-            var timeSpan = TimeSpan.FromSeconds(1);
-            if (dateTime == DateTime.MinValue || dateTime == DateTime.MaxValue) return dateTime;
-            return dateTime.AddTicks(-(dateTime.Ticks % timeSpan.Ticks));
-        }
-
         #region ConvertOracleParameterToBaseType
 
         [Fact]
@@ -407,8 +389,8 @@ namespace ServForOracle.NetCore.UnitTests
             var nul = new OracleDate();
 
 
-            Assert.Equal(Truncate(d1), metadata.ConvertOracleParameterToBaseType(d1.GetType(), new OracleParameter { Value = new OracleDate(d1) }));
-            Assert.Equal(Truncate(d2), metadata.ConvertOracleParameterToBaseType(d2.GetType(), new OracleParameter { Value = d2.HasValue ? new OracleDate(d2.Value.ToString("MM'/'dd'/'yyyy HH:mm:ss")) : nul }));
+            AssertExtensions.Equal(d1, metadata.ConvertOracleParameterToBaseType(d1.GetType(), new OracleParameter { Value = new OracleDate(d1) }), TimeSpan.FromSeconds(1));
+            AssertExtensions.Equal(d2, metadata.ConvertOracleParameterToBaseType(d2.GetType(), new OracleParameter { Value = d2.HasValue ? new OracleDate(d2.Value.ToString("MM'/'dd'/'yyyy HH:mm:ss")) : nul }), TimeSpan.FromSeconds(1));
         }
 
         [Theory, CustomAutoData]
@@ -500,8 +482,8 @@ namespace ServForOracle.NetCore.UnitTests
             var metadata = new MetadataOracle();
             var nul = new OracleTimeStamp();
 
-            Assert.Equal(d1, metadata.ConvertOracleParameterToBaseType(d1.GetType(), new OracleParameter { Value = new OracleTimeStamp(d1) }));
-            Assert.Equal(d2, metadata.ConvertOracleParameterToBaseType(d2.GetType(), new OracleParameter { Value = d2.HasValue ? new OracleTimeStamp(d2.Value.ToString("MM'/'dd'/'yyyy HH:mm:ss.fffffff")) : nul }));
+            AssertExtensions.Equal(d1, metadata.ConvertOracleParameterToBaseType(d1.GetType(), new OracleParameter { Value = new OracleTimeStamp(d1) }), TimeSpan.FromMilliseconds(1));
+            AssertExtensions.Equal(d2, metadata.ConvertOracleParameterToBaseType(d2.GetType(), new OracleParameter { Value = d2.HasValue ? new OracleTimeStamp(d2.Value.ToString("MM'/'dd'/'yyyy HH:mm:ss.fffffff")) : nul }), TimeSpan.FromMilliseconds(1));
         }
 
         [Fact]
@@ -541,8 +523,8 @@ namespace ServForOracle.NetCore.UnitTests
             var metadata = new MetadataOracle();
             var nul = new OracleTimeStampLTZ();
 
-            Assert.Equal(d1, metadata.ConvertOracleParameterToBaseType(d1.GetType(), new OracleParameter { Value = new OracleTimeStamp(d1) }));
-            Assert.Equal(d2, metadata.ConvertOracleParameterToBaseType(d2.GetType(), new OracleParameter { Value = d2.HasValue ? new OracleTimeStampLTZ(d2.Value.ToString("MM'/'dd'/'yyyy HH:mm:ss.fffffff")) : nul }));
+            AssertExtensions.Equal(d1, metadata.ConvertOracleParameterToBaseType(d1.GetType(), new OracleParameter { Value = new OracleTimeStamp(d1) }), TimeSpan.FromMilliseconds(1));
+            AssertExtensions.Equal(d2, metadata.ConvertOracleParameterToBaseType(d2.GetType(), new OracleParameter { Value = d2.HasValue ? new OracleTimeStampLTZ(d2.Value.ToString("MM'/'dd'/'yyyy HH:mm:ss.fffffff")) : nul }), TimeSpan.FromMilliseconds(1));
         }
 
         [Fact]
@@ -582,8 +564,8 @@ namespace ServForOracle.NetCore.UnitTests
             var metadata = new MetadataOracle();
             var nul = new OracleTimeStampTZ();
 
-            Assert.Equal(d1, metadata.ConvertOracleParameterToBaseType(d1.GetType(), new OracleParameter { Value = new OracleTimeStamp(d1) }));
-            Assert.Equal(d2, metadata.ConvertOracleParameterToBaseType(d2.GetType(), new OracleParameter { Value = d2.HasValue ? new OracleTimeStampTZ(d2.Value.ToString("MM'/'dd'/'yyyy HH:mm:ss.fffffff")) : nul }));
+            AssertExtensions.Equal(d1, metadata.ConvertOracleParameterToBaseType(d1.GetType(), new OracleParameter { Value = new OracleTimeStamp(d1) }), TimeSpan.FromMilliseconds(1));
+            AssertExtensions.Equal(d2, metadata.ConvertOracleParameterToBaseType(d2.GetType(), new OracleParameter { Value = d2.HasValue ? new OracleTimeStampTZ(d2.Value.ToString("MM'/'dd'/'yyyy HH:mm:ss.fffffff")) : nul }), TimeSpan.FromMilliseconds(1));
         }
 
         [Fact]
