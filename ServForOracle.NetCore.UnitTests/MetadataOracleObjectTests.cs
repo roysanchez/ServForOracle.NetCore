@@ -13,6 +13,8 @@ namespace ServForOracle.NetCore.UnitTests
 {
     public class MetadataOracleObjectTests
     {
+        #region Test classes
+
         public class TestClass
         {
         }
@@ -44,6 +46,8 @@ namespace ServForOracle.NetCore.UnitTests
             //public string[] Prop1 { get; set; }
             public SimpleTestClass[] Prop2 { get; set; }
         }
+
+        #endregion Test classes
 
         private void CompareOracleTypeNetMetadata(MetadataOracleTypePropertyDefinition[] expected, MetadataOraclePropertyNetTypeDefinition[] actual)
         {
@@ -274,7 +278,7 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.NotNull(actual);
             Assert.All(actual, c => Assert.Equal(ParameterDirection.Input, c.Direction));
 
-            Assert.Collection(actual, 
+            Assert.Collection(actual,
                 (c) =>
                 {
                     Assert.Equal($":{startNumber++}", c.ParameterName);
@@ -333,6 +337,27 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
+        internal void GetRefCursorQuery_NetProperty_MultipleProperties(MetadataOracleNetTypeDefinition typedef, int startNumber, string fieldName)
+        {
+            var prop = typedef.Properties.OrderBy(c => c.Order).First();
+            prop.NETProperty = typeof(MultiplePropertiesTestClass).GetProperty(nameof(MultiplePropertiesTestClass.Prop1));
+
+            var anotherProp = typedef.Properties.Where(c => c != prop).OrderBy(c => c.Order).First();
+            anotherProp.NETProperty = typeof(MultiplePropertiesTestClass).GetProperty(nameof(MultiplePropertiesTestClass.Prop2));
+
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef);
+
+            var actual = metadata.GetRefCursorQuery(startNumber, fieldName);
+
+            Assert.NotNull(actual);
+            var expected = $"open :{startNumber} for select value({fieldName}).{prop.Name} {prop.NETProperty.Name},"
+                + Environment.NewLine
+                + $"value({fieldName}).{anotherProp.Name} {anotherProp.NETProperty.Name}"
+                + $"{Environment.NewLine} from dual;";
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory, CustomAutoData]
         internal void GetRefCursorQuery_WithMetadata_ReturnsXMLElement(MetadataOracleNetTypeDefinition typedef, MetadataOracleNetTypeDefinition metaTypeProp, int startNumber, string fieldName)
         {
             var prop = typedef.Properties.OrderBy(c => c.Order).First();
@@ -355,6 +380,71 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.Equal(expected, actual);
         }
 
+        [Theory, CustomAutoData]
+        internal void GetRefCursorQuery_WithMetadata_CollectionProperty_ReturnsXMLElement(MetadataOracleNetTypeDefinition typedef, MetadataOracleNetTypeDefinition metaTypeProp, int startNumber, string fieldName)
+        {
+            var prop = typedef.Properties.OrderBy(c => c.Order).First();
+            prop.NETProperty = typeof(CollectionPropertyTestClass).GetProperty(nameof(CollectionPropertyTestClass.Prop2));
+            prop.PropertyMetadata = metaTypeProp;
+
+            var subProp = metaTypeProp.Properties.OrderBy(c => c.Order).First();
+            subProp.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
+
+            var metadata = new MetadataOracleObject<CollectionPropertyTestClass>(typedef);
+
+            var actual = metadata.GetRefCursorQuery(startNumber, fieldName);
+
+            Assert.NotNull(actual);
+
+            var expected = $"open :{startNumber} for select (select xmlelement( \"{prop.NETProperty.Name}\", xmlagg( xmlconcat( xmlelement( \"{prop.NETProperty.Name}\", "
+                + $"XmlElement(\"{subProp.NETProperty.Name}\", d1.{subProp.Name})"
+                + $") ) ) ) from table(value({fieldName}).{prop.Name}) d1)"
+                + $" {prop.Name}{Environment.NewLine} from dual;";
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory, CustomAutoData]
+        internal void GetRefCursorQuery_WithMetadata_Array_ReturnsXMLElement_WithDummy(MetadataOracleNetTypeDefinition typedef, MetadataOracleNetTypeDefinition metaTypeProp, int startNumber, string fieldName)
+        {
+            var prop = typedef.Properties.OrderBy(c => c.Order).First();
+            prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
+            prop.PropertyMetadata = metaTypeProp;
+
+            var metadata = new MetadataOracleObject<SimpleTestClass[]>(typedef);
+
+            var actual = metadata.GetRefCursorQuery(startNumber, fieldName);
+
+            Assert.NotNull(actual);
+
+            var expected = $"open :{startNumber} for select (select xmlelement( \"{prop.NETProperty.Name}\", xmlconcat( 1 dummy) "
+                + $") from dual) {prop.NETProperty.Name}{Environment.NewLine} from table({fieldName}) c;";
+
+            Assert.Equal(expected, actual);
+        }
+
+        [Theory, CustomAutoData]
+        internal void GetRefCursorQuery_WithMetadata_Array_ReturnsXMLElement(MetadataOracleNetTypeDefinition typedef, MetadataOracleNetTypeDefinition metaTypeProp, int startNumber, string fieldName)
+        {
+            var prop = typedef.Properties.OrderBy(c => c.Order).First();
+            prop.NETProperty = typeof(ComplexTestClass).GetProperty(nameof(ComplexTestClass.ObjectProp));
+            prop.PropertyMetadata = metaTypeProp;
+
+            var subProp = metaTypeProp.Properties.OrderBy(c => c.Order).First();
+            subProp.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
+
+            var metadata = new MetadataOracleObject<ComplexTestClass[]>(typedef);
+
+            var actual = metadata.GetRefCursorQuery(startNumber, fieldName);
+
+            Assert.NotNull(actual);
+
+            var expected = $"open :{startNumber} for select (select xmlelement( \"{prop.NETProperty.Name}\", "
+                + $"xmlconcat( XmlElement(\"{subProp.NETProperty.Name}\", value(c).{prop.Name}.{subProp.Name})) "
+                + $") from dual) {prop.NETProperty.Name}{Environment.NewLine} from table({fieldName}) c;";
+
+            Assert.Equal(expected, actual);
+        }
 
         #endregion GetRefCursorQuery
     }
