@@ -3,6 +3,7 @@ using Oracle.ManagedDataAccess.Types;
 using ServForOracle.NetCore.Extensions;
 using ServForOracle.NetCore.Metadata;
 using ServForOracle.NetCore.OracleAbstracts;
+using ServForOracle.NetCore.Wrapper;
 using System;
 using System.Data;
 using System.Threading.Tasks;
@@ -65,13 +66,13 @@ namespace ServForOracle.NetCore.Parameters
 
         internal override async Task SetOutputValueAsync(object value)
         {
-            Value = (T)(await Metadata.GetValueFromRefCursorAsync(Type, value as OracleRefCursor).ConfigureAwait(false));
+            Value = (T)(await Metadata.GetValueFromRefCursorAsync(Type, new OracleRefCursorWrapper(value as OracleRefCursor)).ConfigureAwait(false));
             base.Value = Value;
         }
 
         internal override void SetOutputValue(object value)
         {
-            Value = (T)Metadata.GetValueFromRefCursor(Type, value as OracleRefCursor);
+            Value = (T)Metadata.GetValueFromRefCursor(Type, new OracleRefCursorWrapper(value as OracleRefCursor));
             base.Value = Value;
         }
 

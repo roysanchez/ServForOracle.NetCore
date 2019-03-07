@@ -15,6 +15,7 @@ using ServForOracle.NetCore.OracleAbstracts;
 using System.Runtime.CompilerServices;
 using ServForOracle.NetCore.Cache;
 using Microsoft.Extensions.Logging;
+using ServForOracle.NetCore.Wrapper;
 
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 [assembly: InternalsVisibleTo("ServForOracle.NetCore.UnitTests")]
@@ -205,7 +206,7 @@ namespace ServForOracle.NetCore
             var returnType = typeof(T);
             if (!returnType.IsClrType() && returnMetadata is MetadataOracleObject<T> metadata)
             {
-                return (T)metadata.GetValueFromRefCursor(returnType, retOra.Value as OracleRefCursor);
+                return (T)metadata.GetValueFromRefCursor(returnType, new OracleRefCursorWrapper(retOra.Value as OracleRefCursor));
 
             }
             else if (returnMetadata is MetadataOracleBoolean metadataBoolean)

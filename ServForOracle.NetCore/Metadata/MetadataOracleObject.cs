@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Data;
 using ServForOracle.NetCore.OracleAbstracts;
 using ServForOracle.NetCore.Cache;
+using ServForOracle.NetCore.Wrapper;
 
 namespace ServForOracle.NetCore.Metadata
 {
@@ -247,7 +248,7 @@ namespace ServForOracle.NetCore.Metadata
             return query.ToString();
         }
 
-        private dynamic ReadObjectInstance(Type type, OracleDataReader reader, MetadataOracleNetTypeDefinition metadata, ref int count)
+        private dynamic ReadObjectInstance(Type type, IOracleDataReaderWrapper reader, MetadataOracleNetTypeDefinition metadata, ref int count)
         {
             var instance = type.CreateInstance();
             int nullCounter = 0;
@@ -335,7 +336,7 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        public override async Task<object> GetValueFromRefCursorAsync(Type type, OracleRefCursor refCursor)
+        public override async Task<object> GetValueFromRefCursorAsync(Type type, IOracleRefCursorWrapper refCursor)
         {
             dynamic instance = type.CreateInstance();
             int counter = 0;
@@ -363,7 +364,7 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        public override object GetValueFromRefCursor(Type type, OracleRefCursor refCursor)
+        public override object GetValueFromRefCursor(Type type, IOracleRefCursorWrapper refCursor)
         {
             dynamic instance = type.CreateInstance();
             int counter = 0;
@@ -399,8 +400,8 @@ namespace ServForOracle.NetCore.Metadata
 
     internal abstract class MetadataOracleObject : MetadataOracle
     {
-        public abstract Task<object> GetValueFromRefCursorAsync(Type type, OracleRefCursor refCursor);
-        public abstract object GetValueFromRefCursor(Type type, OracleRefCursor refCursor);
+        public abstract Task<object> GetValueFromRefCursorAsync(Type type, IOracleRefCursorWrapper refCursor);
+        public abstract object GetValueFromRefCursor(Type type, IOracleRefCursorWrapper refCursor);
         public abstract string GetRefCursorQuery(int startNumber, string fieldName);
     }
 }
