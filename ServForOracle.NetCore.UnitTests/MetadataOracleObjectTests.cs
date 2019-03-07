@@ -8,6 +8,9 @@ using System.Text;
 using Xunit;
 using ServForOracle.NetCore.Extensions;
 using System.Data;
+using System.Threading.Tasks;
+using ServForOracle.NetCore.Wrapper;
+using Moq;
 
 namespace ServForOracle.NetCore.UnitTests
 {
@@ -79,14 +82,14 @@ namespace ServForOracle.NetCore.UnitTests
         [Fact]
         internal void MetadataOracleObject_Constructor_NullParameter_ThrowsArgumentNull()
         {
-            Assert.Throws<ArgumentNullException>("oracleNetTypeDefinition", () => new MetadataOracleObject<TestClass>(null));
+            Assert.Throws<ArgumentNullException>("oracleNetTypeDefinition", () => new MetadataOracleObject<TestClass>(null, null));
         }
 
         [Theory, CustomAutoData]
         internal void MetadataOracleObject_Constructor_Object(ServForOracleCache cache, MetadataOracleTypeDefinition metadataOracleType, UdtPropertyNetPropertyMap[] customProperties, bool fuzzyNameMatch)
         {
             var typedef = new MetadataOracleNetTypeDefinition(cache, typeof(TestClass), metadataOracleType, customProperties, fuzzyNameMatch);
-            var metadata = new MetadataOracleObject<TestClass>(typedef);
+            var metadata = new MetadataOracleObject<TestClass>(typedef, new MetadataOracleCommon());
 
             Assert.NotNull(metadata);
             Assert.NotNull(metadata.OracleTypeNetMetadata);
@@ -99,7 +102,7 @@ namespace ServForOracle.NetCore.UnitTests
         internal void MetadataOracleObject_Constructor_Collection(ServForOracleCache cache, MetadataOracleTypeDefinition metadataOracleType, UdtPropertyNetPropertyMap[] customProperties, bool fuzzyNameMatch)
         {
             var typedef = new MetadataOracleNetTypeDefinition(cache, typeof(TestClass[]).GetCollectionUnderType(), metadataOracleType, customProperties, fuzzyNameMatch);
-            var metadata = new MetadataOracleObject<TestClass[]>(typedef);
+            var metadata = new MetadataOracleObject<TestClass[]>(typedef, new MetadataOracleCommon());
 
             Assert.NotNull(metadata);
             Assert.NotNull(metadata.OracleTypeNetMetadata);
@@ -116,7 +119,7 @@ namespace ServForOracle.NetCore.UnitTests
         internal void BuildQueryConstructorString_Object_NoMatch_AllPropertiesNull(ServForOracleCache cache, MetadataOracleTypeDefinition metadataOracleType, UdtPropertyNetPropertyMap[] customProperties, bool fuzzyNameMatch, TestClass model, string name, int startNumber)
         {
             var typedef = new MetadataOracleNetTypeDefinition(cache, typeof(TestClass), metadataOracleType, customProperties, fuzzyNameMatch);
-            var metadata = new MetadataOracleObject<TestClass>(typedef);
+            var metadata = new MetadataOracleObject<TestClass>(typedef, new MetadataOracleCommon());
 
             var (constructor, lastNumber) = metadata.BuildQueryConstructorString(model, name, startNumber);
 
@@ -133,7 +136,7 @@ namespace ServForOracle.NetCore.UnitTests
 
             customProperties[0] = new UdtPropertyNetPropertyMap(nameof(SimpleTestClass.Prop1), prop.Name);
             var typedef = new MetadataOracleNetTypeDefinition(cache, typeof(SimpleTestClass), metadataOracleType, customProperties, fuzzyNameMatch);
-            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef);
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, new MetadataOracleCommon());
 
             var (constructor, lastNumber) = metadata.BuildQueryConstructorString(model, name, startNumber);
 
@@ -152,7 +155,7 @@ namespace ServForOracle.NetCore.UnitTests
             prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
             prop.PropertyMetadata = metTypeDef;
 
-            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef);
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, new MetadataOracleCommon());
 
             var (constructor, lastNumber) = metadata.BuildQueryConstructorString(model, name, startNumber);
 
@@ -173,7 +176,7 @@ namespace ServForOracle.NetCore.UnitTests
             var prop = typedef.Properties.OrderBy(c => c.Order).First();
             prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
 
-            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef);
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, new MetadataOracleCommon());
 
             var (constructor, lastNumber) = metadata.BuildQueryConstructorString(new SimpleTestClass(), name, startNumber);
 
@@ -186,7 +189,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void BuildQueryConstructorString_Array(MetadataOracleNetTypeDefinition typedef, SimpleTestClass[] model, string name, int startNumber)
         {
-            var metadata = new MetadataOracleObject<SimpleTestClass[]>(typedef);
+            var metadata = new MetadataOracleObject<SimpleTestClass[]>(typedef, new MetadataOracleCommon());
 
             var (constructor, lastNumber) = metadata.BuildQueryConstructorString(model, name, startNumber);
 
@@ -211,7 +214,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void GetOracleParameters_Object_NoMatch_ReturnsEmpty(MetadataOracleNetTypeDefinition typedef, SimpleTestClass model, int startNumber)
         {
-            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef);
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, new MetadataOracleCommon());
 
             var actual = metadata.GetOracleParameters(model, startNumber);
 
@@ -225,7 +228,7 @@ namespace ServForOracle.NetCore.UnitTests
             var prop = typedef.Properties.OrderBy(c => c.Order).First();
             prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
 
-            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef);
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, new MetadataOracleCommon());
 
             var actual = metadata.GetOracleParameters(model, startNumber);
 
@@ -248,7 +251,7 @@ namespace ServForOracle.NetCore.UnitTests
             var subProp = metaTypeDef.Properties.OrderBy(c => c.Order).First();
             subProp.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
 
-            var metadata = new MetadataOracleObject<ComplexTestClass>(typedef);
+            var metadata = new MetadataOracleObject<ComplexTestClass>(typedef, new MetadataOracleCommon());
 
             var actual = metadata.GetOracleParameters(model, startNumber);
 
@@ -271,7 +274,7 @@ namespace ServForOracle.NetCore.UnitTests
             var subProp = metaTypeDef.Properties.OrderBy(c => c.Order).First();
             subProp.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
 
-            var metadata = new MetadataOracleObject<CollectionPropertyTestClass>(typedef);
+            var metadata = new MetadataOracleObject<CollectionPropertyTestClass>(typedef, new MetadataOracleCommon());
 
             var actual = metadata.GetOracleParameters(model, startNumber);
 
@@ -299,7 +302,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void GetOracleParameters_Array_NoMatch_ReturnsEmpty(MetadataOracleNetTypeDefinition typedef, SimpleTestClass[] model, int startNumber)
         {
-            var metadata = new MetadataOracleObject<SimpleTestClass[]>(typedef);
+            var metadata = new MetadataOracleObject<SimpleTestClass[]>(typedef, new MetadataOracleCommon());
 
             var actual = metadata.GetOracleParameters(model, startNumber);
 
@@ -314,7 +317,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         internal void GetRefCursorQuery_NoMetadata_ReturnsDummyQuery(MetadataOracleNetTypeDefinition typedef, int startNumber, string fieldName)
         {
-            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef);
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, new MetadataOracleCommon());
 
             var actual = metadata.GetRefCursorQuery(startNumber, fieldName);
 
@@ -328,7 +331,7 @@ namespace ServForOracle.NetCore.UnitTests
             var prop = typedef.Properties.OrderBy(c => c.Order).First();
             prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
 
-            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef);
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, new MetadataOracleCommon());
 
             var actual = metadata.GetRefCursorQuery(startNumber, fieldName);
 
@@ -345,7 +348,7 @@ namespace ServForOracle.NetCore.UnitTests
             var anotherProp = typedef.Properties.Where(c => c != prop).OrderBy(c => c.Order).First();
             anotherProp.NETProperty = typeof(MultiplePropertiesTestClass).GetProperty(nameof(MultiplePropertiesTestClass.Prop2));
 
-            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef);
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, new MetadataOracleCommon());
 
             var actual = metadata.GetRefCursorQuery(startNumber, fieldName);
 
@@ -367,7 +370,7 @@ namespace ServForOracle.NetCore.UnitTests
             var subProp = metaTypeProp.Properties.OrderBy(c => c.Order).First();
             subProp.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
 
-            var metadata = new MetadataOracleObject<ComplexTestClass>(typedef);
+            var metadata = new MetadataOracleObject<ComplexTestClass>(typedef, new MetadataOracleCommon());
 
             var actual = metadata.GetRefCursorQuery(startNumber, fieldName);
 
@@ -390,7 +393,7 @@ namespace ServForOracle.NetCore.UnitTests
             var subProp = metaTypeProp.Properties.OrderBy(c => c.Order).First();
             subProp.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
 
-            var metadata = new MetadataOracleObject<CollectionPropertyTestClass>(typedef);
+            var metadata = new MetadataOracleObject<CollectionPropertyTestClass>(typedef, new MetadataOracleCommon());
 
             var actual = metadata.GetRefCursorQuery(startNumber, fieldName);
 
@@ -411,7 +414,7 @@ namespace ServForOracle.NetCore.UnitTests
             prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
             prop.PropertyMetadata = metaTypeProp;
 
-            var metadata = new MetadataOracleObject<SimpleTestClass[]>(typedef);
+            var metadata = new MetadataOracleObject<SimpleTestClass[]>(typedef, new MetadataOracleCommon());
 
             var actual = metadata.GetRefCursorQuery(startNumber, fieldName);
 
@@ -433,7 +436,7 @@ namespace ServForOracle.NetCore.UnitTests
             var subProp = metaTypeProp.Properties.OrderBy(c => c.Order).First();
             subProp.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
 
-            var metadata = new MetadataOracleObject<ComplexTestClass[]>(typedef);
+            var metadata = new MetadataOracleObject<ComplexTestClass[]>(typedef, new MetadataOracleCommon());
 
             var actual = metadata.GetRefCursorQuery(startNumber, fieldName);
 
@@ -447,5 +450,27 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         #endregion GetRefCursorQuery
+
+        #region GetValueFromRefCursorAsync
+
+        [Theory, CustomAutoData]
+        internal async Task GetValueFromRefCursorAsync_Object(MetadataOracleNetTypeDefinition typedef, Mock<IOracleRefCursorWrapper> refCursorWrapper,
+            Mock<IOracleDataReaderWrapper> dataReaderWrapper)
+        {
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, new MetadataOracleCommon());
+
+            refCursorWrapper.Setup(r => r.GetDataReader()).Returns(dataReaderWrapper.Object);
+            dataReaderWrapper.SetupSequence(d => d.ReadAsync())
+                .ReturnsAsync(true)
+                .ReturnsAsync(false);
+
+            var result = await metadata.GetValueFromRefCursorAsync(typeof(SimpleTestClass), refCursorWrapper.Object);
+
+            Assert.NotNull(result);
+            var actual = Assert.IsType<SimpleTestClass>(result);
+            Assert.Null(actual.Prop1);
+        }
+
+        #endregion GetValueFromRefCursorAsync
     }
 }

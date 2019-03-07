@@ -82,7 +82,7 @@ namespace ServForOracle.NetCore.UnitTests
         internal async Task GetMetadataOracleObjectAsync_FindsInCache(OracleUdtInfo info, MetadataOracleTypeDefinition typeDefinition, UdtPropertyNetPropertyMap[] properties)
         {
             var typedef = new MetadataOracleNetTypeDefinition(cacheMoq.Object, typeof(TestRoy), typeDefinition, properties, fuzzyNameMatch: true);
-            var metadata = new MetadataOracleObject<TestRoy>(typedef);
+            var metadata = new MetadataOracleObject<TestRoy>(typedef, new MetadataOracleCommon());
 
             cacheMoq.Setup(c => c.GetMetadata(typeof(TestRoy).FullName))
                 .Returns(metadata)
@@ -118,9 +118,9 @@ namespace ServForOracle.NetCore.UnitTests
             cacheMoq.Setup(c => c.PresetGetValueOrDefault(typeof(TestRoy)))
                 .Returns(preset);
 
-            MetadataOracle metadata = null;
-            cacheMoq.Setup(c => c.SaveMetadata(typeof(TestRoy).FullName, It.IsAny<MetadataOracle>()))
-                .Callback((string n, object meta) => metadata = meta as MetadataOracle);
+            MetadataBase metadata = null;
+            cacheMoq.Setup(c => c.SaveMetadata(typeof(TestRoy).FullName, It.IsAny<MetadataBase>()))
+                .Callback((string n, object meta) => metadata = meta as MetadataBase);
 
             var builder = new MetadataBuilder(connectionMoq.Object, cacheMoq.Object, loggerMoq.Object);
 
@@ -183,9 +183,9 @@ namespace ServForOracle.NetCore.UnitTests
             cacheMoq.Setup(c => c.PresetGetValueOrDefault(superType)).Returns((null, propMap, FuzzyMatch: true));
             cacheMoq.Setup(c => c.PresetGetValueOrDefault(subtype)).Returns((null, subPropMap, FuzzyMatch: true));
 
-            MetadataOracle metadata = null;
-            cacheMoq.Setup(c => c.SaveMetadata(superType.FullName, It.IsAny<MetadataOracle>()))
-                .Callback((string n, object meta) => metadata = meta as MetadataOracle);
+            MetadataBase metadata = null;
+            cacheMoq.Setup(c => c.SaveMetadata(superType.FullName, It.IsAny<MetadataBase>()))
+                .Callback((string n, object meta) => metadata = meta as MetadataBase);
 
 
             subCmdMoq.Setup(c => c._ExecuteDbDataReaderAsync(It.IsAny<CommandBehavior>(), It.IsAny<CancellationToken>()))
@@ -276,9 +276,9 @@ namespace ServForOracle.NetCore.UnitTests
             cacheMoq.Setup(c => c.PresetGetValueOrDefault(superType)).Returns((null, propMap, FuzzyMatch: true));
             cacheMoq.Setup(c => c.PresetGetValueOrDefault(subtype)).Returns((null, subPropMap, FuzzyMatch: true));
 
-            MetadataOracle metadata = null;
-            cacheMoq.Setup(c => c.SaveMetadata(superType.FullName, It.IsAny<MetadataOracle>()))
-                .Callback((string n, object meta) => metadata = meta as MetadataOracle);
+            MetadataBase metadata = null;
+            cacheMoq.Setup(c => c.SaveMetadata(superType.FullName, It.IsAny<MetadataBase>()))
+                .Callback((string n, object meta) => metadata = meta as MetadataBase);
 
             collectionCmdMoq.Setup(c => c._ExecuteDbDataReaderAsync(It.IsAny<CommandBehavior>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(collectionReaderMoq.Object);
@@ -470,7 +470,7 @@ namespace ServForOracle.NetCore.UnitTests
         internal void GetMetadataOracleObject_FindsInCache(OracleUdtInfo info, MetadataOracleTypeDefinition typeDefinition, UdtPropertyNetPropertyMap[] properties)
         {
             var typedef = new MetadataOracleNetTypeDefinition(cacheMoq.Object, typeof(TestRoy), typeDefinition, properties, fuzzyNameMatch: true);
-            var metadata = new MetadataOracleObject<TestRoy>(typedef);
+            var metadata = new MetadataOracleObject<TestRoy>(typedef, new MetadataOracleCommon());
 
             cacheMoq.Setup(c => c.GetMetadata(typeof(TestRoy).FullName))
                 .Returns(metadata)
@@ -505,9 +505,9 @@ namespace ServForOracle.NetCore.UnitTests
             cacheMoq.Setup(c => c.PresetGetValueOrDefault(typeof(TestRoy)))
                 .Returns(preset);
 
-            MetadataOracle metadata = null;
-            cacheMoq.Setup(c => c.SaveMetadata(typeof(TestRoy).FullName, It.IsAny<MetadataOracle>()))
-                .Callback((string n, object meta) => metadata = meta as MetadataOracle);
+            MetadataBase metadata = null;
+            cacheMoq.Setup(c => c.SaveMetadata(typeof(TestRoy).FullName, It.IsAny<MetadataBase>()))
+                .Callback((string n, object meta) => metadata = meta as MetadataBase);
 
             var builder = new MetadataBuilder(connectionMoq.Object, cacheMoq.Object, loggerMoq.Object);
 
@@ -569,9 +569,9 @@ namespace ServForOracle.NetCore.UnitTests
             cacheMoq.Setup(c => c.PresetGetValueOrDefault(superType)).Returns((null, propMap, FuzzyMatch: true));
             cacheMoq.Setup(c => c.PresetGetValueOrDefault(subtype)).Returns((null, subPropMap, FuzzyMatch: true));
 
-            MetadataOracle metadata = null;
-            cacheMoq.Setup(c => c.SaveMetadata(superType.FullName, It.IsAny<MetadataOracle>()))
-                .Callback((string n, object meta) => metadata = meta as MetadataOracle);
+            MetadataBase metadata = null;
+            cacheMoq.Setup(c => c.SaveMetadata(superType.FullName, It.IsAny<MetadataBase>()))
+                .Callback((string n, object meta) => metadata = meta as MetadataBase);
 
 
             subCmdMoq.Setup(c => c._ExecuteDbDataReader(It.IsAny<CommandBehavior>()))
@@ -661,9 +661,9 @@ namespace ServForOracle.NetCore.UnitTests
             cacheMoq.Setup(c => c.PresetGetValueOrDefault(superType)).Returns((null, propMap, FuzzyMatch: true));
             cacheMoq.Setup(c => c.PresetGetValueOrDefault(subtype)).Returns((null, subPropMap, FuzzyMatch: true));
 
-            MetadataOracle metadata = null;
-            cacheMoq.Setup(c => c.SaveMetadata(superType.FullName, It.IsAny<MetadataOracle>()))
-                .Callback((string n, object meta) => metadata = meta as MetadataOracle);
+            MetadataBase metadata = null;
+            cacheMoq.Setup(c => c.SaveMetadata(superType.FullName, It.IsAny<MetadataBase>()))
+                .Callback((string n, object meta) => metadata = meta as MetadataBase);
 
             collectionCmdMoq.Setup(c => c._ExecuteDbDataReader(It.IsAny<CommandBehavior>()))
                 .Returns(collectionReaderMoq.Object);

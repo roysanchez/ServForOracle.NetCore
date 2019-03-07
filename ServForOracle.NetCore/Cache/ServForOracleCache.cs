@@ -66,13 +66,13 @@ namespace ServForOracle.NetCore.Cache
             SaveUdtInfo(type.FullName, info, props, fuzzyNameMatch);
         }
 
-        internal virtual MetadataOracle GetMetadata(string name)
+        internal virtual MetadataBase GetMetadata(string name)
         {
-            Cache.TryGetValue($"metadata-{name}", out MetadataOracle metadata);
+            Cache.TryGetValue($"metadata-{name}", out MetadataBase metadata);
             return metadata;
         }
 
-        internal virtual void SaveMetadata(string name, MetadataOracle metadata)
+        internal virtual void SaveMetadata(string name, MetadataBase metadata)
         {
             using (var entry = Cache.CreateEntry($"metadata-{name}"))
             {

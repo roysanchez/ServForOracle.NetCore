@@ -21,11 +21,13 @@ namespace ServForOracle.NetCore.Metadata
         private readonly Regex regex = new Regex(Regex.Escape("$"));
         private readonly string ConstructorString;
         private readonly Type Type;
+        private readonly MetadataOracleCommon _Common;
         internal readonly MetadataOracleNetTypeDefinition OracleTypeNetMetadata;
 
-        public MetadataOracleObject(MetadataOracleNetTypeDefinition oracleNetTypeDefinition)
+        public MetadataOracleObject(MetadataOracleNetTypeDefinition oracleNetTypeDefinition, MetadataOracleCommon common)
         {
             OracleTypeNetMetadata = oracleNetTypeDefinition ?? throw new ArgumentNullException(nameof(oracleNetTypeDefinition));
+            _Common = common ?? throw new ArgumentNullException(nameof(common));
             Type = typeof(T);
             ConstructorString = GenerateConstructor(OracleTypeNetMetadata.UDTInfo.FullObjectName, OracleTypeNetMetadata.Properties.ToArray());
         }
@@ -135,7 +137,7 @@ namespace ServForOracle.NetCore.Metadata
                 if (value != null && prop.NETProperty.GetValue(value) != null)
                 {
                     propertiesParameters.Add(
-                    GetOracleParameter(
+                    _Common.GetOracleParameter(
                         type: prop.NETProperty.PropertyType,
                         direction: ParameterDirection.Input,
                         name: $":{startNumber++}",
@@ -262,11 +264,11 @@ namespace ServForOracle.NetCore.Metadata
                 if (prop.PropertyMetadata != null)
                 {
                     subInstance = subType.CreateInstance();
-                    subInstance = GetValueFromOracleXML(subType, oracleValue as OracleXmlType);
+                    subInstance = _Common.GetValueFromOracleXML(subType, oracleValue as OracleXmlType);
                 }
                 else
                 {
-                    subInstance = ConvertOracleParameterToBaseType(subType, oracleValue);
+                    subInstance = _Common.ConvertOracleParameterToBaseType(subType, oracleValue);
                 }
 
                 prop.NETProperty.SetValue(instance, subInstance);
@@ -396,9 +398,14 @@ namespace ServForOracle.NetCore.Metadata
         {
             return GetDeclareLine(type, parameterName, udtInfo, OracleTypeNetMetadata);
         }
+
+        public OracleParameter GetOracleParameterForRefCursor(int starNumber)
+        {
+            return _Common.GetOracleParameterForRefCursor(starNumber);
+        }
     }
 
-    internal abstract class MetadataOracleObject : MetadataOracle
+    internal abstract class MetadataOracleObject : MetadataBase
     {
         public abstract Task<object> GetValueFromRefCursorAsync(Type type, IOracleRefCursorWrapper refCursor);
         public abstract object GetValueFromRefCursor(Type type, IOracleRefCursorWrapper refCursor);

@@ -178,7 +178,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal void GetMetadata_ExistsInCache(MetadataOracle metadata, string name, Mock<IMemoryCache> memoryCache)
+        internal void GetMetadata_ExistsInCache(MetadataBase metadata, string name, Mock<IMemoryCache> memoryCache)
         {
             object validParameter = metadata;
             memoryCache.Setup(m => m.TryGetValue($"metadata-{name}", out validParameter)).Returns(true);
@@ -194,7 +194,7 @@ namespace ServForOracle.NetCore.UnitTests
         internal void GetMetadata_DoesNoExistsInCache_ReturnsDefault(string name, Mock<IMemoryCache> memoryCache)
         {
             object validParameter = null;
-            MetadataOracle metadata = default;
+            MetadataBase metadata = default;
 
             memoryCache.Setup(m => m.TryGetValue($"metadata-{name}", out validParameter)).Returns(false);
 
@@ -206,7 +206,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal void SaveMetadata_CreatesEntryInCache(Mock<IMemoryCache> memoryCache, Mock<ICacheEntry> entry, string name, MetadataOracle metadata)
+        internal void SaveMetadata_CreatesEntryInCache(Mock<IMemoryCache> memoryCache, Mock<ICacheEntry> entry, string name, MetadataBase metadata)
         {
             var cache = new ServForOracleCache(memoryCache.Object);
 

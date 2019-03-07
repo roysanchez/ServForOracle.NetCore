@@ -11,15 +11,15 @@ namespace ServForOracle.NetCore.Parameters
     public class ParamClrType<T> : ParamClrType, IParam<T>
     {
         
-        internal MetadataOracle Metadata { get; private set; }
+        internal MetadataOracleCommon Metadata { get; private set; }
         public new T Value { get; private set; }
 
         public ParamClrType(T value, ParameterDirection direction)
-            : this(value, direction, new MetadataOracle())
+            : this(value, direction, new MetadataOracleCommon())
         {
         }
 
-        internal ParamClrType(T value, ParameterDirection direction, MetadataOracle metadata)
+        internal ParamClrType(T value, ParameterDirection direction, MetadataOracleCommon metadata)
             : base(typeof(T), value, direction)
         {
             Metadata = metadata;

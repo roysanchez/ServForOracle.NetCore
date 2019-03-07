@@ -26,6 +26,7 @@ namespace ServForOracle.NetCore
         private readonly IDbConnectionFactory _DbFactory;
         private readonly ServForOracleCache _Cache;
         private readonly ILogger _Logger;
+        private readonly MetadataOracleCommon _Common;
 
         public ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, string connectionString)
             :this(logger, cache, new OracleDbConnectionFactory(connectionString))
@@ -33,10 +34,16 @@ namespace ServForOracle.NetCore
         }
 
         public ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory)
+            :this(logger, cache, factory, new MetadataOracleCommon())
+        {
+        }
+
+        internal ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory, MetadataOracleCommon common)
         {
             _Logger = logger;
             _Cache = cache;
             _DbFactory = factory;
+            _Common = common;
         }
 
         public async Task ExecuteProcedureAsync(string procedure, params IParam[] parameters)
@@ -83,7 +90,7 @@ namespace ServForOracle.NetCore
 
         public async Task<T> ExecuteFunctionAsync<T>(string function, OracleUdtInfo udtInfo, params IParam[] parameters)
         {
-            MetadataOracle returnMetadata = null;
+            MetadataBase returnMetadata = null;
             OracleParameter retOra = null;
             try
             {
@@ -119,7 +126,7 @@ namespace ServForOracle.NetCore
 
         public T ExecuteFunction<T>(string function, OracleUdtInfo udtInfo, params IParam[] parameters)
         {
-            MetadataOracle returnMetadata = null;
+            MetadataBase returnMetadata = null;
             OracleParameter retOra = null;
             try
             {
@@ -179,7 +186,7 @@ namespace ServForOracle.NetCore
             return returnInfo;
         }
 
-        private string FunctionBeforeQuery<T>(MetadataBuilder builder, ExecutionInformation info, OracleUdtInfo udt, out MetadataOracle metadata, out OracleParameter parameter)
+        private string FunctionBeforeQuery<T>(MetadataBuilder builder, ExecutionInformation info, OracleUdtInfo udt, out MetadataBase metadata, out OracleParameter parameter)
         {
             if (typeof(T).IsBoolean())
             {
@@ -189,7 +196,7 @@ namespace ServForOracle.NetCore
             }
             else if (typeof(T).IsClrType())
             {
-                metadata = new MetadataOracle();
+                metadata = new MetadataBase();
                 parameter = FunctionReturnOracleParameter<T>(info, metadata);
                 return $"{parameter.ParameterName} := ";
             }
@@ -201,7 +208,7 @@ namespace ServForOracle.NetCore
             }
         }
 
-        private T GetReturnParameterOtuputValue<T>(OracleParameter retOra, MetadataOracle returnMetadata = null)
+        private T GetReturnParameterOtuputValue<T>(OracleParameter retOra, MetadataBase returnMetadata = null)
         {
             var returnType = typeof(T);
             if (!returnType.IsClrType() && returnMetadata is MetadataOracleObject<T> metadata)
@@ -216,11 +223,11 @@ namespace ServForOracle.NetCore
             else
             {
                
-                return (T)returnMetadata.ConvertOracleParameterToBaseType(returnType, retOra);
+                return (T)_Common.ConvertOracleParameterToBaseType(returnType, retOra);
             }
         }
 
-        private OracleParameter FunctionReturnOracleParameter<T>(ExecutionInformation info, MetadataOracle metadata)
+        private OracleParameter FunctionReturnOracleParameter<T>(ExecutionInformation info, MetadataBase metadata)
         {
             OracleParameter retOra;
             var type = typeof(T);
@@ -235,7 +242,7 @@ namespace ServForOracle.NetCore
             }
             else if (type.IsClrType())
             {
-                retOra = metadata.GetOracleParameter(
+                retOra = _Common.GetOracleParameter(
                     type: type, direction: ParameterDirection.Output, name: $":{info.ParameterCounter++}", value: DBNull.Value);
             }
             else

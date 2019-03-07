@@ -221,7 +221,7 @@ namespace ServForOracle.NetCore.UnitTests
         public void ConvertOracleParameterToBaseType_OracleParamIsNull()
         {
             var type = typeof(TestClass);
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             Assert.Null(metadata.ConvertOracleParameterToBaseType(type, null));
         }
@@ -230,7 +230,7 @@ namespace ServForOracle.NetCore.UnitTests
         public void ConvertOracleParameterToBaseType_OracleParamIsSameAsReturn(TestClass test)
         {
             var type = typeof(TestClass);
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             Assert.Equal(test, metadata.ConvertOracleParameterToBaseType(type, test));
         }
@@ -243,7 +243,7 @@ namespace ServForOracle.NetCore.UnitTests
                 Value = DBNull.Value
             };
             var type = typeof(TestClass);
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             Assert.Null(metadata.ConvertOracleParameterToBaseType(type, oracleParameter));
         }
@@ -256,7 +256,7 @@ namespace ServForOracle.NetCore.UnitTests
                 Value = new OracleDecimal()
             };
             var type = typeof(TestClass);
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             Assert.Null(metadata.ConvertOracleParameterToBaseType(typeof(TestClass), oracleParameter));
             Assert.Null(metadata.ConvertOracleParameterToBaseType(typeof(int?), oracleParameter));
@@ -270,7 +270,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = new OracleDecimal()
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
             var type = typeof(int);
 
             var exception = Assert.Throws<InvalidCastException>(() => metadata.ConvertOracleParameterToBaseType(type, oracleParameter));
@@ -280,7 +280,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void ConvertOracleParameterToBaseType_OracleDecimal_Returns(int p1, int? p2, float p3, float? p4, double p5, double? p6, decimal p7, decimal? p8, byte p9, byte? p10)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
             var nul = new OracleDecimal();
             string p11 = p1.ToString();
 
@@ -304,7 +304,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = new OracleDecimal(dec)
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
             var type = typeof(TestClass);
 
             var exception = Assert.Throws<InvalidCastException>(() => metadata.ConvertOracleParameterToBaseType(type, oracleParameter));
@@ -318,7 +318,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = new OracleString()
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             Assert.Null(metadata.ConvertOracleParameterToBaseType(typeof(string), oracleParameter));
         }
@@ -330,7 +330,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = new OracleString(str)
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var actual = metadata.ConvertOracleParameterToBaseType(typeof(string), oracleParameter);
 
@@ -347,7 +347,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = clob
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             Assert.Throws<OracleNullValueException>(() => metadata.ConvertOracleParameterToBaseType(typeof(string), oracleParameter));
         }
@@ -362,7 +362,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = bfile
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             Assert.Throws<OracleNullValueException>(() => metadata.ConvertOracleParameterToBaseType(typeof(byte[]), oracleParameter));
         }
@@ -377,7 +377,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = bfile
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             Assert.Throws<OracleNullValueException>(() => metadata.ConvertOracleParameterToBaseType(typeof(byte[]), oracleParameter));
         }
@@ -385,7 +385,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void ConvertOracleParameterToBaseType_OracleDate(DateTime d1, DateTime? d2)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
             var nul = new OracleDate();
 
 
@@ -400,7 +400,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = new OracleDate()
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
 
             var exception = Assert.Throws<InvalidCastException>(() => metadata.ConvertOracleParameterToBaseType(d1.GetType(), oracleParameter));
@@ -411,7 +411,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void ConvertOracleParameterToBaseType_OracleIntervalDS(TimeSpan t1, TimeSpan? t2)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
             var nul = new OracleIntervalDS();
 
             Assert.Equal(t1, metadata.ConvertOracleParameterToBaseType(t1.GetType(), new OracleParameter { Value = new OracleIntervalDS(t1) }));
@@ -425,7 +425,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = new OracleIntervalDS()
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
 
             var exception = Assert.Throws<InvalidCastException>(() => metadata.ConvertOracleParameterToBaseType(t1.GetType(), oracleParameter));
@@ -436,7 +436,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void ConvertOracleParameterToBaseType_OracleIntervalYM(long p1, long? p2, float p3, float? p4, double p5, double? p6)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
             var nul = new OracleIntervalYM();
 
             Assert.Equal(p1, metadata.ConvertOracleParameterToBaseType(p1.GetType(), new OracleParameter { Value = new OracleIntervalYM(p1) }));
@@ -454,7 +454,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = new OracleIntervalYM()
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
             var type = typeof(long);
 
             var exception = Assert.Throws<InvalidCastException>(() => metadata.ConvertOracleParameterToBaseType(type, oracleParameter));
@@ -469,7 +469,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = new OracleBinary(bytes)
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var actual = metadata.ConvertOracleParameterToBaseType(typeof(byte[]), oracleParameter);
 
@@ -479,7 +479,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void ConvertOracleParameterToBaseType_OracleTimeStamp(DateTime d1, DateTime? d2)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
             var nul = new OracleTimeStamp();
 
             AssertExtensions.Equal(d1, metadata.ConvertOracleParameterToBaseType(d1.GetType(), new OracleParameter { Value = new OracleTimeStamp(d1) }), TimeSpan.FromMilliseconds(1));
@@ -493,7 +493,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = new OracleTimeStamp()
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
             var type = typeof(DateTime);
 
             var exception = Assert.Throws<InvalidCastException>(() => metadata.ConvertOracleParameterToBaseType(type, oracleParameter));
@@ -508,7 +508,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = new OracleTimeStamp()
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var type = typeof(DateTime?);
 
@@ -520,7 +520,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void ConvertOracleParameterToBaseType_OracleTimeStampLTZ(DateTime d1, DateTime? d2)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
             var nul = new OracleTimeStampLTZ();
 
             AssertExtensions.Equal(d1, metadata.ConvertOracleParameterToBaseType(d1.GetType(), new OracleParameter { Value = new OracleTimeStamp(d1) }), TimeSpan.FromMilliseconds(1));
@@ -534,7 +534,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = new OracleTimeStampLTZ()
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
             var type = typeof(DateTime);
 
             var exception = Assert.Throws<InvalidCastException>(() => metadata.ConvertOracleParameterToBaseType(type, oracleParameter));
@@ -549,7 +549,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = new OracleTimeStampLTZ()
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var type = typeof(DateTime?);
 
@@ -561,7 +561,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void ConvertOracleParameterToBaseType_OracleTimeStampTZ(DateTime d1, DateTime? d2)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
             var nul = new OracleTimeStampTZ();
 
             AssertExtensions.Equal(d1, metadata.ConvertOracleParameterToBaseType(d1.GetType(), new OracleParameter { Value = new OracleTimeStamp(d1) }), TimeSpan.FromMilliseconds(1));
@@ -575,7 +575,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = new OracleTimeStampTZ()
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
             var type = typeof(DateTime);
 
             var exception = Assert.Throws<InvalidCastException>(() => metadata.ConvertOracleParameterToBaseType(type, oracleParameter));
@@ -590,7 +590,7 @@ namespace ServForOracle.NetCore.UnitTests
             {
                 Value = new OracleTimeStampTZ()
             };
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var type = typeof(DateTime?);
 
@@ -602,7 +602,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void ConvertOracleParameterToBaseType_InvalidType_ReturnsNull(TestClass test)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             Assert.Null(metadata.ConvertOracleParameterToBaseType(typeof(int?), test));
         }
@@ -614,7 +614,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void GetOracleParameter_IsValueType_Char(char p1, ParameterDirection direction, string name)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
 
@@ -627,7 +627,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void GetOracleParameter_IsValueType_Short(short p1, ParameterDirection direction, string name)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
 
@@ -640,7 +640,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void GetOracleParameter_IsValueType_Int(int p1, ParameterDirection direction, string name)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
 
@@ -653,7 +653,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void GetOracleParameter_IsValueType_Long(long p1, ParameterDirection direction, string name)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
 
@@ -666,7 +666,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void GetOracleParameter_IsValueType_Float(float p1, ParameterDirection direction, string name)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
 
@@ -679,7 +679,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void GetOracleParameter_IsValueType_Double(double p1, ParameterDirection direction, string name)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
 
@@ -692,7 +692,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void GetOracleParameter_IsValueType_Decimal(decimal p1, ParameterDirection direction, string name)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
 
@@ -705,7 +705,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void GetOracleParameter_IsValueType_DateTime(DateTime p1, ParameterDirection direction, string name)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
 
@@ -718,7 +718,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void GetOracleParameter_IsValueType_Bool(bool p1, ParameterDirection direction, string name)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
 
@@ -731,7 +731,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void GetOracleParameter_IsValueType_ByteArray(byte[] p1, ParameterDirection direction, string name)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
 
@@ -745,7 +745,7 @@ namespace ServForOracle.NetCore.UnitTests
         public void GetOracleParameter_IsValueType_String(string p1, ParameterDirection direction, string name)
         {
             var fixture = new Fixture();
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var parameter = metadata.GetOracleParameter(p1.GetType(), direction, name, p1);
 
@@ -762,7 +762,7 @@ namespace ServForOracle.NetCore.UnitTests
         public void GetOracleParameter_IsValueType_String_OutputSize(string p1, string name)
         {
             var fixture = new Fixture();
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var parameter = metadata.GetOracleParameter(p1.GetType(), ParameterDirection.Output, name, p1);
 
@@ -778,7 +778,7 @@ namespace ServForOracle.NetCore.UnitTests
         public void GetOracleParameter_IsValueType_String_Clob(char value, ParameterDirection direction, string name)
         {
             var fixture = new Fixture();
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
             var str = new string(value, 32001);
 
             var parameter = metadata.GetOracleParameter(str.GetType(), direction, name, str);
@@ -794,7 +794,7 @@ namespace ServForOracle.NetCore.UnitTests
         public void GetOracleParameter_IsValueType_NotHandledType(ParameterDirection direction, string name)
         {
             var fixture = new Fixture();
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var parameter = metadata.GetOracleParameter(typeof(object), direction, name, DBNull.Value);
 
@@ -810,7 +810,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Fact]
         public void GetValueFromOracleXML_ParametersNull_ReturnsNull()
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             Assert.Null(metadata.GetValueFromOracleXML(typeof(string), null));
             Assert.Null(metadata.GetValueFromOracleXML(typeof(string), OracleXmlType.Null));
@@ -820,7 +820,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void GetValueFromOracleXML_Object(string expected)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
             var connection = new OracleConnection();
             var type = typeof(OracleXmlType);
 
@@ -856,7 +856,7 @@ namespace ServForOracle.NetCore.UnitTests
         public void GetValueFromXMLElement_Object(XmlTestObject xml)
         {
             var xelement = ToXElement(xml);
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var actual = metadata.GetValueFromXMLElement(typeof(XmlTestObject), xelement);
 
@@ -869,7 +869,7 @@ namespace ServForOracle.NetCore.UnitTests
         public void GetValueFromXMLElement_Object_DateTimeOffset(DateTimeOffset date)
         {
             var xelement = XElement.Parse($"<roy><x><Date>{date.ToString("o")}</Date></x></roy>");
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var actual = metadata.GetValueFromXMLElement(typeof(XmlTestDateTimeOffset), xelement);
 
@@ -883,7 +883,7 @@ namespace ServForOracle.NetCore.UnitTests
         {
             complex.NullProperty = null;
             var xelement = ToXElement(complex);
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var actual = metadata.GetValueFromXMLElement(typeof(XmlTestComplexObject), xelement);
 
@@ -896,7 +896,7 @@ namespace ServForOracle.NetCore.UnitTests
         public void GetValueFromXMLElement_Object_NotMatchedXml_ReturnsNull(XmlTestDateTimeOffset date)
         {
             var xelement = ToXElement(date);
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var actual = metadata.GetValueFromXMLElement(typeof(XmlTestComplexObject), xelement);
 
@@ -907,7 +907,7 @@ namespace ServForOracle.NetCore.UnitTests
         public void GetValueFromXMLElement_Object_NoElements_ReturnsNull()
         {
             var xelement = XElement.Parse("<roy></roy>");
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var actual = metadata.GetValueFromXMLElement(typeof(XmlTestComplexObject), xelement);
 
@@ -918,7 +918,7 @@ namespace ServForOracle.NetCore.UnitTests
         public void GetValueFromXMLElement_Collection(XmlTestObject[] xml)
         {
             var xelement = ToXElement(xml);
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var actual = metadata.GetValueFromXMLElement(typeof(XmlTestObject[]), xelement);
 
@@ -931,7 +931,7 @@ namespace ServForOracle.NetCore.UnitTests
         public void GetValueFromXMLElement_Collection_List(List<XmlTestObject> xml)
         {
             var xelement = ToXElement(xml);
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var actual = metadata.GetValueFromXMLElement(typeof(List<XmlTestObject>), xelement);
 
@@ -944,7 +944,7 @@ namespace ServForOracle.NetCore.UnitTests
         public void GetValueFromXMLElement_Collection_Of_Collection(XmlTestSimpleObject[][] xml)
         {
             var xelement = ToXElement(xml);
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var actual = metadata.GetValueFromXMLElement(typeof(XmlTestSimpleObject[][]), xelement);
 
@@ -957,7 +957,7 @@ namespace ServForOracle.NetCore.UnitTests
         public void GetValueFromXMLElement_Collection_NoElements_ReturnsNull()
         {
             var xelement = XElement.Parse("<roy></roy>");
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var actual = metadata.GetValueFromXMLElement(typeof(XmlTestComplexObject[]), xelement);
 
@@ -969,7 +969,7 @@ namespace ServForOracle.NetCore.UnitTests
         {
             var simpleArray = new XmlTestSimpleObject[3];
             var xelement = ToXElement(simpleArray);
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var actual = metadata.GetValueFromXMLElement(typeof(XmlTestSimpleObject[]), xelement);
 
@@ -981,7 +981,7 @@ namespace ServForOracle.NetCore.UnitTests
         [Theory, CustomAutoData]
         public void GetOracleParameterForRefCursor(int startNumber)
         {
-            var metadata = new MetadataOracle();
+            var metadata = new MetadataOracleCommon();
 
             var refCursor = metadata.GetOracleParameterForRefCursor(startNumber);
 

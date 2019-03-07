@@ -75,7 +75,7 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        private void GetTypeAndCachedMetadata<T>(out Type type, out MetadataOracle metadata)
+        private void GetTypeAndCachedMetadata<T>(out Type type, out MetadataBase metadata)
         {
             type = typeof(T);
             metadata = Cache.GetMetadata(type.FullName);
@@ -87,7 +87,7 @@ namespace ServForOracle.NetCore.Metadata
             return await RegisterAsync(type, con, udtInfo);
         }
 
-        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleNetTypeDefinition)"
+        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleNetTypeDefinition, MetadataOracleCommon)"
         private async Task<object> RegisterAsync(Type type, DbConnection con, OracleUdtInfo udtInfo)
         {
             var metadataGenericType = typeof(MetadataOracleObject<>).MakeGenericType(type);
@@ -95,9 +95,9 @@ namespace ServForOracle.NetCore.Metadata
 
             var (_, props, fuzzyMatch) = Cache.PresetGetValueOrDefault(type);
             var typedef = new MetadataOracleNetTypeDefinition(Cache, type.IsCollection() ? type.GetCollectionUnderType() : type, typeMetadata, props, fuzzyMatch);
-            var metadata = metadataGenericType.CreateInstance(typedef);
+            var metadata = metadataGenericType.CreateInstance(typedef, new MetadataOracleCommon());
 
-            Cache.SaveMetadata(type.FullName, metadata as MetadataOracle);
+            Cache.SaveMetadata(type.FullName, metadata as MetadataBase);
 
             return metadata;
         }
@@ -108,7 +108,7 @@ namespace ServForOracle.NetCore.Metadata
             return Register(type, con, udtInfo);
         }
 
-        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleNetTypeDefinition)"
+        /// <see cref="MetadataOracleObject{T}.MetadataOracleObject(MetadataOracleNetTypeDefinition, MetadataOracleCommon)"
         private object Register(Type type, DbConnection con, OracleUdtInfo udtInfo)
         {
             var metadataGenericType = typeof(MetadataOracleObject<>).MakeGenericType(type);
@@ -117,10 +117,10 @@ namespace ServForOracle.NetCore.Metadata
             
             var (_, props, fuzzyMatch) = Cache.PresetGetValueOrDefault(type);
             var typedef = new MetadataOracleNetTypeDefinition(Cache, type.IsCollection() ? type.GetCollectionUnderType() : type, typeMetadata, props, fuzzyMatch);
-            var metadata = metadataGenericType.CreateInstance(typedef);
+            var metadata = metadataGenericType.CreateInstance(typedef, new MetadataOracleCommon());
 
             Logger?.LogDebug("Saving cache for the type {typeName}", type.FullName);
-            Cache.SaveMetadata(type.FullName, metadata as MetadataOracle);
+            Cache.SaveMetadata(type.FullName, metadata as MetadataBase);
 
             return metadata;
         }

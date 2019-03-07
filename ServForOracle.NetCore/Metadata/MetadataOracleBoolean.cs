@@ -7,7 +7,7 @@ using System.Text;
 
 namespace ServForOracle.NetCore.Metadata
 {
-    internal class MetadataOracleBoolean : MetadataOracle
+    internal class MetadataOracleBoolean : MetadataBase
     {
         public string GetDeclareLine(string parameterName)
         {

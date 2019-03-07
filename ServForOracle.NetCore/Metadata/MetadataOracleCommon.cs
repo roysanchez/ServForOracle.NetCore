@@ -14,7 +14,7 @@ using System.Xml.Linq;
 
 namespace ServForOracle.NetCore.Metadata
 {
-    internal class MetadataOracle
+    internal class MetadataOracleCommon
     {
         private const int VARCHAR_MAX_SIZE = 32000;
 
