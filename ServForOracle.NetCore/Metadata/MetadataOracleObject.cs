@@ -263,6 +263,7 @@ namespace ServForOracle.NetCore.Metadata
 
                 if (prop.PropertyMetadata != null)
                 {
+                    //TODO Find a way to cast the read value without creating an instance twice.
                     subInstance = subType.CreateInstance();
                     subInstance = _Common.GetValueFromOracleXML(subType, oracleValue as OracleXmlType);
                 }

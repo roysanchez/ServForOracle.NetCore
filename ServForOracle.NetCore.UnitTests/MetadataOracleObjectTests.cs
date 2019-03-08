@@ -471,6 +471,59 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.Null(actual.Prop1);
         }
 
+        [Theory, CustomAutoData]
+        internal async Task GetValueFromRefCursorAsync_Object_NetProperty(MetadataOracleNetTypeDefinition typedef, Mock<IOracleRefCursorWrapper> refCursorWrapper,
+    Mock<IOracleDataReaderWrapper> dataReaderWrapper, Mock<MetadataOracleCommon> common, object oracleValue, string oracleValueStr)
+        {
+            var prop = typedef.Properties.OrderBy(c => c.Order).First();
+            prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
+
+
+            refCursorWrapper.Setup(r => r.GetDataReader()).Returns(dataReaderWrapper.Object);
+            dataReaderWrapper.SetupSequence(d => d.ReadAsync())
+                .ReturnsAsync(true)
+                .ReturnsAsync(false);
+            dataReaderWrapper.Setup(d => d.GetOracleValue(0))
+                .Returns(oracleValue);
+            common.Setup(c => c.ConvertOracleParameterToBaseType(typeof(string), oracleValue))
+                .Returns(oracleValueStr);
+
+
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, common.Object);
+
+            var result = await metadata.GetValueFromRefCursorAsync(typeof(SimpleTestClass), refCursorWrapper.Object);
+
+            Assert.NotNull(result);
+            var actual = Assert.IsType<SimpleTestClass>(result);
+            Assert.Equal(oracleValueStr, actual.Prop1);
+        }
+
+        [Theory, CustomAutoData]
+        internal async Task GetValueFromRefCursorAsync_Object_WithMetadata(MetadataOracleNetTypeDefinition typedef, MetadataOracleNetTypeDefinition subTypedef, Mock<IOracleRefCursorWrapper> refCursorWrapper,
+Mock<IOracleDataReaderWrapper> dataReaderWrapper, Mock<MetadataOracleCommon> common, SimpleTestClass oracleValue)
+        {
+            var prop = typedef.Properties.OrderBy(c => c.Order).First();
+            prop.NETProperty = typeof(ComplexTestClass).GetProperty(nameof(ComplexTestClass.ObjectProp));
+            prop.PropertyMetadata = subTypedef;
+
+            refCursorWrapper.Setup(r => r.GetDataReader()).Returns(dataReaderWrapper.Object);
+            dataReaderWrapper.SetupSequence(d => d.ReadAsync())
+                .ReturnsAsync(true)
+                .ReturnsAsync(false);
+            common.Setup(c => c.GetValueFromOracleXML(typeof(SimpleTestClass), null))
+                .Returns(oracleValue);
+
+
+            var metadata = new MetadataOracleObject<ComplexTestClass>(typedef, common.Object);
+
+            var result = await metadata.GetValueFromRefCursorAsync(typeof(ComplexTestClass), refCursorWrapper.Object);
+
+            Assert.NotNull(result);
+            var actual = Assert.IsType<ComplexTestClass>(result);
+            Assert.NotNull(actual.ObjectProp);
+            Assert.Equal(oracleValue, actual.ObjectProp);
+        }
+
         #endregion GetValueFromRefCursorAsync
     }
 }
