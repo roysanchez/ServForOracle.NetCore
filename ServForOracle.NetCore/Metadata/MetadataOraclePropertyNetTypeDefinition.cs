@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 
 namespace ServForOracle.NetCore.Metadata
 {
@@ -6,6 +7,11 @@ namespace ServForOracle.NetCore.Metadata
     {
         public MetadataOraclePropertyNetTypeDefinition(MetadataOracleTypePropertyDefinition baseMetadata)
         {
+            if (baseMetadata is null)
+            {
+                throw new ArgumentNullException(nameof(baseMetadata));
+            }
+
             Name = baseMetadata.Name;
             Order = baseMetadata.Order;
         }
