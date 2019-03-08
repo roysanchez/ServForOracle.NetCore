@@ -370,13 +370,13 @@ namespace ServForOracle.NetCore.Metadata
 
         public override object GetValueFromRefCursor(Type type, IOracleRefCursorWrapper refCursor)
         {
-            dynamic instance = type.CreateInstance();
             int counter = 0;
             var reader = refCursor.GetDataReader();
 
             if (type.IsCollection())
             {
                 var subType = type.GetCollectionUnderType();
+                dynamic instance = subType.CreateListType().CreateInstance();
                 while (reader.Read())
                 {
                     counter = 0;
@@ -387,6 +387,7 @@ namespace ServForOracle.NetCore.Metadata
             }
             else
             {
+                dynamic instance = type.CreateInstance();
                 while (reader.Read())
                 {
                     instance = ReadObjectInstance(type, reader, OracleTypeNetMetadata, ref counter);
