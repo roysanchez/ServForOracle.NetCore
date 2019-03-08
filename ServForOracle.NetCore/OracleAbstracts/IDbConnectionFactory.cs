@@ -5,9 +5,8 @@ using System.Text;
 
 namespace ServForOracle.NetCore.OracleAbstracts
 {
-    public interface IDbConnectionFactory
+    public interface IDbConnectionFactory: IDisposable
     {
         DbConnection CreateConnection();
-        void Dispose();
     }
 }
