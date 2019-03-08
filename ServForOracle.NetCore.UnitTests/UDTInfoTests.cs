@@ -1,6 +1,7 @@
 ﻿using AutoFixture.Xunit2;
 using ServForOracle.NetCore.Metadata;
 using ServForOracle.NetCore.OracleAbstracts;
+using ServForOracle.NetCore.UnitTests.Config;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -10,7 +11,7 @@ namespace ServForOracle.NetCore.UnitTests
 {
     public class UDTInfoTests
     {
-        public void AssertUDTInfo(OracleUdtInfo info, string objectSchema, string objectName)
+        internal void AssertUDTInfo(OracleUdtInfo info, string objectSchema, string objectName)
         {
             Assert.NotNull(info);
             Assert.Equal(objectSchema?.ToUpper(), info.ObjectSchema);
@@ -19,7 +20,7 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.Equal($"{objectSchema}.{objectName}".ToUpper(), info.FullObjectName);
         }
 
-        public void AssertUDTInfo(OracleUdtInfo info, string objectSchema, string objectName, string collectionName)
+        internal void AssertUDTInfo(OracleUdtInfo info, string objectSchema, string objectName, string collectionName)
         {
             Assert.NotNull(info);
             Assert.Equal(objectSchema?.ToUpper(), info.ObjectSchema);
@@ -30,7 +31,7 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.True(info.IsCollectionValid);
         }
 
-        public void AssertUDTInfo(OracleUdtInfo info, string objectName)
+        internal void AssertUDTInfo(OracleUdtInfo info, string objectName)
         {
             Assert.NotNull(info);
             Assert.NotNull(objectName);
@@ -60,7 +61,7 @@ namespace ServForOracle.NetCore.UnitTests
             }
         }
 
-        public void AssertUDTInfo(OracleUdtInfo info, string objectSchema, string objectName, string collectionSchema, string collectionName)
+        internal void AssertUDTInfo(OracleUdtInfo info, string objectSchema, string objectName, string collectionSchema, string collectionName)
         {
             Assert.NotNull(info);
             Assert.Equal(objectSchema?.ToUpper(), info.ObjectSchema);
@@ -82,6 +83,22 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.NotNull(replacedProperty);
             Assert.Equal(propertyName.ToUpper(), replacedProperties[0].NetPropertyName);
             Assert.Equal(replacedProperty.ToUpper(), replacedProperties[0].UDTPropertyName);
+        }
+
+        [Fact]
+        public void Constructor_OneParameter_ThrowsArgumentNull()
+        {
+            Assert.Throws<ArgumentNullException>("objectName", () => new OracleUdtInfo(null));
+        }
+
+        [Theory, CustomAutoData]
+        public void Constructor_OneParameter_Invalid_ThrowsArgument(string objectName)
+        {
+            var expected = $"The object {objectName} is invalid, it needs to have the format SCHEMA.OBJECT_NAME or" +
+                $" SCHEMA.OBJECTNAME|SCHEMA.COLLECTIONNAME{Environment.NewLine}Parameter name: name";
+
+            var exception = Assert.Throws<ArgumentException>("name", () => new OracleUdtInfo(objectName));
+            Assert.Equal(expected, exception.Message);
         }
     }
 }

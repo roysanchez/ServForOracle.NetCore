@@ -31,22 +31,22 @@ namespace ServForOracle.NetCore.OracleAbstracts
 
             (string schema, string name) SplitAndValidateName(string name)
             {
-                var errorString = $"The object {name} is invalid, it needs to havet the format SCHEMA.OBJECT_NAME or" +
+                var errorString = $"The object {name} is invalid, it needs to have the format SCHEMA.OBJECT_NAME or" +
                 " SCHEMA.OBJECTNAME|SCHEMA.COLLECTIONNAME";
 
                 var objectParts = name.Split('.');
                 if (objectParts.Length != 2)
                 {
-                    throw new ArgumentException(nameof(name), errorString);
+                    throw new ArgumentException(errorString, nameof(name));
                 }
 
                 if (string.IsNullOrWhiteSpace(objectParts[0]))
                 {
-                    throw new ArgumentException(nameof(name), errorString);
+                    throw new ArgumentException(errorString, nameof(name));
                 }
                 if (string.IsNullOrWhiteSpace(objectParts[1]))
                 {
-                    throw new ArgumentException(nameof(name), errorString);
+                    throw new ArgumentException(errorString, nameof(name));
                 }
 
                 return (objectParts[0], objectParts[1]);
