@@ -341,13 +341,13 @@ namespace ServForOracle.NetCore.Metadata
 
         public override async Task<object> GetValueFromRefCursorAsync(Type type, IOracleRefCursorWrapper refCursor)
         {
-            dynamic instance = type.CreateInstance();
             int counter = 0;
             var reader = refCursor.GetDataReader();
 
             if (type.IsCollection())
             {
                 var subType = type.GetCollectionUnderType();
+                dynamic instance = subType.CreateListType().CreateInstance();
                 while (await reader.ReadAsync().ConfigureAwait(false))
                 {
                     counter = 0;
@@ -358,6 +358,7 @@ namespace ServForOracle.NetCore.Metadata
             }
             else
             {
+                dynamic instance = type.CreateInstance();
                 while (await reader.ReadAsync().ConfigureAwait(false))
                 {
                     instance = ReadObjectInstance(type, reader, OracleTypeNetMetadata, ref counter);

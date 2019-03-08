@@ -486,7 +486,8 @@ namespace ServForOracle.NetCore.UnitTests
             dataReaderWrapper.Setup(d => d.GetOracleValue(0))
                 .Returns(oracleValue);
             common.Setup(c => c.ConvertOracleParameterToBaseType(typeof(string), oracleValue))
-                .Returns(oracleValueStr);
+                .Returns(oracleValueStr)
+                .Verifiable();
 
 
             var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, common.Object);
@@ -494,6 +495,7 @@ namespace ServForOracle.NetCore.UnitTests
             var result = await metadata.GetValueFromRefCursorAsync(typeof(SimpleTestClass), refCursorWrapper.Object);
 
             Assert.NotNull(result);
+            common.Verify();
             var actual = Assert.IsType<SimpleTestClass>(result);
             Assert.Equal(oracleValueStr, actual.Prop1);
         }
@@ -511,17 +513,122 @@ Mock<IOracleDataReaderWrapper> dataReaderWrapper, Mock<MetadataOracleCommon> com
                 .ReturnsAsync(true)
                 .ReturnsAsync(false);
             common.Setup(c => c.GetValueFromOracleXML(typeof(SimpleTestClass), null))
-                .Returns(oracleValue);
+                .Returns(oracleValue)
+                .Verifiable();
 
 
             var metadata = new MetadataOracleObject<ComplexTestClass>(typedef, common.Object);
 
             var result = await metadata.GetValueFromRefCursorAsync(typeof(ComplexTestClass), refCursorWrapper.Object);
 
+            common.Verify();
             Assert.NotNull(result);
             var actual = Assert.IsType<ComplexTestClass>(result);
             Assert.NotNull(actual.ObjectProp);
             Assert.Equal(oracleValue, actual.ObjectProp);
+        }
+
+        [Theory, CustomAutoData]
+        internal async Task GetValueFromRefCursorAsync_Object_NullValue(MetadataOracleNetTypeDefinition typedef, Mock<IOracleRefCursorWrapper> refCursorWrapper,
+Mock<IOracleDataReaderWrapper> dataReaderWrapper, Mock<MetadataOracleCommon> common)
+        {
+            var prop = typedef.Properties.OrderBy(c => c.Order).First();
+            prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
+
+            refCursorWrapper.Setup(r => r.GetDataReader()).Returns(dataReaderWrapper.Object);
+            dataReaderWrapper.SetupSequence(d => d.ReadAsync())
+                .ReturnsAsync(true)
+                .ReturnsAsync(false);
+            dataReaderWrapper.Setup(d => d.GetOracleValue(0))
+                .Returns(null)
+                .Verifiable();
+            common.Setup(c => c.ConvertOracleParameterToBaseType(typeof(string), null))
+                .Returns(null)
+                .Verifiable();
+
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, common.Object);
+
+            var result = await metadata.GetValueFromRefCursorAsync(typeof(SimpleTestClass), refCursorWrapper.Object);
+
+            dataReaderWrapper.Verify();
+            common.Verify();
+            Assert.NotNull(result);
+            var actual = Assert.IsType<SimpleTestClass>(result);
+            Assert.NotNull(actual);
+            Assert.Null(actual.Prop1);
+        }
+
+        [Theory, CustomAutoData]
+        internal async Task GetValueFromRefCursorAsync_Collection_NullValue(MetadataOracleNetTypeDefinition typedef, Mock<IOracleRefCursorWrapper> refCursorWrapper,
+Mock<IOracleDataReaderWrapper> dataReaderWrapper, Mock<MetadataOracleCommon> common, SimpleTestClass[] simples)
+        {
+            var prop = typedef.Properties.OrderBy(c => c.Order).First();
+            prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
+
+            refCursorWrapper.Setup(r => r.GetDataReader()).Returns(dataReaderWrapper.Object);
+            dataReaderWrapper.SetupSequence(d => d.ReadAsync())
+                .ReturnsAsync(true).ReturnsAsync(true).ReturnsAsync(true)
+                .ReturnsAsync(false);
+            int i = 0;
+            dataReaderWrapper.Setup(d => d.GetOracleValue(i))
+                .Callback(() => i++);
+                
+            common.SetupSequence(c => c.ConvertOracleParameterToBaseType(typeof(string), null))
+                .Returns(simples[0].Prop1)
+                .Returns(simples[1].Prop1)
+                .Returns(simples[2].Prop1);
+                //.Verifiable();
+
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, common.Object);
+
+            var result = await metadata.GetValueFromRefCursorAsync(typeof(SimpleTestClass[]), refCursorWrapper.Object);
+
+            dataReaderWrapper.Verify();
+            common.Verify();
+            Assert.NotNull(result);
+            var actual = Assert.IsType<SimpleTestClass[]>(result);
+            Assert.NotNull(actual);
+            Assert.Collection(actual,
+                c => Assert.Equal(simples[0].Prop1, c.Prop1),
+                c => Assert.Equal(simples[1].Prop1, c.Prop1),
+                c => Assert.Equal(simples[2].Prop1, c.Prop1)
+            );
+        }
+
+        [Theory, CustomAutoData]
+        internal async Task GetValueFromRefCursorAsync_Collection_Enumerable_NullValue(MetadataOracleNetTypeDefinition typedef, Mock<IOracleRefCursorWrapper> refCursorWrapper,
+Mock<IOracleDataReaderWrapper> dataReaderWrapper, Mock<MetadataOracleCommon> common, SimpleTestClass[] simples)
+        {
+            var prop = typedef.Properties.OrderBy(c => c.Order).First();
+            prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
+
+            refCursorWrapper.Setup(r => r.GetDataReader()).Returns(dataReaderWrapper.Object);
+            dataReaderWrapper.SetupSequence(d => d.ReadAsync())
+                .ReturnsAsync(true).ReturnsAsync(true).ReturnsAsync(true)
+                .ReturnsAsync(false);
+            int i = 0;
+            dataReaderWrapper.Setup(d => d.GetOracleValue(i))
+                .Callback(() => i++);
+
+            common.SetupSequence(c => c.ConvertOracleParameterToBaseType(typeof(string), null))
+                .Returns(simples[0].Prop1)
+                .Returns(simples[1].Prop1)
+                .Returns(simples[2].Prop1);
+
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, common.Object);
+
+            var result = await metadata.GetValueFromRefCursorAsync(typeof(IEnumerable<SimpleTestClass>), refCursorWrapper.Object);
+
+            dataReaderWrapper.Verify();
+            common.Verify();
+            Assert.NotNull(result);
+            var actual = Assert.IsType<List<SimpleTestClass>>(result);
+            Assert.NotNull(actual);
+            Assert.Collection(actual,
+                c => Assert.Equal(simples[0].Prop1, c.Prop1),
+                c => Assert.Equal(simples[1].Prop1, c.Prop1),
+                c => Assert.Equal(simples[2].Prop1, c.Prop1)
+            );
         }
 
         #endregion GetValueFromRefCursorAsync
