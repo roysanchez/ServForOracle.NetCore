@@ -11,6 +11,8 @@ using System.Data;
 using System.Threading.Tasks;
 using ServForOracle.NetCore.Wrapper;
 using Moq;
+using ServForOracle.NetCore.OracleAbstracts;
+using Oracle.ManagedDataAccess.Client;
 
 namespace ServForOracle.NetCore.UnitTests
 {
@@ -804,5 +806,69 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         #endregion GetValueFromRefCursor
+
+        #region GetDeclareLine
+
+        [Theory, CustomAutoData]
+        internal void GetDeclareLine_Object_Simple(MetadataOracleNetTypeDefinition typedef, MetadataOracleCommon common, string parameterName, OracleUdtInfo udtInfo)
+        {
+            var type = typeof(SimpleTestClass);
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, common);
+
+            var declareLine = metadata.GetDeclareLine(type, parameterName, udtInfo);
+
+            Assert.Equal($"{parameterName} {udtInfo.FullObjectName};"+Environment.NewLine, declareLine);
+        }
+
+        [Theory, CustomAutoData]
+        internal void GetDeclareLine_Object_WithMetadata(MetadataOracleNetTypeDefinition typedef, MetadataOracleNetTypeDefinition subTypeDef, MetadataOracleCommon common, string parameterName, OracleUdtInfo udtInfo)
+        {
+            var type = typeof(ComplexTestClass);
+            var prop = typedef.Properties.First();
+            prop.PropertyMetadata = subTypeDef;
+            prop.NETProperty = type.GetProperty(nameof(ComplexTestClass.ObjectProp));
+            
+
+            var metadata = new MetadataOracleObject<ComplexTestClass>(typedef, common);
+
+            var declareLine = metadata.GetDeclareLine(type, parameterName, udtInfo);
+
+            var expected = $"{parameterName}_0 {subTypeDef.UDTInfo.FullObjectName};" + Environment.NewLine
+                + $"{parameterName} {udtInfo.FullObjectName};" + Environment.NewLine;
+
+            Assert.Equal(expected, declareLine);
+        }
+
+        [Theory, CustomAutoData]
+        internal void GetDeclareLine_Collection(MetadataOracleNetTypeDefinition typedef, MetadataOracleCommon common, string parameterName, OracleUdtInfo udtInfo)
+        {
+            var type = typeof(ComplexTestClass[]);
+
+            var metadata = new MetadataOracleObject<ComplexTestClass[]>(typedef, common);
+
+            var declareLine = metadata.GetDeclareLine(type, parameterName, udtInfo);
+
+            var expected = $"{parameterName} {udtInfo.FullCollectionName} := {udtInfo.FullCollectionName}();" + Environment.NewLine;
+
+            Assert.Equal(expected, declareLine);
+        }
+
+        #endregion GetDeclareLine
+
+        [Theory, CustomAutoData]
+        internal void GetOracleParameterForRefCursor_CallsCommon(MetadataOracleNetTypeDefinition typedef, Mock<MetadataOracleCommon> common, int startNumber, OracleParameter parameter)
+        {
+            common.Setup(c => c.GetOracleParameterForRefCursor(startNumber))
+                .Returns(parameter)
+                .Verifiable();
+
+            var metadata = new MetadataOracleObject<SimpleTestClass>(typedef, common.Object);
+
+            var actual = metadata.GetOracleParameterForRefCursor(startNumber);
+
+            Assert.NotNull(actual);
+            common.Verify();
+            Assert.Same(parameter, actual);
+        }
     }
 }
