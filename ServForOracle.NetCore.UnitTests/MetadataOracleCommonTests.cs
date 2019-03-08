@@ -21,7 +21,7 @@ using Xunit;
 
 namespace ServForOracle.NetCore.UnitTests
 {
-    public class MetadataOracleTests
+    public class MetadataOracleCommonTests
     {
         public class TestClass
         {

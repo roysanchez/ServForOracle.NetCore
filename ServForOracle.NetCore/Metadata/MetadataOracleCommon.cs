@@ -18,7 +18,7 @@ namespace ServForOracle.NetCore.Metadata
     {
         private const int VARCHAR_MAX_SIZE = 32000;
 
-        public object ConvertOracleParameterToBaseType(Type retType, object oracleParam)
+        public virtual object ConvertOracleParameterToBaseType(Type retType, object oracleParam)
         {
             bool isNullable = (retType.IsGenericType && retType.GetGenericTypeDefinition() == typeof(Nullable<>));
 
@@ -279,7 +279,7 @@ namespace ServForOracle.NetCore.Metadata
                 return null;
         }
 
-        public dynamic GetValueFromXMLElement(Type retType, XElement doc)
+        public virtual dynamic GetValueFromXMLElement(Type retType, XElement doc)
         {
             if (retType.IsCollection())
             {
@@ -293,7 +293,7 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        public dynamic GetValueFromOracleXML(Type retType, OracleXmlType xml)
+        public virtual dynamic GetValueFromOracleXML(Type retType, OracleXmlType xml)
         {
             if (xml is null || retType is null  || xml.IsNull)
             {
@@ -323,7 +323,7 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        public OracleParameter GetOracleParameter(Type type, ParameterDirection direction, string name, object value)
+        public virtual OracleParameter GetOracleParameter(Type type, ParameterDirection direction, string name, object value)
         {
             var param = new OracleParameter(name, value)
             {
@@ -392,7 +392,7 @@ namespace ServForOracle.NetCore.Metadata
             return param;
         }
 
-        public OracleParameter GetOracleParameterForRefCursor(int starNumber)
+        public virtual OracleParameter GetOracleParameterForRefCursor(int starNumber)
         {
             return new OracleParameter($":{starNumber}", DBNull.Value)
             {
