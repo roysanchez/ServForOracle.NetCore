@@ -38,7 +38,6 @@ namespace ServForOracle.NetCore.UnitTests
             public decimal Prop6 { get; set; }
             public long Prop7 { get; set; }
             //it's not configured so its going to return null
-            public sbyte? Prop8 { get; set; }
             public bool Prop9 { get; set; }
             public TimeSpan Prop10 { get; set; }
             public uint Prop11 { get; set; }

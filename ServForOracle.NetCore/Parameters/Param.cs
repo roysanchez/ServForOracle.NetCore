@@ -32,7 +32,14 @@ namespace ServForOracle.NetCore.Parameters
             }
             else if(type.IsClrType())
             {
-                return new ParamClrType<T>(value, direction);
+                if (type.CanMapToOracle())
+                {
+                    return new ParamClrType<T>(value, direction);
+                }
+                else
+                {
+                    throw new ArgumentException($"The type {type.FullName} is not supported by the library as a direct map to oracle.");
+                }
             }
             else
             {

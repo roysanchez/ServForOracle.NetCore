@@ -102,5 +102,48 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.Equal(typeof(List<List<object>>),TypeExtensions.CreateListType(typeof(List<object>)));
             Assert.Equal(typeof(List<object[]>),TypeExtensions.CreateListType(typeof(object[])));
         }
+
+        [Fact]
+        public void CanMapToOracle_Works()
+        {
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(string)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(char)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(char?)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(short)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(short?)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(byte)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(byte?)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(int)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(int?)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(long)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(long?)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(float)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(float?)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(double)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(double?)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(decimal)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(decimal?)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(DateTime)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(DateTime?)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(bool)));
+            Assert.True(TypeExtensions.CanMapToOracle(typeof(bool?)));
+        }
+
+        [Fact]
+        public void CanMapToOracle_Fails()
+        {
+            Assert.False(TypeExtensions.CanMapToOracle(typeof(sbyte)));
+            Assert.False(TypeExtensions.CanMapToOracle(typeof(sbyte?)));
+            Assert.False(TypeExtensions.CanMapToOracle(typeof(uint)));
+            Assert.False(TypeExtensions.CanMapToOracle(typeof(uint?)));
+            Assert.False(TypeExtensions.CanMapToOracle(typeof(ulong)));
+            Assert.False(TypeExtensions.CanMapToOracle(typeof(ulong?)));
+            Assert.False(TypeExtensions.CanMapToOracle(typeof(Guid)));
+            Assert.False(TypeExtensions.CanMapToOracle(typeof(Guid?)));
+            Assert.False(TypeExtensions.CanMapToOracle(typeof(TimeSpan)));
+            Assert.False(TypeExtensions.CanMapToOracle(typeof(TimeSpan?)));
+            Assert.False(TypeExtensions.CanMapToOracle(typeof(DateTimeOffset)));
+            Assert.False(TypeExtensions.CanMapToOracle(typeof(DateTimeOffset?)));
+        }
     }
 }

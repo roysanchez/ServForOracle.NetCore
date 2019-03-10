@@ -14,7 +14,66 @@ namespace ServForOracle.NetCore.Extensions
 
         public static bool IsClrType(this Type type)
         {
-            return type.IsValueType || type == typeof(string);
+            return type != null && (
+                type == typeof(uint) ||
+                type == typeof(uint?) ||
+                type == typeof(ulong) ||
+                type == typeof(ulong?) ||
+                type == typeof(byte) ||
+                type == typeof(byte?) ||
+                type == typeof(short) ||
+                type == typeof(short?) ||
+                type == typeof(int) ||
+                type == typeof(int?) ||
+                type == typeof(long) ||
+                type == typeof(long?) ||
+                type == typeof(bool) ||
+                type == typeof(bool?) ||
+                type == typeof(char) ||
+                type == typeof(char?) ||
+                type == typeof(float) ||
+                type == typeof(float?) ||
+                type == typeof(double) ||
+                type == typeof(double?) ||
+                type == typeof(decimal) ||
+                type == typeof(decimal?) ||
+                type == typeof(DateTime) ||
+                type == typeof(DateTime?) ||
+                type == typeof(TimeSpan) ||
+                type == typeof(TimeSpan?) ||
+                type == typeof(DateTimeOffset) ||
+                type == typeof(DateTimeOffset?) ||
+                type == typeof(Guid) ||
+                type == typeof(Guid?) ||
+                type == typeof(string)
+            );
+        }
+
+        public static bool CanMapToOracle(this Type type)
+        {
+            return type != null && (
+                type == typeof(string) ||
+                type == typeof(char) ||
+                type == typeof(char?) ||
+                type == typeof(short) ||
+                type == typeof(short?) ||
+                type == typeof(byte) ||
+                type == typeof(byte?) ||
+                type == typeof(int) ||
+                type == typeof(int?) ||
+                type == typeof(long) ||
+                type == typeof(long?) ||
+                type == typeof(float) ||
+                type == typeof(float?) ||
+                type == typeof(double) ||
+                type == typeof(double?) ||
+                type == typeof(decimal) ||
+                type == typeof(decimal?) ||
+                type == typeof(DateTime) ||
+                type == typeof(DateTime?) ||
+                type == typeof(bool) ||
+                type == typeof(bool?)
+            );
         }
 
         public static bool IsCollection(this Type type)
