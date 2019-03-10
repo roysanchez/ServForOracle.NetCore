@@ -1,6 +1,7 @@
 ﻿using AutoFixture;
 using AutoFixture.AutoMoq;
 using AutoFixture.Xunit2;
+using Oracle.ManagedDataAccess.Types;
 using ServForOracle.NetCore.Cache;
 using ServForOracle.NetCore.Metadata;
 using ServForOracle.NetCore.OracleAbstracts;
@@ -46,6 +47,8 @@ namespace ServForOracle.NetCore.UnitTests.Config
             {
                 return new MetadataOracleNetTypeDefinition(cache, type, typedef, propMap, true);
             });
+
+            fixture.Register<double, OracleDecimal>((p) => new OracleDecimal(p));
         }
     }
 }

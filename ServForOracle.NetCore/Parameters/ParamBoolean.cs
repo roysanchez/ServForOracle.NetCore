@@ -20,12 +20,12 @@ namespace ServForOracle.NetCore.Parameters
         public ParamBoolean(bool? value, ParameterDirection direction)
             : this(value, direction, new MetadataOracleBoolean())
         {
-            Value = value;
         }
 
         internal ParamBoolean(bool? value, ParameterDirection direction, MetadataOracleBoolean metadata)
             : base(typeof(bool?), value, direction)
         {
+            Value = value;
             Metadata = metadata;
         }
 

@@ -9,7 +9,7 @@ namespace ServForOracle.NetCore.Metadata
 {
     internal class MetadataOracleBoolean : MetadataBase
     {
-        public string GetDeclareLine(string parameterName)
+        public virtual string GetDeclareLine(string parameterName)
         {
             if (string.IsNullOrWhiteSpace(parameterName))
                 throw new ArgumentNullException(nameof(parameterName));
@@ -17,7 +17,7 @@ namespace ServForOracle.NetCore.Metadata
             return $"{parameterName} boolean;";
         }
 
-        public string OutputString(int startNumber, string fieldName)
+        public virtual string OutputString(int startNumber, string fieldName)
         {
             if (string.IsNullOrWhiteSpace(fieldName))
                 throw new ArgumentNullException(nameof(fieldName));
@@ -32,7 +32,7 @@ namespace ServForOracle.NetCore.Metadata
             return retStr;
         }
 
-        public OracleParameter GetOracleParameter(bool? value, int counter)
+        public virtual OracleParameter GetOracleParameter(bool? value, int counter)
         {
             byte? tempValue = null;
             if (value.HasValue)
@@ -46,7 +46,7 @@ namespace ServForOracle.NetCore.Metadata
             };
         }
 
-        public object GetBooleanValue(object value)
+        public virtual object GetBooleanValue(object value)
         {
             if (value is OracleDecimal v)
             {
