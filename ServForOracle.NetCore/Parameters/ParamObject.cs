@@ -18,8 +18,6 @@ namespace ServForOracle.NetCore.Parameters
 
         private string _ParameterName;
 
-        private OracleUdtInfo _UDTInfo;
-        internal override OracleUdtInfo UDTInfo => _UDTInfo;
         public override string ParameterName => _ParameterName;
 
         public ParamObject(T value, ParameterDirection direction)
@@ -31,9 +29,9 @@ namespace ServForOracle.NetCore.Parameters
         public ParamObject(T value, ParameterDirection direction, OracleUdtInfo udtInfo)
             : this(value, direction)
         {
-            _UDTInfo = udtInfo ?? throw new ArgumentNullException(nameof(udtInfo));
+            UDTInfo = udtInfo ?? throw new ArgumentNullException(nameof(udtInfo));
 
-            if (Type.IsCollection() && !_UDTInfo.IsCollectionValid)
+            if (Type.IsCollection() && !UDTInfo.IsCollectionValid)
             {
                 throw new ArgumentException($"For the type {Type.FullName} array you must especify the UDT collection name",
                     nameof(udtInfo));
@@ -43,14 +41,14 @@ namespace ServForOracle.NetCore.Parameters
         internal override void LoadObjectMetadata(MetadataBuilder builder)
         {
             Metadata = builder.GetOrRegisterMetadataOracleObject<T>(UDTInfo);
-            _UDTInfo = Metadata.OracleTypeNetMetadata.UDTInfo;
+            UDTInfo = Metadata.OracleTypeNetMetadata.UDTInfo;
             MetadataLoaded = true;
         }
 
         internal override async Task LoadObjectMetadataAsync(MetadataBuilder builder)
         {
             Metadata = await builder.GetOrRegisterMetadataOracleObjectAsync<T>(UDTInfo).ConfigureAwait(false);
-            _UDTInfo = Metadata.OracleTypeNetMetadata.UDTInfo;
+            UDTInfo = Metadata.OracleTypeNetMetadata.UDTInfo;
             MetadataLoaded = true;
         }
 
@@ -102,7 +100,7 @@ namespace ServForOracle.NetCore.Parameters
         {
         }
 
-        internal virtual OracleUdtInfo UDTInfo { get; }
+        protected internal OracleUdtInfo UDTInfo { get; protected set; }
         internal bool MetadataLoaded = false;
         internal abstract void LoadObjectMetadata(MetadataBuilder builder);
         internal abstract Task LoadObjectMetadataAsync(MetadataBuilder builder);

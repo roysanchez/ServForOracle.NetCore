@@ -301,7 +301,7 @@ namespace ServForOracle.NetCore.Metadata
             return declareLine.ToString();
         }
 
-        public (string Constructor, int LastNumber) BuildQueryConstructorString(T value, string name, int startNumber)
+        public virtual (string Constructor, int LastNumber) BuildQueryConstructorString(T value, string name, int startNumber)
         {
             var baseString = new StringBuilder();
             BuildQueryConstructor(baseString, Type, value, name, ref startNumber, OracleTypeNetMetadata, ConstructorString);
@@ -309,7 +309,7 @@ namespace ServForOracle.NetCore.Metadata
             return (baseString.ToString(), startNumber);
         }
 
-        public OracleParameter[] GetOracleParameters(T value, int startNumber)
+        public virtual OracleParameter[] GetOracleParameters(T value, int startNumber)
         {
             var parameters = new List<OracleParameter>();
             if (value != null)
@@ -397,12 +397,12 @@ namespace ServForOracle.NetCore.Metadata
             }
         }
 
-        public string GetDeclareLine(Type type, string parameterName, OracleUdtInfo udtInfo)
+        public virtual string GetDeclareLine(Type type, string parameterName, OracleUdtInfo udtInfo)
         {
             return GetDeclareLine(type, parameterName, udtInfo, OracleTypeNetMetadata);
         }
 
-        public OracleParameter GetOracleParameterForRefCursor(int starNumber)
+        public virtual OracleParameter GetOracleParameterForRefCursor(int starNumber)
         {
             return _Common.GetOracleParameterForRefCursor(starNumber);
         }
