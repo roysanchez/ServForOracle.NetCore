@@ -27,6 +27,7 @@ namespace ServForOracle.NetCore
         private readonly ServForOracleCache _Cache;
         private readonly ILogger _Logger;
         private readonly MetadataOracleCommon _Common;
+        private readonly IMetadataBuilderFactory _BuilderFactory;
 
         public ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, string connectionString)
             :this(logger, cache, new OracleDbConnectionFactory(connectionString))
@@ -34,16 +35,17 @@ namespace ServForOracle.NetCore
         }
 
         public ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory)
-            :this(logger, cache, factory, new MetadataOracleCommon())
+            :this(logger, cache, factory, new MetadataBuilderFactory(cache, logger), new MetadataOracleCommon())
         {
         }
 
-        internal ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory, MetadataOracleCommon common)
+        internal ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory, IMetadataBuilderFactory builderFactory, MetadataOracleCommon common)
         {
             _Logger = logger;
             _Cache = cache ?? throw new ArgumentNullException(nameof(cache));
             _DbFactory = factory ?? throw new ArgumentNullException(nameof(factory));
             _Common = common ?? throw new ArgumentNullException(nameof(common));
+            _BuilderFactory = builderFactory ?? throw new ArgumentNullException(nameof(builderFactory));
         }
 
         public async Task ExecuteProcedureAsync(string procedure, params IParam[] parameters)

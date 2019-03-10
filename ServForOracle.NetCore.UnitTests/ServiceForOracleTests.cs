@@ -26,17 +26,18 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal void Constructor_FourParameters(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory, MetadataOracleCommon common)
+        internal void Constructor_FourParameters(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory, MetadataOracleCommon common, IMetadataBuilderFactory builderFactory)
         {
-            var service = new ServiceForOracle(logger, cache, factory, common);
+            var service = new ServiceForOracle(logger, cache, factory, builderFactory, common);
         }
 
         [Theory, CustomAutoData]
-        internal void Constructor_FourParameters_NullParameter_ThrowsArgumentNull(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory, MetadataOracleCommon common)
+        internal void Constructor_FourParameters_NullParameter_ThrowsArgumentNull(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory, MetadataOracleCommon common, IMetadataBuilderFactory builderFactory)
         {
-            Assert.Throws<ArgumentNullException>("cache", () => new ServiceForOracle(logger, null, factory, common));
-            Assert.Throws<ArgumentNullException>("factory", () => new ServiceForOracle(logger, cache, null, common));
-            Assert.Throws<ArgumentNullException>("common", () => new ServiceForOracle(logger, cache, factory, null));
+            Assert.Throws<ArgumentNullException>("cache", () => new ServiceForOracle(logger, null, factory, builderFactory, common));
+            Assert.Throws<ArgumentNullException>("factory", () => new ServiceForOracle(logger, cache, null, builderFactory, common));
+            Assert.Throws<ArgumentNullException>("builderFactory", () => new ServiceForOracle(logger, cache, factory, null, common));
+            Assert.Throws<ArgumentNullException>("common", () => new ServiceForOracle(logger, cache, factory, builderFactory, null));
         }
     }
 }
