@@ -8,6 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="TestClasses\**" />
+    <EmbeddedResource Remove="TestClasses\**" />
+    <None Remove="TestClasses\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="AutoFixture.AutoMoq" Version="4.8.0" />
     <PackageReference Include="AutoFixture.Xunit2" Version="4.8.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
@@ -23,10 +29,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ServForOracle.NetCore\ServForOracle.NetCore.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="TestClasses\" />
   </ItemGroup>
 
 </Project>
