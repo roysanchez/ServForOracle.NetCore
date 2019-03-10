@@ -1,12 +1,15 @@
 ﻿using AutoFixture;
 using AutoFixture.AutoMoq;
 using AutoFixture.Xunit2;
+using Microsoft.Extensions.Logging;
+using Moq;
 using Oracle.ManagedDataAccess.Types;
 using ServForOracle.NetCore.Cache;
 using ServForOracle.NetCore.Metadata;
 using ServForOracle.NetCore.OracleAbstracts;
 using System;
 using System.Collections.Generic;
+using System.Data.Common;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
@@ -49,6 +52,12 @@ namespace ServForOracle.NetCore.UnitTests.Config
             });
 
             fixture.Register<double, OracleDecimal>((p) => new OracleDecimal(p));
+
+            fixture.Register<Mock<DbConnection>, ServForOracleCache, ILogger, Mock<MetadataBuilder>>((connection, cache, logger) =>
+            {
+                connection.SetupGet(c => c.ConnectionString).Returns(fixture.Create<string>());
+                return new Mock<MetadataBuilder>(connection.Object, cache, logger);
+            });
         }
     }
 }
