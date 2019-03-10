@@ -119,7 +119,8 @@ namespace ServForOracle.NetCore.OracleAbstracts
 
         public virtual bool Equals(OracleUdtInfo other)
         {
-            return ObjectSchema == other.ObjectSchema &&
+            return other != null &&
+                   ObjectSchema == other.ObjectSchema &&
                    ObjectName == other.ObjectName &&
                    CollectionSchema == other.CollectionSchema &&
                    CollectionName == other.CollectionName;
