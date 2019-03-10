@@ -41,9 +41,9 @@ namespace ServForOracle.NetCore
         internal ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory, MetadataOracleCommon common)
         {
             _Logger = logger;
-            _Cache = cache;
-            _DbFactory = factory;
-            _Common = common;
+            _Cache = cache ?? throw new ArgumentNullException(nameof(cache));
+            _DbFactory = factory ?? throw new ArgumentNullException(nameof(factory));
+            _Common = common ?? throw new ArgumentNullException(nameof(common));
         }
 
         public async Task ExecuteProcedureAsync(string procedure, params IParam[] parameters)
