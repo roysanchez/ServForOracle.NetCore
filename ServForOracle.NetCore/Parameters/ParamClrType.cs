@@ -12,7 +12,7 @@ namespace ServForOracle.NetCore.Parameters
     {
         
         internal MetadataOracleCommon Metadata { get; private set; }
-        public new T Value { get; private set; }
+        public virtual new T Value { get; private set; }
 
         public ParamClrType(T value, ParameterDirection direction)
             : this(value, direction, new MetadataOracleCommon())

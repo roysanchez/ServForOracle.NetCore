@@ -16,7 +16,7 @@ namespace ServForOracle.NetCore.Parameters
             Value = value;
             Direction = direction;
         }
-        public ParameterDirection Direction { get; private set; }
+        public virtual ParameterDirection Direction { get; private set; }
         public virtual Type Type { get; }
         public virtual object Value { get; protected set; }
         internal abstract Task SetOutputValueAsync(object value);

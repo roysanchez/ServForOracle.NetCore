@@ -24,7 +24,6 @@ namespace ServForOracle.NetCore
     public class ServiceForOracle : IServiceForOracle
     {
         private readonly IDbConnectionFactory _DbFactory;
-        private readonly ServForOracleCache _Cache;
         private readonly ILogger _Logger;
         private readonly MetadataOracleCommon _Common;
         private readonly IMetadataBuilderFactory _BuilderFactory;
