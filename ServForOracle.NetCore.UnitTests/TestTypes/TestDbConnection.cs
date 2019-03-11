@@ -18,7 +18,7 @@ namespace ServForOracle.NetCore.UnitTests.TestTypes
         public virtual string _ServerVersion { get; set; }
         public override string ServerVersion => _ServerVersion;
 
-        public ConnectionState _State;
+        public virtual ConnectionState _State { get; set; }
         public override ConnectionState State => _State;
 
         public override void ChangeDatabase(string databaseName)

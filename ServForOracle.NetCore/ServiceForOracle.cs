@@ -35,14 +35,13 @@ namespace ServForOracle.NetCore
         }
 
         public ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory)
-            :this(logger, cache, factory, new MetadataBuilderFactory(cache, logger), new MetadataOracleCommon())
+            :this(logger, factory, new MetadataBuilderFactory(cache, logger), new MetadataOracleCommon())
         {
         }
 
-        internal ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory, IMetadataBuilderFactory builderFactory, MetadataOracleCommon common)
+        internal ServiceForOracle(ILogger<ServiceForOracle> logger, IDbConnectionFactory factory, IMetadataBuilderFactory builderFactory, MetadataOracleCommon common)
         {
             _Logger = logger;
-            _Cache = cache ?? throw new ArgumentNullException(nameof(cache));
             _DbFactory = factory ?? throw new ArgumentNullException(nameof(factory));
             _Common = common ?? throw new ArgumentNullException(nameof(common));
             _BuilderFactory = builderFactory ?? throw new ArgumentNullException(nameof(builderFactory));
@@ -54,7 +53,7 @@ namespace ServForOracle.NetCore
             {
                 using (var connection = _DbFactory.CreateConnection())
                 {
-                    var builder = new MetadataBuilder(connection, _Cache, _Logger);
+                    var builder = _BuilderFactory.Create(connection);
                     await ExecuteAsync(builder, connection, procedure, parameters).ConfigureAwait(false);
                 }
             }
@@ -70,7 +69,7 @@ namespace ServForOracle.NetCore
             {
                 using (var connection = _DbFactory.CreateConnection())
                 {
-                    var builder = new MetadataBuilder(connection, _Cache, _Logger);
+                    var builder = _BuilderFactory.Create(connection);
                     Execute(builder, connection, procedure, parameters);
                 }
             }
@@ -98,7 +97,7 @@ namespace ServForOracle.NetCore
             {
                 using (var connection = _DbFactory.CreateConnection())
                 {
-                    var builder = new MetadataBuilder(connection, _Cache, _Logger);
+                    var builder = _BuilderFactory.Create(connection);
                     await ExecuteAsync(builder, connection, function, parameters,
                         (info) => Task.FromResult(FunctionBeforeQuery<T>(builder, info, udtInfo, out returnMetadata,
                             out retOra)),
@@ -134,7 +133,7 @@ namespace ServForOracle.NetCore
             {
                 using (var connection = _DbFactory.CreateConnection())
                 {
-                    var builder = new MetadataBuilder(connection, _Cache, _Logger);
+                    var builder = _BuilderFactory.Create(connection);
 
                     Execute(builder, connection, function, parameters,
                         (info) => FunctionBeforeQuery<T>(builder, info, udtInfo, out returnMetadata, out retOra),
