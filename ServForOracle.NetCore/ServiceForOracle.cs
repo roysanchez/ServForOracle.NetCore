@@ -453,8 +453,7 @@ namespace ServForOracle.NetCore
                     body.AppendLine(constructor);
                     info.ParameterCounter = lastNumber;
                 }
-                else if (param is ParamBoolean paramBool &&
-                    (param.Direction == ParameterDirection.Output || param.Direction == ParameterDirection.InputOutput))
+                else if (param is ParamBoolean paramBool && param.Direction == ParameterDirection.InputOutput)
                 {
                     body.AppendLine(paramBool.GetBodyVariableSetString());
                 }
@@ -513,9 +512,6 @@ namespace ServForOracle.NetCore
                     if (boolean.Direction == ParameterDirection.Output || boolean.Direction == ParameterDirection.InputOutput)
                     {
                         query.Append(boolean.ParameterName);
-                        //name = boolean.ParameterName;
-                        //var output = boolean.PrepareOutputParameter(info.ParameterCounter++);
-                        //info.OracleParameterList.Add(output.OracleParameter);
                     }
                     else
                     {
