@@ -519,5 +519,81 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         #endregion ExecuteProcedureAsync
+
+        #region ExecuteFunctionAsync
+
+        [Theory, CustomAutoData]
+        internal async Task ExecuteFunctionAsync_StringReturn(string function, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<TestDbConnection> connectionMock, Mock<MetadataOracleCommon> commonMock, OracleParameter returnParameter, string expectedValue)
+        {
+            var type = typeof(string);
+            
+            var message = $"declare{Environment.NewLine}{Environment.NewLine}"
+                + $"begin{Environment.NewLine}{Environment.NewLine}"
+                + $"{returnParameter.ParameterName} := {function}();"
+                + $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}end;";
+
+            commandMock.Setup(c => c.ExecuteNonQueryAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(0)
+                .Verifiable();
+
+            connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
+            connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
+            dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
+            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+            commonMock.Setup(c => c.GetOracleParameter(type, ParameterDirection.Output, ":0", DBNull.Value))
+                .Returns(returnParameter);
+            commonMock.Setup(c => c.ConvertOracleParameterToBaseType(typeof(string), returnParameter))
+                .Returns(expectedValue);
+
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, commonMock.Object);
+
+            var result = await service.ExecuteFunctionAsync<string>(function);
+
+            commandMock.Verify();
+            Assert.Equal(expectedValue, result);
+            Assert.Equal(commandMock.Object.CommandText, message);
+            Assert.NotEmpty(commandMock.Object.Parameters);
+            var oracleParameter = Assert.IsType<OracleParameter>(Assert.Single(commandMock.Object.Parameters));
+            Assert.Equal(returnParameter, oracleParameter);
+        }
+
+        [Theory, CustomAutoData]
+        internal async Task ExecuteFunctionAsync_StringReturn_OneParamInput(string function, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<TestDbConnection> connectionMock, Mock<MetadataOracleCommon> commonMock, OracleParameter oracleParameter, Mock<ParamClrType<string>> inputParam, string expectedValue)
+        {
+            var type = typeof(string);
+
+            var message = $"declare{Environment.NewLine}{Environment.NewLine}"
+                + $"begin{Environment.NewLine}{Environment.NewLine}"
+                + $"{oracleParameter.ParameterName} := {function}(:1);"
+                + $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}end;";
+
+            commandMock.Setup(c => c.ExecuteNonQueryAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(0)
+                .Verifiable();
+
+            connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
+            connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
+            dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
+            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+            commonMock.Setup(c => c.GetOracleParameter(type, ParameterDirection.Output, ":0", DBNull.Value))
+                .Returns(oracleParameter);
+            commonMock.Setup(c => c.ConvertOracleParameterToBaseType(typeof(string), oracleParameter))
+                .Returns(expectedValue);
+
+            inputParam.SetupGet(i => i.Direction).Returns(ParameterDirection.Input);
+            inputParam.Setup(i => i.GetOracleParameter(":1")).Returns(oracleParameter);
+
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, commonMock.Object);
+
+            var result = await service.ExecuteFunctionAsync<string>(function, inputParam.Object);
+
+            commandMock.Verify();
+            Assert.Equal(expectedValue, result);
+            Assert.Equal(commandMock.Object.CommandText, message);
+            Assert.NotEmpty(commandMock.Object.Parameters);
+            AssertExtensions.All(commandMock.Object.Parameters, c => Assert.Same(oracleParameter, c));
+        }
+
+        #endregion ExecuteFunctionAsync
     }
 }

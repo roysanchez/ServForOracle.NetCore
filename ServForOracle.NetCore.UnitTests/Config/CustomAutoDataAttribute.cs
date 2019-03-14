@@ -3,6 +3,7 @@ using AutoFixture.AutoMoq;
 using AutoFixture.Xunit2;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Oracle.ManagedDataAccess.Client;
 using Oracle.ManagedDataAccess.Types;
 using ServForOracle.NetCore.Cache;
 using ServForOracle.NetCore.Metadata;
@@ -58,6 +59,8 @@ namespace ServForOracle.NetCore.UnitTests.Config
                 connection.SetupGet(c => c.ConnectionString).Returns(fixture.Create<string>());
                 return new Mock<MetadataBuilder>(connection.Object, cache, logger);
             });
+
+            fixture.Register<string, OracleParameter>((p) => new OracleParameter { ParameterName = p });
         }
     }
 }
