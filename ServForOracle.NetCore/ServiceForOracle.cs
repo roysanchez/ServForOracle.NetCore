@@ -29,12 +29,12 @@ namespace ServForOracle.NetCore
         private readonly IMetadataBuilderFactory _BuilderFactory;
 
         public ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, string connectionString)
-            :this(logger, cache, new OracleDbConnectionFactory(connectionString))
+            : this(logger, cache, new OracleDbConnectionFactory(connectionString))
         {
         }
 
         public ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory)
-            :this(logger, factory, new MetadataBuilderFactory(cache, logger), new MetadataOracleCommon())
+            : this(logger, factory, new MetadataBuilderFactory(cache, logger), new MetadataOracleCommon())
         {
         }
 
@@ -121,7 +121,7 @@ namespace ServForOracle.NetCore
                     return GetReturnParameterOtuputValue<T>(retOra, returnMetadata);
                 }
             }
-            finally{ _DbFactory.Dispose(); }
+            finally { _DbFactory.Dispose(); }
         }
 
         public T ExecuteFunction<T>(string function, OracleUdtInfo udtInfo, params IParam[] parameters)
@@ -155,7 +155,7 @@ namespace ServForOracle.NetCore
                     return GetReturnParameterOtuputValue<T>(retOra, returnMetadata);
                 }
             }
-            finally{ _DbFactory.Dispose(); }
+            finally { _DbFactory.Dispose(); }
         }
 
         private AdditionalInformation ReturnValueAdditionalInformationBoolean<T>(ExecutionInformation info,
@@ -222,7 +222,7 @@ namespace ServForOracle.NetCore
             }
             else
             {
-               
+
                 return (T)_Common.ConvertOracleParameterToBaseType(returnType, retOra);
             }
         }
@@ -271,7 +271,7 @@ namespace ServForOracle.NetCore
 
             //elvis operator is throwing null reference
             string beforeQ = string.Empty;
-            if(beforeQuery != null)
+            if (beforeQuery != null)
             {
                 beforeQ = await beforeQuery.Invoke(info).ConfigureAwait(false);
             }
@@ -282,7 +282,7 @@ namespace ServForOracle.NetCore
 
             AdditionalInformation additionalInfo = null;
 
-            if(beforeEnd != null)
+            if (beforeEnd != null)
             {
                 additionalInfo = await beforeEnd.Invoke(info).ConfigureAwait(false);
             }
@@ -421,7 +421,7 @@ namespace ServForOracle.NetCore
 
             foreach (var param in parameters.Where(c => c is ParamManaged).Cast<ParamManaged>())
             {
-                if(param is ParamBoolean boolean && !(boolean.Direction == ParameterDirection.Output || boolean.Direction == ParameterDirection.InputOutput))
+                if (param is ParamBoolean boolean && !(boolean.Direction == ParameterDirection.Output || boolean.Direction == ParameterDirection.InputOutput))
                 {
                     continue;
                 }
@@ -440,17 +440,23 @@ namespace ServForOracle.NetCore
             var body = new StringBuilder();
             body.AppendLine("begin");
 
-            foreach (var param in parameters.Where(c => c is ParamObject).Cast<ParamObject>())
+            foreach (var param in parameters.Where(c => c is ParamManaged))
             {
-                if (param.Direction == ParameterDirection.Input || param.Direction == ParameterDirection.InputOutput)
+                if (param is ParamObject paramObj &&
+                    (paramObj.Direction == ParameterDirection.Input || paramObj.Direction == ParameterDirection.InputOutput))
                 {
-                    var (constructor, lastNumber) = param.BuildQueryConstructorString(info.ParameterCounter);
-                    var oraParameters = param.GetOracleParameters(info.ParameterCounter);
+                    var (constructor, lastNumber) = paramObj.BuildQueryConstructorString(info.ParameterCounter);
+                    var oraParameters = paramObj.GetOracleParameters(info.ParameterCounter);
 
                     info.OracleParameterList.AddRange(oraParameters);
 
                     body.AppendLine(constructor);
                     info.ParameterCounter = lastNumber;
+                }
+                else if (param is ParamBoolean paramBool &&
+                    (param.Direction == ParameterDirection.Output || param.Direction == ParameterDirection.InputOutput))
+                {
+                    body.AppendLine(paramBool.GetBodyVariableSetString());
                 }
             }
 
@@ -502,21 +508,22 @@ namespace ServForOracle.NetCore
                         info.Outputs.Add(new PreparedOutputParameter(clrType, oracleParameter, null));
                     }
                 }
-                else if(param is ParamBoolean boolean)
+                else if (param is ParamBoolean boolean)
                 {
-                    var name = $":{info.ParameterCounter}";
-                    query.Append(name);
                     if (boolean.Direction == ParameterDirection.Output || boolean.Direction == ParameterDirection.InputOutput)
                     {
-                        var output = boolean.PrepareOutputParameter(info.ParameterCounter++);
-                        info.OracleParameterList.Add(output.OracleParameter);
+                        query.Append(boolean.ParameterName);
+                        //name = boolean.ParameterName;
+                        //var output = boolean.PrepareOutputParameter(info.ParameterCounter++);
+                        //info.OracleParameterList.Add(output.OracleParameter);
                     }
                     else
                     {
-                        boolean.SetParameterName($":{info.ParameterCounter}");
+                        var name = $":{info.ParameterCounter}";
+                        boolean.SetParameterName(name);
                         info.OracleParameterList.Add(boolean.GetOracleParameter(info.ParameterCounter++));
+                        query.Append(name);
                     }
-                    
                 }
             }
 

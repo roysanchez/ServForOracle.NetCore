@@ -18,7 +18,7 @@ namespace ServForOracle.NetCore.Parameters
 
         private string _ParameterName;
 
-        public override string ParameterName => _ParameterName;
+        internal override string ParameterName => _ParameterName;
 
         public ParamObject(T value, ParameterDirection direction)
             : base(typeof(T), value, direction)
@@ -52,12 +52,12 @@ namespace ServForOracle.NetCore.Parameters
             MetadataLoaded = true;
         }
 
-        public override void SetParameterName(string name)
+        internal override void SetParameterName(string name)
         {
             _ParameterName = name;
         }
 
-        public override string GetDeclareLine()
+        internal override string GetDeclareLine()
         {
             return Metadata.GetDeclareLine(Type, _ParameterName, UDTInfo);
         }

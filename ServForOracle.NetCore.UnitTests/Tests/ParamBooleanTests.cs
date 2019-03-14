@@ -211,5 +211,41 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.Equal(expectedParameter, prepared.OracleParameter);
             Assert.Equal(param, prepared.Parameter);
         }
+
+        [Theory, CustomAutoData]
+        internal void GetBodyVariableSetString_NullValue(MetadataOracleBoolean metadata, string name, ParameterDirection direction)
+        {
+            var param = new ParamBoolean(null, direction, metadata);
+
+            param.SetParameterName(name);
+
+            var actual = param.GetBodyVariableSetString();
+
+            Assert.Equal($"{name} := null;", actual);
+        }
+
+        [Theory, CustomAutoData]
+        internal void GetBodyVariableSetString_TrueValue(MetadataOracleBoolean metadata, string name, ParameterDirection direction)
+        {
+            var param = new ParamBoolean(true, direction, metadata);
+
+            param.SetParameterName(name);
+
+            var actual = param.GetBodyVariableSetString();
+
+            Assert.Equal($"{name} := true;", actual);
+        }
+
+        [Theory, CustomAutoData]
+        internal void GetBodyVariableSetString_FalseValue(MetadataOracleBoolean metadata, string name, ParameterDirection direction)
+        {
+            var param = new ParamBoolean(false, direction, metadata);
+
+            param.SetParameterName(name);
+
+            var actual = param.GetBodyVariableSetString();
+
+            Assert.Equal($"{name} := false;", actual);
+        }
     }
 }

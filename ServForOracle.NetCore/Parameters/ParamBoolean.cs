@@ -15,6 +15,7 @@ namespace ServForOracle.NetCore.Parameters
         internal MetadataOracleBoolean Metadata { get; private set; }
 
         bool IParam<bool>.Value => Value ?? false;
+        internal override string ParameterName => _ParameterName;
         private string _ParameterName;
 
         public ParamBoolean(bool? value, ParameterDirection direction)
@@ -29,7 +30,26 @@ namespace ServForOracle.NetCore.Parameters
             Metadata = metadata;
         }
 
-        public override string GetDeclareLine()
+        internal virtual string GetBodyVariableSetString()
+        {
+            if (Value.HasValue)
+            {
+                if (Value.Value)
+                {
+                    return $"{_ParameterName} := true;";
+                }
+                else
+                {
+                    return $"{_ParameterName} := false;";
+                }
+            }
+            else
+            {
+                return $"{_ParameterName} := null;";
+            }
+        }
+
+        internal override string GetDeclareLine()
         {
             if (Direction == ParameterDirection.Input)
             {
@@ -56,12 +76,12 @@ namespace ServForOracle.NetCore.Parameters
             return Task.CompletedTask;
         }
 
-        public override void SetParameterName(string name)
+        internal override void SetParameterName(string name)
         {
             _ParameterName = name;
         }
 
-        internal OracleParameter GetOracleParameter(int startNumber)
+        internal virtual OracleParameter GetOracleParameter(int startNumber)
         {
             if (Direction == ParameterDirection.Output || Direction == ParameterDirection.InputOutput)
             {
