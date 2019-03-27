@@ -90,7 +90,7 @@ namespace ServForOracle.NetCore.UnitTests
 
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
             connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
-            
+
 
             dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
             builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
@@ -144,7 +144,7 @@ namespace ServForOracle.NetCore.UnitTests
             var message = $"declare{Environment.NewLine}{Environment.NewLine}begin"
                 + $"{Environment.NewLine}{Environment.NewLine}{procedure}(:0);"
                 + $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}end;";
-            
+
             commandMock.Setup(c => c.ExecuteNonQueryAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(0)
                 .Verifiable();
@@ -156,10 +156,10 @@ namespace ServForOracle.NetCore.UnitTests
             builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
 
             outputMock.SetupGet(o => o.Direction).Returns(ParameterDirection.Output);
-            
+
             outputMock.Setup(o => o.SetOutputValueAsync(expectedValue)).Returns(Task.CompletedTask)
                 .Verifiable();
-            
+
             var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
 
             await service.ExecuteProcedureAsync(procedure, outputMock.Object);
@@ -199,7 +199,7 @@ namespace ServForOracle.NetCore.UnitTests
             inputOutputMock.Setup(io => io.SetOutputValueAsync(output))
                 .Returns(Task.CompletedTask)
                 .Verifiable();
-           
+
             var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
 
             await service.ExecuteProcedureAsync(procedure, inputOutputMock.Object);
@@ -306,7 +306,7 @@ namespace ServForOracle.NetCore.UnitTests
             await service.ExecuteProcedureAsync(procedure, inputMock.Object);
 
             commandMock.Verify();
-            
+
             Assert.Equal(commandMock.Object.CommandText, message);
             Assert.NotEmpty(commandMock.Object.Parameters);
             AssertExtensions.Length(commandMock.Object.Parameters, inputParameters.Length);
@@ -472,7 +472,7 @@ namespace ServForOracle.NetCore.UnitTests
             builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
 
             outputMock.Setup(o => o.Direction).Returns(ParameterDirection.Output);
-            
+
             outputMock.Setup(o => o.GetDeclareLine())
                 .Returns(declareLine);
             outputMock.Setup(o => o.PrepareOutputParameter(0))
@@ -536,13 +536,14 @@ namespace ServForOracle.NetCore.UnitTests
             var oracleParameter = Assert.IsType<OracleParameter>(Assert.Single(commandMock.Object.Parameters));
             Assert.Equal(prepared.OracleParameter, oracleParameter);
         }
-        
+
         [Theory, CustomAutoData]
-        internal async Task ExecuteProcedureAsync_OneOfEveryKindParam(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, MetadataOracleCommon common, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock,  string declareLine, string outputString, Fixture fixture)
+        internal async Task ExecuteProcedureAsync_OneOfEveryKindParam(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, MetadataOracleCommon common, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Fixture fixture)
         {
             const string voidMethodName = "set_Value";
             const string parametersNameRegex = @"^p\d*$";
             const string oracleNameRegex = @"^:\d*$";
+            var objectInputOutputLastNumber = fixture.Create<int>();
 
             commandMock.Setup(c => c.ExecuteNonQueryAsync(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(0)
@@ -552,9 +553,9 @@ namespace ServForOracle.NetCore.UnitTests
             dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
             builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
 
-
+            #region ParamClrtType
             var stringInput = new Mock<ParamClrType<string>>(MockBehavior.Strict, null, ParameterDirection.Input);
-            
+
             stringInput
                 .Protected()
                 .SetupSequence(voidMethodName, ItExpr.IsNull<object>())
@@ -565,7 +566,7 @@ namespace ServForOracle.NetCore.UnitTests
             var stringInputParameter = fixture.Create<OracleParameter>();
             stringInput.Setup(i => i.GetOracleParameter(It.IsRegex(oracleNameRegex))).Returns(stringInputParameter);
 
-            
+
             var stringOutput = new Mock<ParamClrType<string>>(MockBehavior.Strict, null, ParameterDirection.Output);
             stringOutput
                 .Protected()
@@ -591,6 +592,9 @@ namespace ServForOracle.NetCore.UnitTests
             var stringInputOutputParameter = fixture.Create<OracleParameter>();
             stringInputOutput.Setup(i => i.GetOracleParameter(It.IsRegex(oracleNameRegex))).Returns(stringInputOutputParameter);
 
+            #endregion ParamClrtType
+
+            #region ParamObject
 
             var objectInputValue = fixture.Create<TestClass>();
             var objectInput = new Mock<ParamObject<TestClass>>(MockBehavior.Strict, objectInputValue, ParameterDirection.Input);
@@ -652,8 +656,10 @@ namespace ServForOracle.NetCore.UnitTests
             var preparedObjectInputOutput = new PreparedOutputParameter(objectInputOutput.Object, fixture.Create<OracleParameter>(), "preparedObjectInputOutput" + fixture.Create<string>());
             objectInputOutput.Setup(o => o.SetOutputValueAsync(null)).Returns(Task.CompletedTask);
             objectInputOutput.Setup(o => o.PrepareOutputParameter(It.IsAny<int>())).Returns(preparedObjectInputOutput);
-            var objectInputOutputLastNumber = fixture.Create<int>();
+
+
             var objectInputOutputConstructor = "objectInputOutputConstructor" + fixture.Create<string>();
+
             objectInputOutput.Setup(i => i.BuildQueryConstructorString(It.IsAny<int>())).Returns((objectInputOutputConstructor, objectInputOutputLastNumber));
             objectInputOutput.Setup(o => o.LoadObjectMetadataAsync(builderMock.Object)).Returns(Task.CompletedTask);
 
@@ -661,19 +667,29 @@ namespace ServForOracle.NetCore.UnitTests
             objectInputOutput.SetupGet(o => o.ParameterName)
                 .Returns(objectInputOutputParameterName);
 
+            #endregion ParamObject
 
-            var booleanInput = new Mock<ParamBoolean>(false, ParameterDirection.Input);
+            #region ParamBoolean
+
+            var booleanInput = new Mock<ParamBoolean>(MockBehavior.Strict, false, ParameterDirection.Input);
+            booleanInput
+                .Protected()
+                .Setup(voidMethodName, ItExpr.Is<object>(v => v.Equals(false)));
             booleanInput.SetupGet(s => s.Direction).Returns(ParameterDirection.Input);
-            var declareBooleanInput = "declareBooleanInput" + fixture.Create<string>();
-            booleanInput.Setup(x => x.GetDeclareLine()).Returns(declareBooleanInput);
-            var booleanInputParameter = fixture.Create<OracleParameter>();
-            booleanInput.Setup(i => i.GetOracleParameter(0)).Returns(booleanInputParameter);
+            booleanInput
+                .Setup(m => m.SetParameterName(It.IsRegex(oracleNameRegex)));
 
-            var booleanOutput = new Mock<ParamBoolean>(null, ParameterDirection.Output);
+            var booleanInputParameter = fixture.Create<OracleParameter>();
+            booleanInput.Setup(i => i.GetOracleParameter(It.IsAny<int>())).Returns(booleanInputParameter);
+
+            var booleanOutput = new Mock<ParamBoolean>(MockBehavior.Strict, null, ParameterDirection.Output);
+            booleanOutput
+                .Protected()
+                .Setup(voidMethodName, ItExpr.IsNull<object>());
             booleanOutput
                 .Setup(m => m.SetParameterName(It.IsRegex(parametersNameRegex)));
             booleanOutput.SetupGet(s => s.Direction).Returns(ParameterDirection.Output);
-            var booleanOutputParameterName = "booleanInputOutputParameterName" + fixture.Create<string>();
+            var booleanOutputParameterName = "booleanOutputParameterName" + fixture.Create<string>();
             booleanOutput
                 .SetupGet(b => b.ParameterName)
                 .Returns(booleanOutputParameterName);
@@ -683,9 +699,12 @@ namespace ServForOracle.NetCore.UnitTests
             booleanOutput.Setup(o => o.SetOutputValueAsync(null)).Returns(Task.CompletedTask);
             booleanOutput.Setup(o => o.PrepareOutputParameter(It.IsAny<int>())).Returns(preparedBooleanOutput);
 
-            var booleanInputOutput = new Mock<ParamBoolean>(true, ParameterDirection.InputOutput);
+            var booleanInputOutput = new Mock<ParamBoolean>(MockBehavior.Strict, true, ParameterDirection.InputOutput);
             booleanInputOutput
                 .Setup(m => m.SetParameterName(It.IsRegex(parametersNameRegex)));
+            booleanInputOutput
+                .Protected()
+                .Setup(voidMethodName, ItExpr.Is<object>(v => v.Equals(true)));
 
             var booleanInputOutputParameterName = "booleanInputOutputParameterName" + fixture.Create<string>();
             booleanInputOutput
@@ -701,14 +720,46 @@ namespace ServForOracle.NetCore.UnitTests
             booleanInputOutput.Setup(o => o.SetOutputValueAsync(null)).Returns(Task.CompletedTask);
             booleanInputOutput.Setup(o => o.PrepareOutputParameter(It.IsAny<int>())).Returns(preparedInputOuputBoolean);
 
+            #endregion ParamBoolean
 
-            var message = $"declare{Environment.NewLine}"
-                + $"{declareLine}{Environment.NewLine}"
-                + $"{Environment.NewLine}begin{Environment.NewLine}"
-                + Environment.NewLine
-                + $"{procedure}(p0);{Environment.NewLine}{Environment.NewLine}"
-                + $"{outputString}{Environment.NewLine}{Environment.NewLine}end;";
+            #region Message
 
+            var message = new StringBuilder();
+            message.AppendLine("declare");
+            message.AppendLine(declareObjectInput);
+            message.AppendLine(declareObjectOutput);
+            message.AppendLine(declareBooleanOutput);
+            message.AppendLine(declareObjectInputOutput);
+            message.AppendLine(declareBooleanInputOutput);
+            message.AppendLine();
+
+            message.AppendLine("begin");
+            message.AppendLine(objectInputConstructor);
+            message.AppendLine(objectInputOutputConstructor);
+            message.AppendLine(booleanInputOutputBodyString);
+
+            message.AppendLine();
+            message.Append(procedure + "(");
+            message.Append(objectInputParameterName + ",");
+            message.Append(":" + objectInputOutputLastNumber + ",");
+            message.Append(":" + (objectInputOutputLastNumber + 1) + ",");
+            message.Append(objectOutputParameterName + ",");
+            message.Append(":" + (objectInputOutputLastNumber + 2) + ",");
+            message.Append(booleanOutputParameterName + ",");
+            message.Append(objectInputOutputParameterName + ",");
+            message.Append(":" + (objectInputOutputLastNumber + 3) + ",");
+            message.AppendLine(booleanInputOutputParameterName + ");");
+
+            message.AppendLine();
+            message.AppendLine(preparedObjectOutput.OutputString);
+            message.AppendLine(preparedBooleanOutput.OutputString);
+            message.AppendLine(preparedObjectInputOutput.OutputString);
+            message.AppendLine(preparedInputOuputBoolean.OutputString);
+
+            message.AppendLine();
+            message.Append("end;");
+
+            #endregion Message
 
             var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
 
@@ -716,10 +767,9 @@ namespace ServForOracle.NetCore.UnitTests
 
             commandMock.Verify();
             booleanInputOutput.Verify();
-            //Assert.Equal(commandMock.Object.CommandText, message);
-            //Assert.NotEmpty(commandMock.Object.Parameters);
-            //var oracleParameter = Assert.IsType<OracleParameter>(Assert.Single(commandMock.Object.Parameters));
-            //Assert.Equal(preparedInputOuputBoolean.OracleParameter, oracleParameter);
+            Assert.Equal(message.ToString(), commandMock.Object.CommandText);
+            Assert.NotEmpty(commandMock.Object.Parameters);
+            Assert.Equal(14, commandMock.Object.Parameters.Count);
         }
 
         #endregion ExecuteProcedureAsync
@@ -730,7 +780,7 @@ namespace ServForOracle.NetCore.UnitTests
         internal async Task ExecuteFunctionAsync_StringReturn(string function, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<TestDbConnection> connectionMock, Mock<MetadataOracleCommon> commonMock, OracleParameter returnParameter, string expectedValue)
         {
             var type = typeof(string);
-            
+
             var message = $"declare{Environment.NewLine}{Environment.NewLine}"
                 + $"begin{Environment.NewLine}{Environment.NewLine}"
                 + $"{returnParameter.ParameterName} := {function}();"
