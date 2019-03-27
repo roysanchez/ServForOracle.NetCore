@@ -13,8 +13,8 @@ namespace ServForOracle.NetCore.Parameters
         protected Param(Type type, object value, ParameterDirection direction)
         {
             Type = type;
-            Value = value;
             Direction = direction;
+            Value = value;
         }
         public virtual ParameterDirection Direction { get; private set; }
         public virtual Type Type { get; }

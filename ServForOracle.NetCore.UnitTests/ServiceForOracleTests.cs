@@ -1,6 +1,8 @@
-﻿using Castle.Core.Logging;
+﻿using AutoFixture;
+using Castle.Core.Logging;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Moq.Protected;
 using Oracle.ManagedDataAccess.Client;
 using ServForOracle.NetCore.Cache;
 using ServForOracle.NetCore.Metadata;
@@ -21,10 +23,27 @@ namespace ServForOracle.NetCore.UnitTests
 {
     public class ServiceForOracleTests
     {
-        public class TestClass
+        public class TestClass : IEquatable<TestClass>
         {
             public string Prop1 { get; set; }
             public int Prop2 { get; set; }
+
+            public bool Equals(TestClass other)
+            {
+                return other != null
+                    && other.Prop1 == Prop1
+                    && other.Prop2 == Prop2;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return Equals(obj as TestClass);
+            }
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(Prop1, Prop2);
+            }
         }
         #region Constructor
 
@@ -516,6 +535,191 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.NotEmpty(commandMock.Object.Parameters);
             var oracleParameter = Assert.IsType<OracleParameter>(Assert.Single(commandMock.Object.Parameters));
             Assert.Equal(prepared.OracleParameter, oracleParameter);
+        }
+        
+        [Theory, CustomAutoData]
+        internal async Task ExecuteProcedureAsync_OneOfEveryKindParam(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, MetadataOracleCommon common, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock,  string declareLine, string outputString, Fixture fixture)
+        {
+            const string voidMethodName = "set_Value";
+            const string parametersNameRegex = @"^p\d*$";
+            const string oracleNameRegex = @"^:\d*$";
+
+            commandMock.Setup(c => c.ExecuteNonQueryAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(0)
+                .Verifiable();
+            connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
+            connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
+            dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
+            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+
+
+            var stringInput = new Mock<ParamClrType<string>>(MockBehavior.Strict, null, ParameterDirection.Input);
+            
+            stringInput
+                .Protected()
+                .SetupSequence(voidMethodName, ItExpr.IsNull<object>())
+                .Pass();
+            stringInput.SetupGet(s => s.Direction).Returns(ParameterDirection.Input);
+            stringInput.SetupGet(s => s.Value).Returns(fixture.Create<string>());
+            var declareStringInput = "declareStringInput" + fixture.Create<string>();
+            var stringInputParameter = fixture.Create<OracleParameter>();
+            stringInput.Setup(i => i.GetOracleParameter(It.IsRegex(oracleNameRegex))).Returns(stringInputParameter);
+
+            
+            var stringOutput = new Mock<ParamClrType<string>>(MockBehavior.Strict, null, ParameterDirection.Output);
+            stringOutput
+                .Protected()
+                .SetupSequence(voidMethodName, ItExpr.IsNull<object>())
+                .Pass();
+
+            stringOutput.SetupGet(s => s.Direction).Returns(ParameterDirection.Output);
+            var declareStringOutput = "declareStringOutput" + fixture.Create<string>();
+            stringOutput.Setup(o => o.SetOutputValueAsync(null)).Returns(Task.CompletedTask);
+            var stringOutputParameter = fixture.Create<OracleParameter>();
+            stringOutput.Setup(i => i.GetOracleParameter(It.IsRegex(oracleNameRegex))).Returns(stringOutputParameter);
+
+
+            var stringInputOutput = new Mock<ParamClrType<string>>(MockBehavior.Strict, fixture.Create<string>(), ParameterDirection.InputOutput);
+            stringInputOutput
+                .Protected()
+                .SetupSequence(voidMethodName, ItExpr.IsAny<object>())
+                .Pass();
+
+            stringInputOutput.SetupGet(s => s.Direction).Returns(ParameterDirection.InputOutput);
+            var declareStringInputOutput = "declareStringInputOutput" + fixture.Create<string>();
+            stringInputOutput.Setup(o => o.SetOutputValueAsync(null)).Returns(Task.CompletedTask);
+            var stringInputOutputParameter = fixture.Create<OracleParameter>();
+            stringInputOutput.Setup(i => i.GetOracleParameter(It.IsRegex(oracleNameRegex))).Returns(stringInputOutputParameter);
+
+
+            var objectInputValue = fixture.Create<TestClass>();
+            var objectInput = new Mock<ParamObject<TestClass>>(MockBehavior.Strict, objectInputValue, ParameterDirection.Input);
+            objectInput
+                .Protected()
+                .Setup(voidMethodName, ItExpr.Is<object>(v => v.Equals(objectInputValue)));
+            objectInput
+                .Setup(m => m.SetParameterName(It.IsRegex(parametersNameRegex)));
+
+            objectInput.SetupGet(s => s.Direction).Returns(ParameterDirection.Input);
+            var declareObjectInput = "declareObjectInput" + fixture.Create<string>();
+            objectInput.Setup(x => x.GetDeclareLine()).Returns(declareObjectInput);
+            var objectInputParameters = fixture.Create<OracleParameter[]>();
+            objectInput.Setup(i => i.GetOracleParameters(It.IsAny<int>())).Returns(objectInputParameters);
+            var objectInputLastNumber = fixture.Create<int>();
+            var objectInputConstructor = "objectInputConstructor" + fixture.Create<string>();
+            objectInput.Setup(i => i.BuildQueryConstructorString(It.IsAny<int>())).Returns((objectInputConstructor, objectInputLastNumber));
+            objectInput.Setup(o => o.LoadObjectMetadataAsync(builderMock.Object)).Returns(Task.CompletedTask);
+
+            var objectInputParameterName = "objectInputParameterName" + fixture.Create<string>();
+            objectInput.SetupGet(o => o.ParameterName)
+                .Returns(objectInputParameterName);
+
+
+            var objectOutput = new Mock<ParamObject<TestClass>>(MockBehavior.Strict, null, ParameterDirection.Output);
+            objectOutput
+                .Protected()
+                .Setup(voidMethodName, ItExpr.IsNull<object>());
+            objectOutput
+                .Setup(m => m.SetParameterName(It.IsRegex(parametersNameRegex)));
+
+            objectOutput.SetupGet(s => s.Direction).Returns(ParameterDirection.Output);
+            var declareObjectOutput = "declareObjectOutput" + fixture.Create<string>();
+            objectOutput.Setup(x => x.GetDeclareLine()).Returns(declareObjectOutput);
+
+            var preparedObjectOutput = new PreparedOutputParameter(objectOutput.Object, fixture.Create<OracleParameter>(), "preparedObjectOutput" + fixture.Create<string>());
+            objectOutput.Setup(o => o.SetOutputValueAsync(null)).Returns(Task.CompletedTask);
+            objectOutput.Setup(o => o.PrepareOutputParameter(It.IsAny<int>())).Returns(preparedObjectOutput);
+            objectOutput.Setup(o => o.LoadObjectMetadataAsync(builderMock.Object)).Returns(Task.CompletedTask);
+
+            var objectOutputParameterName = "objectOutputParameterName" + fixture.Create<string>();
+            objectOutput.SetupGet(o => o.ParameterName)
+                .Returns(objectOutputParameterName);
+
+
+            var objectInputOutputValue = fixture.Create<TestClass>();
+            var objectInputOutput = new Mock<ParamObject<TestClass>>(MockBehavior.Strict, objectInputOutputValue, ParameterDirection.InputOutput);
+            objectInputOutput
+                .Protected()
+                .Setup(voidMethodName, ItExpr.Is<object>(v => v.Equals(objectInputOutputValue)));
+            objectInputOutput
+                .Setup(m => m.SetParameterName(It.IsRegex(parametersNameRegex)));
+
+            var objectInputOutputParameters = fixture.Create<OracleParameter[]>();
+            objectInputOutput.Setup(i => i.GetOracleParameters(It.IsAny<int>())).Returns(objectInputOutputParameters);
+            objectInputOutput.SetupGet(s => s.Direction).Returns(ParameterDirection.InputOutput);
+            var declareObjectInputOutput = "declareObjectInputOutput" + fixture.Create<string>();
+            objectInputOutput.Setup(x => x.GetDeclareLine()).Returns(declareObjectInputOutput);
+            var preparedObjectInputOutput = new PreparedOutputParameter(objectInputOutput.Object, fixture.Create<OracleParameter>(), "preparedObjectInputOutput" + fixture.Create<string>());
+            objectInputOutput.Setup(o => o.SetOutputValueAsync(null)).Returns(Task.CompletedTask);
+            objectInputOutput.Setup(o => o.PrepareOutputParameter(It.IsAny<int>())).Returns(preparedObjectInputOutput);
+            var objectInputOutputLastNumber = fixture.Create<int>();
+            var objectInputOutputConstructor = "objectInputOutputConstructor" + fixture.Create<string>();
+            objectInputOutput.Setup(i => i.BuildQueryConstructorString(It.IsAny<int>())).Returns((objectInputOutputConstructor, objectInputOutputLastNumber));
+            objectInputOutput.Setup(o => o.LoadObjectMetadataAsync(builderMock.Object)).Returns(Task.CompletedTask);
+
+            var objectInputOutputParameterName = "objectInputOutputParameterName" + fixture.Create<string>();
+            objectInputOutput.SetupGet(o => o.ParameterName)
+                .Returns(objectInputOutputParameterName);
+
+
+            var booleanInput = new Mock<ParamBoolean>(false, ParameterDirection.Input);
+            booleanInput.SetupGet(s => s.Direction).Returns(ParameterDirection.Input);
+            var declareBooleanInput = "declareBooleanInput" + fixture.Create<string>();
+            booleanInput.Setup(x => x.GetDeclareLine()).Returns(declareBooleanInput);
+            var booleanInputParameter = fixture.Create<OracleParameter>();
+            booleanInput.Setup(i => i.GetOracleParameter(0)).Returns(booleanInputParameter);
+
+            var booleanOutput = new Mock<ParamBoolean>(null, ParameterDirection.Output);
+            booleanOutput
+                .Setup(m => m.SetParameterName(It.IsRegex(parametersNameRegex)));
+            booleanOutput.SetupGet(s => s.Direction).Returns(ParameterDirection.Output);
+            var booleanOutputParameterName = "booleanInputOutputParameterName" + fixture.Create<string>();
+            booleanOutput
+                .SetupGet(b => b.ParameterName)
+                .Returns(booleanOutputParameterName);
+            var declareBooleanOutput = "declareBooleanOutput" + fixture.Create<string>();
+            booleanOutput.Setup(x => x.GetDeclareLine()).Returns(declareBooleanOutput);
+            var preparedBooleanOutput = new PreparedOutputParameter(booleanOutput.Object, fixture.Create<OracleParameter>(), "preparedBooleanOutput" + fixture.Create<string>());
+            booleanOutput.Setup(o => o.SetOutputValueAsync(null)).Returns(Task.CompletedTask);
+            booleanOutput.Setup(o => o.PrepareOutputParameter(It.IsAny<int>())).Returns(preparedBooleanOutput);
+
+            var booleanInputOutput = new Mock<ParamBoolean>(true, ParameterDirection.InputOutput);
+            booleanInputOutput
+                .Setup(m => m.SetParameterName(It.IsRegex(parametersNameRegex)));
+
+            var booleanInputOutputParameterName = "booleanInputOutputParameterName" + fixture.Create<string>();
+            booleanInputOutput
+                .SetupGet(b => b.ParameterName)
+                .Returns(booleanInputOutputParameterName);
+
+            booleanInputOutput.SetupGet(s => s.Direction).Returns(ParameterDirection.InputOutput);
+            var declareBooleanInputOutput = "declareBooleanInputOutput" + fixture.Create<string>();
+            booleanInputOutput.Setup(x => x.GetDeclareLine()).Returns(declareBooleanInputOutput);
+            var preparedInputOuputBoolean = new PreparedOutputParameter(booleanInputOutput.Object, fixture.Create<OracleParameter>(), "preparedInputOuputBoolean" + fixture.Create<string>());
+            var booleanInputOutputBodyString = "booleanInputOutputBodyString" + fixture.Create<string>();
+            booleanInputOutput.Setup(o => o.GetBodyVariableSetString()).Returns(booleanInputOutputBodyString);
+            booleanInputOutput.Setup(o => o.SetOutputValueAsync(null)).Returns(Task.CompletedTask);
+            booleanInputOutput.Setup(o => o.PrepareOutputParameter(It.IsAny<int>())).Returns(preparedInputOuputBoolean);
+
+
+            var message = $"declare{Environment.NewLine}"
+                + $"{declareLine}{Environment.NewLine}"
+                + $"{Environment.NewLine}begin{Environment.NewLine}"
+                + Environment.NewLine
+                + $"{procedure}(p0);{Environment.NewLine}{Environment.NewLine}"
+                + $"{outputString}{Environment.NewLine}{Environment.NewLine}end;";
+
+
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
+
+            await service.ExecuteProcedureAsync(procedure, objectInput.Object, stringInput.Object, booleanInput.Object, objectOutput.Object, stringOutput.Object, booleanOutput.Object, objectInputOutput.Object, stringInputOutput.Object, booleanInputOutput.Object);
+
+            commandMock.Verify();
+            booleanInputOutput.Verify();
+            //Assert.Equal(commandMock.Object.CommandText, message);
+            //Assert.NotEmpty(commandMock.Object.Parameters);
+            //var oracleParameter = Assert.IsType<OracleParameter>(Assert.Single(commandMock.Object.Parameters));
+            //Assert.Equal(preparedInputOuputBoolean.OracleParameter, oracleParameter);
         }
 
         #endregion ExecuteProcedureAsync

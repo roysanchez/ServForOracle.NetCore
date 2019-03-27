@@ -14,7 +14,7 @@ namespace ServForOracle.NetCore.Parameters
     {
         internal MetadataOracleObject<T> Metadata { get; private set; }
 
-        public new T Value { get; private set; }
+        public new virtual T Value { get; private set; }
 
         private string _ParameterName;
 
