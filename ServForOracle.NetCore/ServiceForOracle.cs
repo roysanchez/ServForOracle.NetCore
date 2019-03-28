@@ -27,23 +27,29 @@ namespace ServForOracle.NetCore
         private readonly ILogger _Logger;
         private readonly MetadataOracleCommon _Common;
         private readonly IMetadataBuilderFactory _BuilderFactory;
+        private readonly IOracleRefCursorWrapperFactory _RefCursorWrapperFactory;
 
         public ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, string connectionString)
             : this(logger, cache, new OracleDbConnectionFactory(connectionString))
         {
         }
-
         public ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory)
-            : this(logger, factory, new MetadataBuilderFactory(cache, logger), new MetadataOracleCommon())
+           : this(logger, factory, new MetadataBuilderFactory(cache, logger), new OracleRefCursorWrapperFactory(), new MetadataOracleCommon())
         {
         }
 
         internal ServiceForOracle(ILogger<ServiceForOracle> logger, IDbConnectionFactory factory, IMetadataBuilderFactory builderFactory, MetadataOracleCommon common)
+            : this(logger, factory, builderFactory, new OracleRefCursorWrapperFactory(), common)
+        {
+        }
+
+        internal ServiceForOracle(ILogger<ServiceForOracle> logger, IDbConnectionFactory factory, IMetadataBuilderFactory builderFactory, IOracleRefCursorWrapperFactory wrapperFactory, MetadataOracleCommon common)
         {
             _Logger = logger;
             _DbFactory = factory ?? throw new ArgumentNullException(nameof(factory));
             _Common = common ?? throw new ArgumentNullException(nameof(common));
             _BuilderFactory = builderFactory ?? throw new ArgumentNullException(nameof(builderFactory));
+            _RefCursorWrapperFactory = wrapperFactory ?? throw new ArgumentNullException(nameof(wrapperFactory));
         }
 
         public async Task ExecuteProcedureAsync(string procedure, params IParam[] parameters)
@@ -213,7 +219,7 @@ namespace ServForOracle.NetCore
             var returnType = typeof(T);
             if (!returnType.IsClrType() && returnMetadata is MetadataOracleObject<T> metadata)
             {
-                return (T)metadata.GetValueFromRefCursor(returnType, new OracleRefCursorWrapper(retOra.Value as OracleRefCursor));
+                return (T)metadata.GetValueFromRefCursor(returnType, _RefCursorWrapperFactory.Create(retOra.Value as OracleRefCursor));
 
             }
             else if (returnMetadata is MetadataOracleBoolean metadataBoolean)

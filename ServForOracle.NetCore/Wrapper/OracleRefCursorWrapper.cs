@@ -5,7 +5,7 @@ using System.Text;
 
 namespace ServForOracle.NetCore.Wrapper
 {
-    public class OracleRefCursorWrapper: IOracleRefCursorWrapper
+    internal class OracleRefCursorWrapper: IOracleRefCursorWrapper
     {
         private readonly OracleRefCursor _refCursor;
         
