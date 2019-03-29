@@ -19,7 +19,7 @@ namespace ServForOracle.NetCore.UnitTests
             connection.SetupGet(c => c.ConnectionString).Returns(connectionString);
             var factory = new MetadataBuilderFactory(cache, logger);
 
-            var builder = factory.Create(connection.Object);
+            var builder = factory.CreateBuilder(connection.Object);
 
             Assert.NotNull(builder);
             Assert.Equal(connection.Object, builder.OracleConnection);

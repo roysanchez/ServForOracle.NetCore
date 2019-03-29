@@ -9,7 +9,7 @@ namespace ServForOracle.NetCore.Metadata
 {
     internal interface IMetadataBuilderFactory
     {
-        MetadataBuilder Create(DbConnection connection);
+        MetadataBuilder CreateBuilder(DbConnection connection);
     }
 
     internal class MetadataBuilderFactory: IMetadataBuilderFactory
@@ -23,7 +23,7 @@ namespace ServForOracle.NetCore.Metadata
             _logger = logger;
         }
 
-        public MetadataBuilder Create(DbConnection connection)
+        public MetadataBuilder CreateBuilder(DbConnection connection)
         {
             return new MetadataBuilder(connection, _cache, _logger);
         }
