@@ -259,12 +259,6 @@ namespace ServForOracle.NetCore.UnitTests
         {
             var prepared = new PreparedOutputParameter(outputParam.Object, new OracleParameter(), outputString);
             var type = typeof(string);
-            //var expectedValue = oracleParameter.Value;
-
-            //var message = $"declare{Environment.NewLine}{Environment.NewLine}"
-            //    + $"begin{Environment.NewLine}{Environment.NewLine}"
-            //    + $"{oracleParameter.ParameterName} := {function}(:1,:2);"
-            //    + $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}end;";
 
             var message = $"declare{Environment.NewLine}"
                 + $"{declareP0}{Environment.NewLine}" //p0
@@ -298,16 +292,7 @@ namespace ServForOracle.NetCore.UnitTests
 
             wrapperFactoryMock.Setup(w => w.Create(null))
                 .Returns<OracleRefCursorWrapper>(null);
-
-
-            //commonMock.Setup(c => c.GetOracleParameter(type, ParameterDirection.Output, ":0", DBNull.Value))
-            //    .Returns(oracleParameter);
-            //commonMock.Setup(c => c.ConvertOracleParameterToBaseType(typeof(string), It.IsAny<OracleParameter>()))
-            //    .Returns(returnValue);
-
-            //inputParam.SetupGet(i => i.Direction).Returns(ParameterDirection.Input);
-            //inputParam.Setup(i => i.GetOracleParameter(":1")).Returns(oracleParameter);
-
+            
             inputParam.Setup(i => i.Direction).Returns(ParameterDirection.Input);
             inputParam.Setup(i => i.LoadObjectMetadataAsync(builderMock.Object))
                 .Returns(Task.CompletedTask);
@@ -317,11 +302,6 @@ namespace ServForOracle.NetCore.UnitTests
                 .Returns((constructor, lastNumber));
             inputParam.Setup(i => i.GetOracleParameters(0))
                 .Returns(oracleParameters);
-
-            //outputParam.SetupGet(o => o.Direction).Returns(ParameterDirection.Output);
-            //outputParam.Setup(i => i.GetOracleParameter(":2")).Returns(oracleParameter);
-            //outputParam.Setup(o => o.SetOutputValueAsync(expectedValue)).Returns(Task.CompletedTask)
-            //    .Verifiable();
 
             outputParam.Setup(o => o.Direction).Returns(ParameterDirection.Output);
             outputParam.Setup(o => o.LoadObjectMetadataAsync(builderMock.Object))
@@ -340,10 +320,10 @@ namespace ServForOracle.NetCore.UnitTests
 
             commandMock.Verify();
             outputParam.Verify();
-            //Assert.Equal(returnValue, result);
-            //Assert.Equal(commandMock.Object.CommandText, message);
-            //Assert.NotEmpty(commandMock.Object.Parameters);
-            //AssertExtensions.All(commandMock.Object.Parameters, c => Assert.Same(oracleParameter, c));
+            Assert.Equal(returnValue, result);
+            Assert.Equal(commandMock.Object.CommandText, message);
+            Assert.NotEmpty(commandMock.Object.Parameters);
+            Assert.Equal(oracleParameters.Length + 2, commandMock.Object.Parameters.Count);
         }
 
         #endregion ObjectParam
