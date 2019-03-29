@@ -255,6 +255,125 @@ namespace ServForOracle.NetCore.UnitTests
         #region ObjectParam
 
         [Theory, CustomAutoData]
+        internal async Task ExecuteFunctionAsync_ObjectReturn_OneInputObjectParam(string function, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<TestDbConnection> connectionMock, Mock<MetadataOracleCommon> commonMock, OracleParameter[] oracleParameters, Mock<ParamObject<TestClass>> inputParam, TestClass returnValue, string declareRet, string declareP0, string constructor, int lastNumber, Mock<MetadataOracleObject<TestClass>> metadataBaseMock, string retOutputQuery, Mock<IOracleRefCursorWrapperFactory> wrapperFactoryMock)
+        {
+            //var prepared = new PreparedOutputParameter(outputParam.Object, new OracleParameter(), outputString);
+            var type = typeof(string);
+
+            var message = $"declare{Environment.NewLine}"
+                + $"{declareP0}{Environment.NewLine}" //p0
+                + $"{declareRet}{Environment.NewLine}" //ret
+                + $"{Environment.NewLine}begin{Environment.NewLine}"
+                + $"{constructor}{Environment.NewLine}{Environment.NewLine}"
+                + $"ret := {function}(p0);{Environment.NewLine}{Environment.NewLine}"
+                + $"{retOutputQuery}{Environment.NewLine}"
+                + $"{Environment.NewLine}end;";
+
+            commandMock.Setup(c => c.ExecuteNonQueryAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(0)
+                .Verifiable();
+
+            connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
+            connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
+
+            dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
+            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+
+            builderMock.Setup(b => b.GetOrRegisterMetadataOracleObject<TestClass>(It.IsAny<OracleUdtInfo>()))
+                .Returns(metadataBaseMock.Object);
+            metadataBaseMock.Setup(m => m.GetDeclareLine(typeof(TestClass), "ret", It.IsAny<OracleUdtInfo>()))
+                .Returns(declareRet);
+            metadataBaseMock.Setup(m => m.GetRefCursorQuery(It.IsAny<int>(), "ret"))
+                .Returns(retOutputQuery);
+            metadataBaseMock.Setup(m => m.GetValueFromRefCursor(typeof(TestClass), null))
+                .Returns(returnValue);
+
+            wrapperFactoryMock.Setup(w => w.Create(null))
+                .Returns<OracleRefCursorWrapper>(null);
+
+            inputParam.Setup(i => i.Direction).Returns(ParameterDirection.Input);
+            inputParam.Setup(i => i.LoadObjectMetadataAsync(builderMock.Object))
+                .Returns(Task.CompletedTask);
+            inputParam.Setup(i => i.GetDeclareLine())
+                .Returns(declareP0);
+            inputParam.Setup(i => i.BuildQueryConstructorString(0))
+                .Returns((constructor, lastNumber));
+            inputParam.Setup(i => i.GetOracleParameters(0))
+                .Returns(oracleParameters);
+
+
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, wrapperFactoryMock.Object, commonMock.Object);
+
+            var result = await service.ExecuteFunctionAsync<TestClass>(function, inputParam.Object);
+
+            commandMock.Verify();
+            Assert.Equal(returnValue, result);
+            Assert.Equal(commandMock.Object.CommandText, message);
+            Assert.NotEmpty(commandMock.Object.Parameters);
+            Assert.Equal(oracleParameters.Length + 1, commandMock.Object.Parameters.Count);
+        }
+
+        [Theory, CustomAutoData]
+        internal async Task ExecuteFunctionAsync_ObjectReturn_OneOutputObjectParam(string function, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<TestDbConnection> connectionMock, Mock<MetadataOracleCommon> commonMock, Mock<ParamObject<TestClass>> outputParam, TestClass returnValue, string declareRet, string declareP0, string outputString, Mock<MetadataOracleObject<TestClass>> metadataBaseMock, string retOutputQuery, Mock<IOracleRefCursorWrapperFactory> wrapperFactoryMock)
+        {
+            var prepared = new PreparedOutputParameter(outputParam.Object, new OracleParameter(), outputString);
+            var type = typeof(string);
+
+            var message = $"declare{Environment.NewLine}"
+                + $"{declareP0}{Environment.NewLine}" //p0
+                + $"{declareRet}{Environment.NewLine}" //ret
+                + $"{Environment.NewLine}begin{Environment.NewLine}{Environment.NewLine}"
+                + $"ret := {function}(p0);{Environment.NewLine}{Environment.NewLine}"
+                + $"{outputString}{Environment.NewLine}"
+                + $"{retOutputQuery}{Environment.NewLine}"
+                + $"{Environment.NewLine}end;";
+
+            commandMock.Setup(c => c.ExecuteNonQueryAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(0)
+                .Verifiable();
+
+            connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
+            connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
+
+            dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
+            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+
+            builderMock.Setup(b => b.GetOrRegisterMetadataOracleObject<TestClass>(It.IsAny<OracleUdtInfo>()))
+                .Returns(metadataBaseMock.Object);
+            metadataBaseMock.Setup(m => m.GetDeclareLine(typeof(TestClass), "ret", It.IsAny<OracleUdtInfo>()))
+                .Returns(declareRet);
+            metadataBaseMock.Setup(m => m.GetRefCursorQuery(It.IsAny<int>(), "ret"))
+                .Returns(retOutputQuery);
+            metadataBaseMock.Setup(m => m.GetValueFromRefCursor(typeof(TestClass), null))
+                .Returns(returnValue);
+
+            wrapperFactoryMock.Setup(w => w.Create(null))
+                .Returns<OracleRefCursorWrapper>(null);
+
+            outputParam.Setup(o => o.Direction).Returns(ParameterDirection.Output);
+            outputParam.Setup(o => o.LoadObjectMetadataAsync(builderMock.Object))
+                .Returns(Task.CompletedTask);
+            outputParam.Setup(o => o.GetDeclareLine())
+                .Returns(declareP0);
+            outputParam.Setup(o => o.PrepareOutputParameter(0))
+                .Returns(prepared);
+            outputParam.Setup(o => o.SetOutputValueAsync(null)).Returns(Task.CompletedTask)
+                .Verifiable();
+
+
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, wrapperFactoryMock.Object, commonMock.Object);
+
+            var result = await service.ExecuteFunctionAsync<TestClass>(function, outputParam.Object);
+
+            commandMock.Verify();
+            outputParam.Verify();
+            Assert.Equal(returnValue, result);
+            Assert.Equal(commandMock.Object.CommandText, message);
+            Assert.NotEmpty(commandMock.Object.Parameters);
+            Assert.Equal(2, commandMock.Object.Parameters.Count);
+        }
+
+        [Theory, CustomAutoData]
         internal async Task ExecuteFunctionAsync_ObjectReturn_OneInputOneOutputObjectParam(string function, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<TestDbConnection> connectionMock, Mock<MetadataOracleCommon> commonMock, OracleParameter[] oracleParameters, Mock<ParamObject<TestClass>> inputParam, Mock<ParamObject<TestClass>> outputParam, TestClass returnValue, string declareRet, string declareP0, string declareP1, string constructor, string outputString, int lastNumber, Mock<MetadataOracleObject<TestClass>> metadataBaseMock, string retOutputQuery, Mock<IOracleRefCursorWrapperFactory> wrapperFactoryMock)
         {
             var prepared = new PreparedOutputParameter(outputParam.Object, new OracleParameter(), outputString);
