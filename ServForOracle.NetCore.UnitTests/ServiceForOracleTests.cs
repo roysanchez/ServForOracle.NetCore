@@ -29,24 +29,24 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal void Constructor_FourParameters(ILogger<ServiceForOracle> logger, IDbConnectionFactory factory, MetadataOracleCommon common, IMetadataBuilderFactory builderFactory)
+        internal void Constructor_FourParameters(ILogger<ServiceForOracle> logger, IDbConnectionFactory factory, IMetadataFactory metadataFactory, IMetadataBuilderFactory builderFactory)
         {
-            var service = new ServiceForOracle(logger, factory, builderFactory, common);
+            var service = new ServiceForOracle(logger, factory, builderFactory, metadataFactory);
         }
 
         [Theory, CustomAutoData]
-        internal void Constructor_FiveParameters(ILogger<ServiceForOracle> logger, IDbConnectionFactory factory, MetadataOracleCommon common, IMetadataBuilderFactory builderFactory, IOracleRefCursorWrapperFactory wrapperFactory)
+        internal void Constructor_FiveParameters(ILogger<ServiceForOracle> logger, IDbConnectionFactory factory, IMetadataFactory metadataFactory, IMetadataBuilderFactory builderFactory, IOracleRefCursorWrapperFactory wrapperFactory)
         {
-            var service = new ServiceForOracle(logger, factory, builderFactory, wrapperFactory, common);
+            var service = new ServiceForOracle(logger, factory, builderFactory, wrapperFactory, metadataFactory);
         }
 
         [Theory, CustomAutoData]
-        internal void Constructor_FourParameters_NullParameter_ThrowsArgumentNull(ILogger<ServiceForOracle> logger, IDbConnectionFactory factory, MetadataOracleCommon common, IMetadataBuilderFactory builderFactory, IOracleRefCursorWrapperFactory wrapperFactory)
+        internal void Constructor_FourParameters_NullParameter_ThrowsArgumentNull(ILogger<ServiceForOracle> logger, IDbConnectionFactory factory, IMetadataFactory metadataFactory, IMetadataBuilderFactory builderFactory, IOracleRefCursorWrapperFactory wrapperFactory)
         {
-            Assert.Throws<ArgumentNullException>("factory", () => new ServiceForOracle(logger, null, builderFactory, wrapperFactory, common));
-            Assert.Throws<ArgumentNullException>("builderFactory", () => new ServiceForOracle(logger, factory, null, wrapperFactory, common));
-            Assert.Throws<ArgumentNullException>("common", () => new ServiceForOracle(logger, factory, builderFactory, wrapperFactory, null));
-            Assert.Throws<ArgumentNullException>("wrapperFactory", () => new ServiceForOracle(logger, factory, builderFactory, null, common));
+            Assert.Throws<ArgumentNullException>("factory", () => new ServiceForOracle(logger, null, builderFactory, wrapperFactory, metadataFactory));
+            Assert.Throws<ArgumentNullException>("builderFactory", () => new ServiceForOracle(logger, factory, null, wrapperFactory, metadataFactory));
+            Assert.Throws<ArgumentNullException>("metadataFactory", () => new ServiceForOracle(logger, factory, builderFactory, wrapperFactory, null));
+            Assert.Throws<ArgumentNullException>("wrapperFactory", () => new ServiceForOracle(logger, factory, builderFactory, null, metadataFactory));
         }
 
         #endregion Constructor

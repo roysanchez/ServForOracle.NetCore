@@ -26,6 +26,7 @@ namespace ServForOracle.NetCore
         private readonly IDbConnectionFactory _DbFactory;
         private readonly ILogger _Logger;
         private readonly MetadataOracleCommon _Common;
+        private readonly IMetadataFactory _MetadataFactory;
         private readonly IMetadataBuilderFactory _BuilderFactory;
         private readonly IOracleRefCursorWrapperFactory _RefCursorWrapperFactory;
 
@@ -34,20 +35,21 @@ namespace ServForOracle.NetCore
         {
         }
         public ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory)
-           : this(logger, factory, new MetadataBuilderFactory(cache, logger), new OracleRefCursorWrapperFactory(), new MetadataOracleCommon())
+           : this(logger, factory, new MetadataBuilderFactory(cache, logger), new OracleRefCursorWrapperFactory(), new MetadataFactory())
         {
         }
 
-        internal ServiceForOracle(ILogger<ServiceForOracle> logger, IDbConnectionFactory factory, IMetadataBuilderFactory builderFactory, MetadataOracleCommon common)
-            : this(logger, factory, builderFactory, new OracleRefCursorWrapperFactory(), common)
+        internal ServiceForOracle(ILogger<ServiceForOracle> logger, IDbConnectionFactory factory, IMetadataBuilderFactory builderFactory, IMetadataFactory metadataFactory)
+            : this(logger, factory, builderFactory, new OracleRefCursorWrapperFactory(), metadataFactory)
         {
         }
 
-        internal ServiceForOracle(ILogger<ServiceForOracle> logger, IDbConnectionFactory factory, IMetadataBuilderFactory builderFactory, IOracleRefCursorWrapperFactory wrapperFactory, MetadataOracleCommon common)
+        internal ServiceForOracle(ILogger<ServiceForOracle> logger, IDbConnectionFactory factory, IMetadataBuilderFactory builderFactory, IOracleRefCursorWrapperFactory wrapperFactory, IMetadataFactory metadataFactory)
         {
             _Logger = logger;
             _DbFactory = factory ?? throw new ArgumentNullException(nameof(factory));
-            _Common = common ?? throw new ArgumentNullException(nameof(common));
+            _MetadataFactory = metadataFactory ?? throw new ArgumentNullException(nameof(metadataFactory));
+            _Common = _MetadataFactory.CreateCommon();
             _BuilderFactory = builderFactory ?? throw new ArgumentNullException(nameof(builderFactory));
             _RefCursorWrapperFactory = wrapperFactory ?? throw new ArgumentNullException(nameof(wrapperFactory));
         }
@@ -58,7 +60,7 @@ namespace ServForOracle.NetCore
             {
                 using (var connection = _DbFactory.CreateConnection())
                 {
-                    var builder = _BuilderFactory.Create(connection);
+                    var builder = _BuilderFactory.CreateBuilder(connection);
                     await ExecuteAsync(builder, connection, procedure, parameters).ConfigureAwait(false);
                 }
             }
@@ -74,7 +76,7 @@ namespace ServForOracle.NetCore
             {
                 using (var connection = _DbFactory.CreateConnection())
                 {
-                    var builder = _BuilderFactory.Create(connection);
+                    var builder = _BuilderFactory.CreateBuilder(connection);
                     Execute(builder, connection, procedure, parameters);
                 }
             }
@@ -102,7 +104,7 @@ namespace ServForOracle.NetCore
             {
                 using (var connection = _DbFactory.CreateConnection())
                 {
-                    var builder = _BuilderFactory.Create(connection);
+                    var builder = _BuilderFactory.CreateBuilder(connection);
                     await ExecuteAsync(builder, connection, function, parameters,
                         (info) => Task.FromResult(FunctionBeforeQuery<T>(builder, info, udtInfo, out returnMetadata,
                             out retOra)),
@@ -138,7 +140,7 @@ namespace ServForOracle.NetCore
             {
                 using (var connection = _DbFactory.CreateConnection())
                 {
-                    var builder = _BuilderFactory.Create(connection);
+                    var builder = _BuilderFactory.CreateBuilder(connection);
 
                     Execute(builder, connection, function, parameters,
                         (info) => FunctionBeforeQuery<T>(builder, info, udtInfo, out returnMetadata, out retOra),
@@ -196,7 +198,7 @@ namespace ServForOracle.NetCore
         {
             if (typeof(T).IsBoolean())
             {
-                metadata = new MetadataOracleBoolean();
+                metadata = _MetadataFactory.CreateBoolean();
                 parameter = null;
                 return "ret := ";
             }

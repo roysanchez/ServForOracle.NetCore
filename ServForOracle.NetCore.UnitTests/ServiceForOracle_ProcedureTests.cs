@@ -50,7 +50,7 @@ namespace ServForOracle.NetCore.UnitTests
         #region ExecuteProcedureAsync
 
         [Theory, CustomAutoData]
-        internal async Task ExecuteProcedureAsync_NoParams_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, MetadataOracleCommon common, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock)
+        internal async Task ExecuteProcedureAsync_NoParams_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, IMetadataFactory metadataFactory, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock)
         {
             var message = $"declare{Environment.NewLine}{Environment.NewLine}begin"
                 + $"{Environment.NewLine}{Environment.NewLine}{procedure}();"
@@ -65,9 +65,9 @@ namespace ServForOracle.NetCore.UnitTests
 
 
             dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
-            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+            builderFactoryMock.Setup(b => b.CreateBuilder(connectionMock.Object)).Returns(builderMock.Object);
 
-            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, metadataFactory);
 
             await service.ExecuteProcedureAsync(procedure);
 
@@ -77,7 +77,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal async Task ExecuteProcedureAsync_OneInputClrParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, MetadataOracleCommon common, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamClrType<string>> inputMock)
+        internal async Task ExecuteProcedureAsync_OneInputClrParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, IMetadataFactory metadataFactory, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamClrType<string>> inputMock)
         {
             var message = $"declare{Environment.NewLine}{Environment.NewLine}begin"
                 + $"{Environment.NewLine}{Environment.NewLine}{procedure}(:0);"
@@ -92,11 +92,11 @@ namespace ServForOracle.NetCore.UnitTests
 
 
             dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
-            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+            builderFactoryMock.Setup(b => b.CreateBuilder(connectionMock.Object)).Returns(builderMock.Object);
 
             inputMock.SetupGet(i => i.Direction).Returns(ParameterDirection.Input);
 
-            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, metadataFactory);
 
             await service.ExecuteProcedureAsync(procedure, inputMock.Object);
 
@@ -110,7 +110,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal async Task ExecuteProcedureAsync_OneOutputClrParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, MetadataOracleCommon common, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamClrType<string>> outputMock)
+        internal async Task ExecuteProcedureAsync_OneOutputClrParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, IMetadataFactory metadataFactory, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamClrType<string>> outputMock)
         {
             var expectedValue = outputMock.Object.Value;
             var message = $"declare{Environment.NewLine}{Environment.NewLine}begin"
@@ -125,14 +125,14 @@ namespace ServForOracle.NetCore.UnitTests
             connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
 
             dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
-            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+            builderFactoryMock.Setup(b => b.CreateBuilder(connectionMock.Object)).Returns(builderMock.Object);
 
             outputMock.SetupGet(o => o.Direction).Returns(ParameterDirection.Output);
 
             outputMock.Setup(o => o.SetOutputValueAsync(expectedValue)).Returns(Task.CompletedTask)
                 .Verifiable();
 
-            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, metadataFactory);
 
             await service.ExecuteProcedureAsync(procedure, outputMock.Object);
 
@@ -147,7 +147,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal async Task ExecuteProcedureAsync_OneInputOutputClrParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, MetadataOracleCommon common, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamClrType<string>> inputOutputMock, string output)
+        internal async Task ExecuteProcedureAsync_OneInputOutputClrParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, IMetadataFactory metadataFactory, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamClrType<string>> inputOutputMock, string output)
         {
             var expectedValue = new OracleParameter { Value = output };
             var message = $"declare{Environment.NewLine}{Environment.NewLine}begin"
@@ -162,7 +162,7 @@ namespace ServForOracle.NetCore.UnitTests
             connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
 
             dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
-            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+            builderFactoryMock.Setup(b => b.CreateBuilder(connectionMock.Object)).Returns(builderMock.Object);
 
             inputOutputMock.SetupGet(io => io.Direction).Returns(ParameterDirection.InputOutput);
             inputOutputMock.Setup(io => io.GetOracleParameter(":0"))
@@ -172,7 +172,7 @@ namespace ServForOracle.NetCore.UnitTests
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
-            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, metadataFactory);
 
             await service.ExecuteProcedureAsync(procedure, inputOutputMock.Object);
 
@@ -185,7 +185,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal async Task ExecuteProcedureAsync_OneInputOneOutputClrParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, MetadataOracleCommon common, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamClrType<string>> inputMock, Mock<ParamClrType<string>> outputMock, string input, string output)
+        internal async Task ExecuteProcedureAsync_OneInputOneOutputClrParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, IMetadataFactory metadataFactory, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamClrType<string>> inputMock, Mock<ParamClrType<string>> outputMock, string input, string output)
         {
             var inputParameter = new OracleParameter { Value = input };
             var outputParameter = new OracleParameter { Value = output };
@@ -201,7 +201,7 @@ namespace ServForOracle.NetCore.UnitTests
             connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
 
             dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
-            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+            builderFactoryMock.Setup(b => b.CreateBuilder(connectionMock.Object)).Returns(builderMock.Object);
 
             inputMock.SetupGet(i => i.Direction).Returns(ParameterDirection.Input);
             inputMock.Setup(io => io.GetOracleParameter(":0"))
@@ -214,7 +214,7 @@ namespace ServForOracle.NetCore.UnitTests
                 .Returns(Task.CompletedTask)
                 .Verifiable();
 
-            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, metadataFactory);
 
             await service.ExecuteProcedureAsync(procedure, inputMock.Object, outputMock.Object);
 
@@ -242,7 +242,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal async Task ExecuteProcedureAsync_OneInputObjectParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, MetadataOracleCommon common, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamObject<TestClass>> inputMock, string declareLine, string constructor, int lastNumber)
+        internal async Task ExecuteProcedureAsync_OneInputObjectParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, IMetadataFactory metadataFactory, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamObject<TestClass>> inputMock, string declareLine, string constructor, int lastNumber)
         {
             var inputParameters = new OracleParameter[2];
 
@@ -261,7 +261,7 @@ namespace ServForOracle.NetCore.UnitTests
             connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
 
             dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
-            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+            builderFactoryMock.Setup(b => b.CreateBuilder(connectionMock.Object)).Returns(builderMock.Object);
 
             inputMock.Setup(i => i.Direction).Returns(ParameterDirection.Input);
             inputMock.Setup(i => i.LoadObjectMetadataAsync(builderMock.Object))
@@ -273,7 +273,7 @@ namespace ServForOracle.NetCore.UnitTests
             inputMock.Setup(i => i.GetOracleParameters(0))
                 .Returns(inputParameters);
 
-            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, metadataFactory);
 
             await service.ExecuteProcedureAsync(procedure, inputMock.Object);
 
@@ -285,7 +285,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal async Task ExecuteProcedureAsync_OneOutputObjectParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, MetadataOracleCommon common, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamObject<TestClass>> outputMock, string declareLine, string outputString)
+        internal async Task ExecuteProcedureAsync_OneOutputObjectParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, IMetadataFactory metadataFactory, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamObject<TestClass>> outputMock, string declareLine, string outputString)
         {
             var prepared = new PreparedOutputParameter(outputMock.Object, new OracleParameter(), outputString);
 
@@ -303,7 +303,7 @@ namespace ServForOracle.NetCore.UnitTests
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
             connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
             dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
-            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+            builderFactoryMock.Setup(b => b.CreateBuilder(connectionMock.Object)).Returns(builderMock.Object);
 
             outputMock.Setup(o => o.Direction).Returns(ParameterDirection.Output);
             outputMock.Setup(o => o.LoadObjectMetadataAsync(builderMock.Object))
@@ -315,7 +315,7 @@ namespace ServForOracle.NetCore.UnitTests
             outputMock.Setup(o => o.SetOutputValueAsync(null)).Returns(Task.CompletedTask)
                 .Verifiable();
 
-            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, metadataFactory);
 
             await service.ExecuteProcedureAsync(procedure, outputMock.Object);
 
@@ -328,7 +328,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal async Task ExecuteProcedureAsync_OneInputOneOutputObjectParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, MetadataOracleCommon common, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock,
+        internal async Task ExecuteProcedureAsync_OneInputOneOutputObjectParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, IMetadataFactory metadataFactory, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock,
             Mock<ParamObject<TestClass>> inputMock, Mock<ParamObject<TestClass>> outputMock, string declareP0, string declareP1, string outputString, string constructor, int lastNumber)
         {
             var prepared = new PreparedOutputParameter(outputMock.Object, new OracleParameter(), outputString);
@@ -349,7 +349,7 @@ namespace ServForOracle.NetCore.UnitTests
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
             connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
             dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
-            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+            builderFactoryMock.Setup(b => b.CreateBuilder(connectionMock.Object)).Returns(builderMock.Object);
 
             outputMock.Setup(o => o.Direction).Returns(ParameterDirection.Output);
             outputMock.Setup(o => o.LoadObjectMetadataAsync(builderMock.Object))
@@ -371,7 +371,7 @@ namespace ServForOracle.NetCore.UnitTests
             inputMock.Setup(i => i.GetOracleParameters(0))
                 .Returns(inputParameters);
 
-            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, metadataFactory);
 
             await service.ExecuteProcedureAsync(procedure, inputMock.Object, outputMock.Object);
 
@@ -385,7 +385,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal async Task ExecuteProcedureAsync_OneInputBooleanParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, MetadataOracleCommon common, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamBoolean> inputMock)
+        internal async Task ExecuteProcedureAsync_OneInputBooleanParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, IMetadataFactory metadataFactory, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamBoolean> inputMock)
         {
             var inputParameter = new OracleParameter();
 
@@ -403,13 +403,13 @@ namespace ServForOracle.NetCore.UnitTests
             connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
 
             dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
-            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+            builderFactoryMock.Setup(b => b.CreateBuilder(connectionMock.Object)).Returns(builderMock.Object);
 
             inputMock.Setup(i => i.Direction).Returns(ParameterDirection.Input);
             inputMock.Setup(i => i.GetOracleParameter(0))
                 .Returns(inputParameter);
 
-            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, metadataFactory);
 
             await service.ExecuteProcedureAsync(procedure, inputMock.Object);
 
@@ -422,7 +422,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal async Task ExecuteProcedureAsync_OneOutputBooleanParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, MetadataOracleCommon common, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamBoolean> outputMock, string declareLine, string outputString)
+        internal async Task ExecuteProcedureAsync_OneOutputBooleanParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, IMetadataFactory metadataFactory, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamBoolean> outputMock, string declareLine, string outputString)
         {
             var prepared = new PreparedOutputParameter(outputMock.Object, new OracleParameter(), outputString);
 
@@ -441,7 +441,7 @@ namespace ServForOracle.NetCore.UnitTests
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
             connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
             dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
-            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+            builderFactoryMock.Setup(b => b.CreateBuilder(connectionMock.Object)).Returns(builderMock.Object);
 
             outputMock.Setup(o => o.Direction).Returns(ParameterDirection.Output);
 
@@ -452,7 +452,7 @@ namespace ServForOracle.NetCore.UnitTests
             outputMock.Setup(o => o.SetOutputValueAsync(null)).Returns(Task.CompletedTask)
                 .Verifiable();
 
-            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, metadataFactory);
 
             await service.ExecuteProcedureAsync(procedure, outputMock.Object);
 
@@ -465,7 +465,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal async Task ExecuteProcedureAsync_OneInputOutputBooleanParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, MetadataOracleCommon common, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamBoolean> inputOutputMock, string declareLine, string outputString, string bodyString)
+        internal async Task ExecuteProcedureAsync_OneInputOutputBooleanParam_Works(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, IMetadataFactory metadataFactory, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Mock<ParamBoolean> inputOutputMock, string declareLine, string outputString, string bodyString)
         {
             var prepared = new PreparedOutputParameter(inputOutputMock.Object, new OracleParameter(), outputString);
 
@@ -484,7 +484,7 @@ namespace ServForOracle.NetCore.UnitTests
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
             connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
             dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
-            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+            builderFactoryMock.Setup(b => b.CreateBuilder(connectionMock.Object)).Returns(builderMock.Object);
 
             inputOutputMock.Setup(o => o.Direction).Returns(ParameterDirection.InputOutput);
 
@@ -497,7 +497,7 @@ namespace ServForOracle.NetCore.UnitTests
             inputOutputMock.Setup(o => o.SetOutputValueAsync(null)).Returns(Task.CompletedTask)
                 .Verifiable();
 
-            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, metadataFactory);
 
             await service.ExecuteProcedureAsync(procedure, inputOutputMock.Object);
 
@@ -510,7 +510,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal async Task ExecuteProcedureAsync_OneOfEveryKindParam(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, MetadataOracleCommon common, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Fixture fixture)
+        internal async Task ExecuteProcedureAsync_OneOfEveryKindParam(string procedure, Mock<IDbConnectionFactory> dbConnectionFactoryMock, ILogger<ServiceForOracle> logger, Mock<IMetadataBuilderFactory> builderFactoryMock, IMetadataFactory metadataFactory, Mock<TestDbConnection> connectionMock, Mock<MetadataBuilder> builderMock, Mock<TestDbCommand> commandMock, Fixture fixture)
         {
             const string voidMethodName = "set_Value";
             const string parametersNameRegex = @"^p\d*$";
@@ -523,7 +523,7 @@ namespace ServForOracle.NetCore.UnitTests
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
             connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
             dbConnectionFactoryMock.Setup(c => c.CreateConnection()).Returns(connectionMock.Object);
-            builderFactoryMock.Setup(b => b.Create(connectionMock.Object)).Returns(builderMock.Object);
+            builderFactoryMock.Setup(b => b.CreateBuilder(connectionMock.Object)).Returns(builderMock.Object);
 
             #region ParamClrtType
             var stringInput = new Mock<ParamClrType<string>>(MockBehavior.Strict, null, ParameterDirection.Input);
@@ -733,7 +733,7 @@ namespace ServForOracle.NetCore.UnitTests
 
             #endregion Message
 
-            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, common);
+            var service = new ServiceForOracle(logger, dbConnectionFactoryMock.Object, builderFactoryMock.Object, metadataFactory);
 
             await service.ExecuteProcedureAsync(procedure, objectInput.Object, stringInput.Object, booleanInput.Object, objectOutput.Object, stringOutput.Object, booleanOutput.Object, objectInputOutput.Object, stringInputOutput.Object, booleanInputOutput.Object);
 
