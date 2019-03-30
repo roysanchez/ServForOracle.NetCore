@@ -36,7 +36,7 @@ Included items must then not match any entries in the exclude list to remain inc
                 <!--<ModulePath>.*\.exe$</ModulePath>-->
               </Include>
               <Exclude>
-                <ModulePath>.*\\servfororacle\.netcore\.unittest\.dll$</ModulePath>
+                <ModulePath>.*\servfororacle\.netcore\.unittests\.dll$</ModulePath>
               </Exclude>
             </ModulePaths>
 
