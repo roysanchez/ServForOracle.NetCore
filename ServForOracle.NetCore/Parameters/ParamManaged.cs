@@ -14,7 +14,7 @@ namespace ServForOracle.NetCore.Parameters
         {
         }
 
-        internal virtual string ParameterName { get; }
+        internal abstract string ParameterName { get; }
         internal abstract void SetParameterName(string name);
         internal abstract string GetDeclareLine();
         internal abstract PreparedOutputParameter PrepareOutputParameter(int startNumber);
