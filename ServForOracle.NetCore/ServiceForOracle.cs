@@ -16,6 +16,7 @@ using System.Runtime.CompilerServices;
 using ServForOracle.NetCore.Cache;
 using Microsoft.Extensions.Logging;
 using ServForOracle.NetCore.Wrapper;
+using Microsoft.Extensions.Caching.Memory;
 
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 [assembly: InternalsVisibleTo("ServForOracle.NetCore.UnitTests")]
@@ -30,11 +31,16 @@ namespace ServForOracle.NetCore
         private readonly IMetadataBuilderFactory _BuilderFactory;
         private readonly IOracleRefCursorWrapperFactory _RefCursorWrapperFactory;
 
-        public ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, string connectionString)
+        public ServiceForOracle(ILogger<ServiceForOracle> logger, IMemoryCache cache, string connectionString)
             : this(logger, cache, new OracleDbConnectionFactory(connectionString))
         {
         }
-        public ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory)
+        public ServiceForOracle(ILogger<ServiceForOracle> logger, IMemoryCache cache, IDbConnectionFactory factory)
+           : this(logger, new ServForOracleCache(cache), factory)
+        {
+        }
+
+        internal ServiceForOracle(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory)
            : this(logger, factory, new MetadataBuilderFactory(cache, logger), new OracleRefCursorWrapperFactory(), new MetadataFactory())
         {
         }

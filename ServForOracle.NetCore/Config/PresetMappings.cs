@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using ServForOracle.NetCore.Cache;
 
 namespace ServForOracle.NetCore.Config
@@ -8,7 +9,12 @@ namespace ServForOracle.NetCore.Config
         private readonly ILogger<ConfigurePresetMappings> _logger;
         private readonly ServForOracleCache _cache;
 
-        public ConfigurePresetMappings(ILogger<ConfigurePresetMappings> logger, ServForOracleCache cache)
+        public ConfigurePresetMappings(ILogger<ConfigurePresetMappings> logger, IMemoryCache cache)
+            :this(logger, new ServForOracleCache(cache))
+        {
+        }
+
+        internal ConfigurePresetMappings(ILogger<ConfigurePresetMappings> logger, ServForOracleCache cache)
         {
             _logger = logger;
             _cache = cache;

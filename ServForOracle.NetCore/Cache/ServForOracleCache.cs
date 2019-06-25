@@ -7,33 +7,15 @@ using System.Reflection;
 
 namespace ServForOracle.NetCore.Cache
 {
-    public class ServForOracleCache: IServForOracleCache
+    internal class ServForOracleCache: IServForOracleCache
     {
         public IMemoryCache Cache { get; private set; }
 
-        private static ServForOracleCache _servForOracleCache;
-        private static readonly object Padlock = new object();
-
-        internal ServForOracleCache(IMemoryCache memoryCache)
+        public ServForOracleCache(IMemoryCache memoryCache)
         {
             Cache = memoryCache ?? throw new ArgumentNullException(nameof(memoryCache));
         }
 
-        public static ServForOracleCache Create(IMemoryCache memoryCache)
-        {
-            if (_servForOracleCache is null)
-            {
-                lock (Padlock)
-                {
-                    if(_servForOracleCache is null)
-                    {
-                        _servForOracleCache = new ServForOracleCache(memoryCache);
-                    }
-                }
-            }
-
-            return _servForOracleCache;
-        }
 
         internal virtual void SaveUdtInfo(string name, OracleUdtInfo info, UdtPropertyNetPropertyMap[] props, bool fuzzyNameMatch)
         {
