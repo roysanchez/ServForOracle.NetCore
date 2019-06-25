@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
 using ServForOracle.NetCore.Cache;
 using ServForOracle.NetCore.Metadata;
 using ServForOracle.NetCore.OracleAbstracts;
@@ -17,15 +18,24 @@ namespace ServForOracle.NetCore.UnitTests
         #region Constructor
 
         [Theory, CustomAutoData]
-        public void Constructor_ThreeParameters_ConnectionString(ILogger<ServiceForOracle> logger, ServForOracleCache cache, string connectionString)
+        internal void Constructor_ThreeParameters_ConnectionString(ILogger<ServiceForOracle> logger, IMemoryCache cache, string connectionString)
         {
             var service = new ServiceForOracle(logger, cache, connectionString);
+            Assert.NotNull(service);
         }
 
         [Theory, CustomAutoData]
-        public void Constructor_ThreeParameters_DbFactory(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory)
+        internal void Constructor_ThreeParameters_DbFactory(ILogger<ServiceForOracle> logger, IMemoryCache cache, IDbConnectionFactory factory)
         {
             var service = new ServiceForOracle(logger, cache, factory);
+            Assert.NotNull(service);
+        }
+
+        [Theory, CustomAutoData]
+        internal void Constructor_Internal_ThreeParameters_DbFactory(ILogger<ServiceForOracle> logger, ServForOracleCache cache, IDbConnectionFactory factory)
+        {
+            var service = new ServiceForOracle(logger, cache, factory);
+            Assert.NotNull(service);
         }
 
         [Theory, CustomAutoData]

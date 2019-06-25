@@ -32,22 +32,6 @@ namespace ServForOracle.NetCore.UnitTests
             Assert.Throws<ArgumentNullException>("memoryCache", () => new ServForOracleCache(null));
         }
 
-        [Theory, CustomAutoData]
-        public void Create_IsSingleton(IMemoryCache memoryCache, IMemoryCache memoryCache2)
-        {
-            var field = typeof(ServForOracleCache).GetField("_servForOracleCache", BindingFlags.Static | BindingFlags.NonPublic);
-            if (field != null)
-                field.SetValue(null, null);
-
-            var cache1 = ServForOracleCache.Create(memoryCache);
-            var cache2 = ServForOracleCache.Create(memoryCache2);
-
-            Assert.Equal(cache1, cache2);
-            Assert.Equal(memoryCache, cache2.Cache);
-        }
-
-
-        [Theory, CustomAutoData]
         internal void CreateSaveUdtInfo_CreatesEntryInCache(Mock<IMemoryCache> memoryCache, Mock<ICacheEntry> entry, string name, OracleUdtInfo info, UdtPropertyNetPropertyMap[] props, bool fuzzyNameMatch)
         {
             var cache = new ServForOracleCache(memoryCache.Object);

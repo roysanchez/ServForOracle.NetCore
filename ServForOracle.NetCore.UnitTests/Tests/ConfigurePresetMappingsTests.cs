@@ -22,7 +22,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        public void AddOracleUDT_ValidParameterWontCallsLogger(string objectSchema, string objectName, Mock<ServForOracleCache> servForOracleCache)
+        internal void AddOracleUDT_ValidParameterWontCallsLogger(string objectSchema, string objectName, Mock<ServForOracleCache> servForOracleCache)
         {
             var test = new PresetMap<TestClass>(objectSchema, objectName);
             var logger = new Mock<ILogger<ConfigurePresetMappings>>(MockBehavior.Strict);
@@ -37,7 +37,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        public void AddOracleUDT_NullParameterCallsLogger(string objectSchema, string objectName, Mock<ServForOracleCache> servForOracleCache)
+        internal void AddOracleUDT_NullParameterCallsLogger(string objectSchema, string objectName, Mock<ServForOracleCache> servForOracleCache)
         {
             var test = new PresetMap<TestClass>(objectSchema, objectName);
             var logger = new Mock<ILogger<ConfigurePresetMappings>>(MockBehavior.Strict);

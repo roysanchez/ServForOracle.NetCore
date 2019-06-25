@@ -785,6 +785,7 @@ namespace ServForOracle.NetCore.UnitTests
                 + $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}end;";
 
             commandMock.Setup(c => c.ExecuteNonQuery())
+                .Returns(0)
                 .Verifiable();
 
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
@@ -814,6 +815,7 @@ namespace ServForOracle.NetCore.UnitTests
                 + $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}end;";
 
             commandMock.Setup(c => c.ExecuteNonQuery())
+                .Returns(0)
                 .Verifiable();
 
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
@@ -839,7 +841,9 @@ namespace ServForOracle.NetCore.UnitTests
                 + $"{Environment.NewLine}{Environment.NewLine}{procedure}(:0);"
                 + $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}end;";
 
-            commandMock.Setup(c => c.ExecuteNonQuery()).Verifiable();
+            commandMock.Setup(c => c.ExecuteNonQuery())
+                .Returns(0)
+                .Verifiable();
 
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
             connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);
@@ -872,6 +876,7 @@ namespace ServForOracle.NetCore.UnitTests
                 + $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}end;";
 
             commandMock.Setup(c => c.ExecuteNonQuery())
+                .Returns(0)
                 .Verifiable();
 
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
@@ -908,6 +913,7 @@ namespace ServForOracle.NetCore.UnitTests
                 + $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}end;";
 
             commandMock.Setup(c => c.ExecuteNonQuery())
+                .Returns(0)
                 .Verifiable();
 
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
@@ -945,6 +951,7 @@ namespace ServForOracle.NetCore.UnitTests
                 + $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}end;";
 
             commandMock.Setup(c => c.ExecuteNonQuery())
+                .Returns(0)
                 .Verifiable();
 
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
@@ -1003,6 +1010,7 @@ namespace ServForOracle.NetCore.UnitTests
                 + $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}end;";
 
             commandMock.Setup(c => c.ExecuteNonQuery())
+                .Returns(0)
                 .Verifiable();
 
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
@@ -1044,6 +1052,7 @@ namespace ServForOracle.NetCore.UnitTests
                 + $"{outputString}{Environment.NewLine}{Environment.NewLine}end;";
 
             commandMock.Setup(c => c.ExecuteNonQuery())
+                .Returns(0)
                 .Verifiable();
 
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
@@ -1088,6 +1097,7 @@ namespace ServForOracle.NetCore.UnitTests
                 + $"{outputString}{Environment.NewLine}{Environment.NewLine}end;";
 
             commandMock.Setup(c => c.ExecuteNonQuery())
+                .Returns(0)
                 .Verifiable();
 
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
@@ -1138,6 +1148,7 @@ namespace ServForOracle.NetCore.UnitTests
                 + $"{Environment.NewLine}{Environment.NewLine}{Environment.NewLine}end;";
 
             commandMock.Setup(c => c.ExecuteNonQuery())
+                .Returns(0)
                 .Verifiable();
 
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
@@ -1176,6 +1187,7 @@ namespace ServForOracle.NetCore.UnitTests
                 + $"{outputString}{Environment.NewLine}{Environment.NewLine}end;";
 
             commandMock.Setup(c => c.ExecuteNonQuery())
+                .Returns(0)
                 .Verifiable();
 
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
@@ -1218,6 +1230,7 @@ namespace ServForOracle.NetCore.UnitTests
                 + $"{outputString}{Environment.NewLine}{Environment.NewLine}end;";
 
             commandMock.Setup(c => c.ExecuteNonQuery())
+                .Returns(0)
                 .Verifiable();
 
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
@@ -1257,6 +1270,7 @@ namespace ServForOracle.NetCore.UnitTests
             var objectInputOutputLastNumber = fixture.Create<int>();
 
             commandMock.Setup(c => c.ExecuteNonQuery())
+                .Returns(0)
                 .Verifiable();
             connectionMock.Setup(c => c._CreateDbCommand()).Returns(commandMock.Object);
             connectionMock.SetupGet(c => c._State).Returns(ConnectionState.Open);

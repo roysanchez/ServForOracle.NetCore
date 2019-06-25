@@ -558,7 +558,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal async Task GetValueFromRefCursorAsync_Collection_NullValue(MetadataOracleNetTypeDefinition typedef, Mock<IOracleRefCursorWrapper> refCursorWrapper, Mock<IOracleDataReaderWrapper> dataReaderWrapper, Mock<MetadataOracleCommon> common, SimpleTestClass[] simples)
+        internal async Task GetValueFromRefCursorAsync_Collection_NullValue(MetadataOracleNetTypeDefinition typedef, Mock<IOracleRefCursorWrapper> refCursorWrapper, Mock<IOracleDataReaderWrapper> dataReaderWrapper, Mock<MetadataOracleCommon> common, SimpleTestClass[] simples, object oracleValue)
         {
             var prop = typedef.Properties.OrderBy(c => c.Order).First();
             prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
@@ -569,9 +569,10 @@ namespace ServForOracle.NetCore.UnitTests
                 .ReturnsAsync(false);
             int i = 0;
             dataReaderWrapper.Setup(d => d.GetOracleValue(i))
-                .Callback(() => i++);
+                .Callback(() => i++)
+                .Returns(oracleValue);
                 
-            common.SetupSequence(c => c.ConvertOracleParameterToBaseType(typeof(string), null))
+            common.SetupSequence(c => c.ConvertOracleParameterToBaseType(typeof(string), oracleValue))
                 .Returns(simples[0].Prop1)
                 .Returns(simples[1].Prop1)
                 .Returns(simples[2].Prop1);
@@ -594,7 +595,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal async Task GetValueFromRefCursorAsync_Collection_Enumerable_NullValue(MetadataOracleNetTypeDefinition typedef, Mock<IOracleRefCursorWrapper> refCursorWrapper, Mock<IOracleDataReaderWrapper> dataReaderWrapper, Mock<MetadataOracleCommon> common, SimpleTestClass[] simples)
+        internal async Task GetValueFromRefCursorAsync_Collection_Enumerable_NullValue(MetadataOracleNetTypeDefinition typedef, Mock<IOracleRefCursorWrapper> refCursorWrapper, Mock<IOracleDataReaderWrapper> dataReaderWrapper, Mock<MetadataOracleCommon> common, SimpleTestClass[] simples, object oracleValue)
         {
             var prop = typedef.Properties.OrderBy(c => c.Order).First();
             prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
@@ -605,9 +606,10 @@ namespace ServForOracle.NetCore.UnitTests
                 .ReturnsAsync(false);
             int i = 0;
             dataReaderWrapper.Setup(d => d.GetOracleValue(i))
-                .Callback(() => i++);
+                .Callback(() => i++)
+                .Returns(oracleValue);
 
-            common.SetupSequence(c => c.ConvertOracleParameterToBaseType(typeof(string), null))
+            common.SetupSequence(c => c.ConvertOracleParameterToBaseType(typeof(string), oracleValue))
                 .Returns(simples[0].Prop1)
                 .Returns(simples[1].Prop1)
                 .Returns(simples[2].Prop1);
@@ -735,7 +737,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal void GetValueFromRefCursor_Collection_NullValue(MetadataOracleNetTypeDefinition typedef, Mock<IOracleRefCursorWrapper> refCursorWrapper, Mock<IOracleDataReaderWrapper> dataReaderWrapper, Mock<MetadataOracleCommon> common, SimpleTestClass[] simples)
+        internal void GetValueFromRefCursor_Collection_NullValue(MetadataOracleNetTypeDefinition typedef, Mock<IOracleRefCursorWrapper> refCursorWrapper, Mock<IOracleDataReaderWrapper> dataReaderWrapper, Mock<MetadataOracleCommon> common, SimpleTestClass[] simples, object oracleValue)
         {
             var prop = typedef.Properties.OrderBy(c => c.Order).First();
             prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
@@ -746,9 +748,10 @@ namespace ServForOracle.NetCore.UnitTests
                 .Returns(false);
             int i = 0;
             dataReaderWrapper.Setup(d => d.GetOracleValue(i))
-                .Callback(() => i++);
+                .Callback(() => i++)
+                .Returns(oracleValue);
 
-            common.SetupSequence(c => c.ConvertOracleParameterToBaseType(typeof(string), null))
+            common.SetupSequence(c => c.ConvertOracleParameterToBaseType(typeof(string), oracleValue))
                 .Returns(simples[0].Prop1)
                 .Returns(simples[1].Prop1)
                 .Returns(simples[2].Prop1);
@@ -771,7 +774,7 @@ namespace ServForOracle.NetCore.UnitTests
         }
 
         [Theory, CustomAutoData]
-        internal void GetValueFromRefCursor_Collection_Enumerable_NullValue(MetadataOracleNetTypeDefinition typedef, Mock<IOracleRefCursorWrapper> refCursorWrapper, Mock<IOracleDataReaderWrapper> dataReaderWrapper, Mock<MetadataOracleCommon> common, SimpleTestClass[] simples)
+        internal void GetValueFromRefCursor_Collection_Enumerable_NullValue(MetadataOracleNetTypeDefinition typedef, Mock<IOracleRefCursorWrapper> refCursorWrapper, Mock<IOracleDataReaderWrapper> dataReaderWrapper, Mock<MetadataOracleCommon> common, SimpleTestClass[] simples, object oracleValue)
         {
             var prop = typedef.Properties.OrderBy(c => c.Order).First();
             prop.NETProperty = typeof(SimpleTestClass).GetProperty(nameof(SimpleTestClass.Prop1));
@@ -782,9 +785,10 @@ namespace ServForOracle.NetCore.UnitTests
                 .Returns(false);
             int i = 0;
             dataReaderWrapper.Setup(d => d.GetOracleValue(i))
-                .Callback(() => i++);
+                .Callback(() => i++)
+                .Returns(oracleValue);
 
-            common.SetupSequence(c => c.ConvertOracleParameterToBaseType(typeof(string), null))
+            common.SetupSequence(c => c.ConvertOracleParameterToBaseType(typeof(string), oracleValue))
                 .Returns(simples[0].Prop1)
                 .Returns(simples[1].Prop1)
                 .Returns(simples[2].Prop1);
