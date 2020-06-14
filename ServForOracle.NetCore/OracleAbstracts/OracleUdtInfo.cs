@@ -100,7 +100,7 @@ namespace ServForOracle.NetCore.OracleAbstracts
             {
                 if(string.IsNullOrWhiteSpace(CollectionSchema) || string.IsNullOrWhiteSpace(CollectionName))
                 {
-                    throw new Exception("The UDT object is not set up correctly, doesn't have the collectionObject configured, udt=" + ToString());
+                    throw new ArgumentNullException("The UDT object is not set up correctly, doesn't have the collectionObject configured, udt=" + ToString());
                 }
                 return $"{CollectionSchema}.{CollectionName}";
             }
